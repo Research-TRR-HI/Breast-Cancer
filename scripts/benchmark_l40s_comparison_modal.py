@@ -47,6 +47,7 @@ image = (
         "omegaconf>=2.3.0",
         "pandas>=2.2.0",
         "pydicom>=2.4.4",
+        "opencv-python-headless>=4.10.0",
         "pylibjpeg>=2.0.0",
         "pylibjpeg-libjpeg>=2.1.0",
         "pylibjpeg-openjpeg>=2.1.0",
@@ -108,10 +109,11 @@ def _decode_and_preprocess_timed(
     t1 = time.perf_counter()
 
     def _prep(item):
-        arr, phot = item
+        arr, phot, lat = item
         return preprocess_pixel_array(
             arr,
             photometric=phot,
+            laterality=lat,
             target_size=(1520, 912),
             invert_monochrome1=True,
             standardize=True,
@@ -125,7 +127,7 @@ def _decode_and_preprocess_timed(
     batch_tensor = torch.stack(tensors)
     t2 = time.perf_counter()
 
-    photometrics = [phot for _, phot in decoded]
+    photometrics = [phot for _, phot, _ in decoded]
     return batch_tensor, (t1 - t0), (t2 - t1), photometrics
 
 
