@@ -27,7 +27,7 @@ APP_NAME = "anchorshift-l40s-comparison"
 RSNA_VOL = modal.Volume.from_name("rsna-mammography-vol")
 MOUNT_PATH = Path("/data")
 
-CPU_CORES = 4.0
+CPU_CORES = 6.0
 MEMORY_MB = 16384
 MEMORY_GIB = MEMORY_MB / 1024.0
 
@@ -247,7 +247,8 @@ def run_l40s_comparison(
     extract_utils = []
 
     rel_paths = bench_df["rel_path"].tolist()
-    for start in range(0, len(rel_paths), batch_size):
+    n_extract_chunks = math.ceil(len(rel_paths) / batch_size)
+    for chunk_idx, start in enumerate(range(0, len(rel_paths), batch_size), start=1):
         chunk = rel_paths[start : start + batch_size]
         bx_cpu, dt_dec, dt_prep, phots = _decode_and_preprocess_timed(rsna_raw, chunk, num_workers=num_workers)
         all_photometrics.extend(phots)
@@ -268,6 +269,11 @@ def run_l40s_comparison(
         total_decode_s += dt_dec
         total_preproc_s += dt_prep
         total_encode_s += (t_enc1 - t_enc0)
+        print(
+            f"  [phase 1/4] batch {chunk_idx}/{n_extract_chunks} ({min(start + len(chunk), len(rel_paths))}/{len(rel_paths)} imgs) | "
+            f"decode={dt_dec:.2f}s prep={dt_prep:.2f}s enc={t_enc1 - t_enc0:.2f}s",
+            flush=True,
+        )
 
     extract_peak_vram_gb = torch.cuda.max_memory_allocated(device) / (1024**3)
     feats_fp32 = torch.cat(all_feats, dim=0)  # (1000, 2048)
@@ -364,7 +370,7 @@ def run_l40s_comparison(
     sampler_a = BalancedBatchSampler(
         bench_train["cancer"].values, batch_size=80, n_pos=20, seed=seed, epoch_policy="full_neg_pass"
     )
-    batches_a = list(sampler_a)  # ceil(671 / 60) = 12 batches of 80
+    batches_a = list(sampler_a)[:5]  # 1 warmup + 4 timed batches (400 imgs) to keep benchmark low-cost
     head_a = _make_head(encoder.embed_dim, device, seed=seed)
     opt_a = torch.optim.AdamW(head_a.parameters(), lr=3e-5, weight_decay=1e-4)
     scaler_a = torch.amp.GradScaler("cuda")
@@ -395,6 +401,7 @@ def run_l40s_comparison(
         scaler_a.update()
         torch.cuda.synchronize()
         dt = time.perf_counter() - t0
+        print(f"  [approach A] batch {b_idx + 1}/{len(batches_a)} ({'warmup' if b_idx == 0 else 'timed'}): {dt:.2f}s", flush=True)
 
         if b_idx > 0:  # skip batch 0 as warmup
             a_step_times.append(dt)
@@ -402,9 +409,9 @@ def run_l40s_comparison(
             if u is not None:
                 a_utils.append(u)
 
-    # Time live eval on bench_val_calib (200 images)
+    # Time live eval on 80 bench_val_calib images
     head_a.eval()
-    val_paths_a = bench_val_calib["rel_path"].tolist()
+    val_paths_a = bench_val_calib["rel_path"].tolist()[:80]
     torch.cuda.synchronize()
     t_va0 = time.perf_counter()
     with torch.no_grad():
