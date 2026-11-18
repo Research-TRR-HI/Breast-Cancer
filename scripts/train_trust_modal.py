@@ -106,8 +106,8 @@ def _load_rsna_splits(rsna_raw: Path, splits_csv: Path, seed: int):
     df_full = pd.read_csv(rsna_raw / "train.csv")
     patient_cancer = df_full.groupby("patient_id")["cancer"].max().reset_index()
     rng = np.random.RandomState(seed)
-    pos_pts = patient_cancer[patient_cancer["cancer"] == 1]["patient_id"].values
-    neg_pts = patient_cancer[patient_cancer["cancer"] == 0]["patient_id"].values
+    pos_pts = patient_cancer[patient_cancer["cancer"] == 1]["patient_id"].to_numpy().copy()
+    neg_pts = patient_cancer[patient_cancer["cancer"] == 0]["patient_id"].to_numpy().copy()
     rng.shuffle(pos_pts)
     rng.shuffle(neg_pts)
 
@@ -579,12 +579,12 @@ def train_model(
     timeout=3600,
 )
 def benchmark_throughput(
-    benchmark_batches: int = 10,
-    eval_samples: int = 160,
+    benchmark_batches: int = 3,
+    eval_samples: int = 40,
     batch_size: int = 80,
     micro_batch_size: int = 8,
     epoch_policy: str = "full_neg_pass",
-    num_workers: int = 8,
+    num_workers: int = 4,
     hourly_rate: float = 1.95,
     seed: int = 42,
 ) -> dict:
@@ -602,14 +602,17 @@ def benchmark_throughput(
     mammo_clip_tar = MOUNT_PATH / "models" / "mammo_clip" / "b5-model-best-epoch-7.tar"
     splits_csv = MOUNT_PATH / "rsna" / "splits_seed42.csv"
 
+    print(f"[bench] Starting L40S benchmark on {gpu_name} ({total_vram_gb:.2f} GB VRAM)...", flush=True)
     df = _load_rsna_splits(rsna_raw, splits_csv, seed)
     train_df = df[df["split"] == "train"].reset_index(drop=True)
     train_calib_df = df[df["split"] == "train_calib"].reset_index(drop=True)
     val_calib_df = df[df["split"] == "val_calib"].reset_index(drop=True)
+    print(f"[bench] Splits loaded (train={len(train_df)}, val_calib={len(val_calib_df)}).", flush=True)
 
     encoder, head, optimizer, scaler, criterion, _ = _build_model_and_criterion(
         mammo_clip_tar, device, "trust", 3e-5, 0.05, 1.0, 1.0
     )
+    print("[bench] Mammo-CLIP B5 (852/852) loaded. Running warmup + timed batches...", flush=True)
 
     pos_idx = train_df[train_df["cancer"] == 1].index.values.copy()
     neg_idx = train_df[train_df["cancer"] == 0].index.values.copy()
@@ -655,11 +658,15 @@ def benchmark_throughput(
         scaler.update()
         torch.cuda.synchronize()
         dt = time.time() - t0
-        if b > 0:
+        if b == 0:
+            print(f"[bench] Warmup batch (80 imgs): {dt:.2f}s", flush=True)
+        else:
             batch_times.append(dt)
+            print(f"[bench] Timed batch {b}/{benchmark_batches} (80 imgs): {dt:.2f}s", flush=True)
 
     # Benchmark eval throughput
     eval_sub = val_calib_df.head(eval_samples)
+    print(f"[bench] Timing eval on {len(eval_sub)} val_calib images...", flush=True)
     t_eval0 = time.time()
     _evaluate_split(
         eval_sub, rsna_raw, encoder, head, criterion, 0.5, device, eval_batch_size=16, num_workers=num_workers
@@ -710,6 +717,197 @@ def benchmark_throughput(
     return report
 
 
+@app.function(
+    image=image,
+    volumes={str(MOUNT_PATH): RSNA_VOL},
+    gpu="L40S",
+    cpu=4.0,
+    memory=16384,
+    timeout=1800,
+)
+def sweep_micro_batch(
+    candidates: Tuple[int, ...] = (80, 96, 112, 128, 144, 160, 192),
+    fallback_candidates: Tuple[int, ...] = (60, 40, 20, 16, 8),
+    timed_steps: int = 1,
+    num_workers: int = 4,
+    seed: int = 42,
+) -> dict:
+    """Find the HIGHEST stable micro-batch size on L40S, starting at 80 and stepping up until CUDA OOM.
+
+    If 80 OOMs, automatically falls back downward through (60, 40, 20, 16, 8).
+    Pre-decodes 80 real RSNA DICOMs (20 pos, 60 neg) once into CPU RAM to minimize GPU credits.
+    """
+    import subprocess
+    import numpy as np
+    import pandas as pd
+    import torch
+
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    gpu_name = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU"
+    total_vram_gb = torch.cuda.get_device_properties(0).total_memory / (1024**3) if torch.cuda.is_available() else 0.0
+
+    print(f"[sweep] Starting L40S micro-batch sweep on {gpu_name} ({total_vram_gb:.2f} GB VRAM)...", flush=True)
+    rsna_raw = MOUNT_PATH / "rsna" / "raw"
+    mammo_clip_tar = MOUNT_PATH / "models" / "mammo_clip" / "b5-model-best-epoch-7.tar"
+    splits_csv = MOUNT_PATH / "rsna" / "splits_seed42.csv"
+
+    df = _load_rsna_splits(rsna_raw, splits_csv, seed)
+    train_df = df[df["split"] == "train"].reset_index(drop=True)
+    pos_sub = train_df[train_df["cancer"] == 1].head(20)
+    neg_sub = train_df[train_df["cancer"] == 0].head(60)
+    sample_df = pd.concat([pos_sub, neg_sub], ignore_index=True)
+
+    print("[sweep] Decoding 80 RSNA DICOMs (20 pos + 60 neg) once into CPU RAM...", flush=True)
+    cpu_x = _decode_paths_parallel(rsna_raw, sample_df["rel_path"].tolist(), num_workers=num_workers)
+    cpu_y = torch.tensor(sample_df["cancer"].values, dtype=torch.float32).unsqueeze(1)
+    # Interleave 1:3 pos:neg order so every slice of size mb has exact 25% positives
+    pos_tensors = cpu_x[:20]
+    neg_tensors = cpu_x[20:]
+    pos_labels = cpu_y[:20]
+    neg_labels = cpu_y[20:]
+
+    encoder, head, optimizer, scaler, criterion, _ = _build_model_and_criterion(
+        mammo_clip_tar, device, "trust", 3e-5, 0.05, 1.0, 1.0
+    )
+
+    def _read_gpu_util() -> Optional[float]:
+        try:
+            out = subprocess.check_output(
+                ["nvidia-smi", "--query-gpu=utilization.gpu", "--format=csv,noheader,nounits"],
+                text=True,
+                timeout=2,
+            ).strip()
+            return float(out.splitlines()[0].strip())
+        except Exception:
+            return None
+
+    def _test_mb(mb: int) -> Optional[dict]:
+        print(f"\n[sweep] Testing batch_size={mb}...", flush=True)
+        torch.cuda.empty_cache()
+        torch.cuda.reset_peak_memory_stats(device)
+
+        # Build a single batch of size mb (preserving 1:3 pos:neg ratio) from cached 80 tensors
+        n_pos_mb = max(mb // 4, 1)
+        n_neg_mb = mb - n_pos_mb
+        p_idx = torch.arange(n_pos_mb) % len(pos_tensors)
+        n_idx = torch.arange(n_neg_mb) % len(neg_tensors)
+        bx_cpu = torch.cat([pos_tensors[p_idx], neg_tensors[n_idx]], dim=0)
+        by_cpu = torch.cat([pos_labels[p_idx], neg_labels[n_idx]], dim=0)
+
+        try:
+            head.train()
+            step_times = []
+            util_samples = []
+
+            for step_idx in range(timed_steps + 1):  # 1 warmup + timed_steps
+                torch.cuda.synchronize()
+                t0 = time.time()
+                optimizer.zero_grad()
+
+                bx = bx_cpu.to(device, non_blocking=True)
+                by = by_cpu.to(device, non_blocking=True)
+
+                with torch.amp.autocast("cuda"):
+                    with torch.no_grad():
+                        feats = encoder(bx)
+                    logits = head(feats)
+                    loss, _ = criterion(logits, by, tau_t=0.5)
+                scaler.scale(loss).backward()
+
+                if step_idx > 0:
+                    u = _read_gpu_util()
+                    if u is not None:
+                        util_samples.append(u)
+
+                scaler.unscale_(optimizer)
+                torch.nn.utils.clip_grad_norm_(head.parameters(), 5.0)
+                scaler.step(optimizer)
+                scaler.update()
+                torch.cuda.synchronize()
+                dt = time.time() - t0
+                if step_idx > 0:
+                    step_times.append(dt)
+
+            peak_vram_gb = torch.cuda.max_memory_allocated(device) / (1024**3)
+            mean_step_s = float(np.mean(step_times))
+            imgs_per_s = mb / max(mean_step_s, 1e-6)
+            mean_util = float(np.mean(util_samples)) if util_samples else None
+
+            entry = {
+                "batch_size": mb,
+                "status": "OK",
+                "peak_vram_gb": round(peak_vram_gb, 2),
+                "vram_pct": round((peak_vram_gb / max(total_vram_gb, 1e-6)) * 100, 1),
+                "gpu_util_pct": round(mean_util, 1) if mean_util is not None else None,
+                "step_time_sec": round(mean_step_s, 3),
+                "imgs_per_sec": round(imgs_per_s, 2),
+            }
+            print(
+                f"[sweep] OK | batch={mb} | peak_vram={entry['peak_vram_gb']} GB ({entry['vram_pct']}%) | "
+                f"gpu_util={entry['gpu_util_pct']}% | step={entry['step_time_sec']}s | {entry['imgs_per_sec']} img/s",
+                flush=True,
+            )
+            return entry
+
+        except (torch.cuda.OutOfMemoryError, RuntimeError) as exc:
+            if "out of memory" in str(exc).lower():
+                torch.cuda.empty_cache()
+                print(f"[sweep] CUDA OOM at batch_size={mb}.", flush=True)
+                return {
+                    "batch_size": mb,
+                    "status": "CUDA_OOM",
+                    "error": str(exc).splitlines()[0],
+                }
+            raise
+
+    results = []
+    highest_stable_mb = None
+    fastest_cfg = None
+
+    for mb in candidates:
+        entry = _test_mb(mb)
+        results.append(entry)
+        if entry["status"] == "CUDA_OOM":
+            break
+        highest_stable_mb = mb
+        if fastest_cfg is None or entry["imgs_per_sec"] > fastest_cfg["imgs_per_sec"]:
+            fastest_cfg = entry
+
+    if highest_stable_mb is None:
+        print("[sweep] 80 OOM'd — stepping downward to find highest stable size...", flush=True)
+        for mb in fallback_candidates:
+            entry = _test_mb(mb)
+            results.append(entry)
+            if entry["status"] == "OK":
+                highest_stable_mb = mb
+                fastest_cfg = entry
+                break
+
+    summary = {
+        "gpu_name": gpu_name,
+        "total_vram_gb": round(total_vram_gb, 2),
+        "highest_stable_micro_batch": highest_stable_mb,
+        "fastest_stable_config": fastest_cfg,
+        "results": results,
+    }
+
+    out_path = MOUNT_PATH / "models" / "l40s_micro_batch_sweep.json"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(summary, indent=2))
+    RSNA_VOL.commit()
+
+    print("\n" + "=" * 65, flush=True)
+    print("L40S MICRO-BATCH SWEEP SUMMARY:", flush=True)
+    print(f"  Highest stable micro_batch_size: {highest_stable_mb}", flush=True)
+    print(f"  Fastest stable config: {fastest_cfg}", flush=True)
+    for r in results:
+        print(f"  {r}", flush=True)
+    print("=" * 65, flush=True)
+    return summary
+
+
 @app.local_entrypoint()
 def main(
     baseline: str = "trust",
@@ -722,11 +920,12 @@ def main(
     lambda_dismiss: float = 1.0,
     tau_target_recall: float = 0.98,
     epoch_policy: str = "full_neg_pass",
-    num_workers: int = 8,
+    num_workers: int = 4,
     gpu: str = "L40S",
     resume: bool = False,
     benchmark: bool = False,
-    benchmark_batches: int = 10,
+    benchmark_batches: int = 3,
+    sweep_mb: bool = False,
     hourly_rate: float = -1.0,
 ) -> None:
     gpu_norm = gpu.upper()
@@ -734,6 +933,12 @@ def main(
         raise ValueError(f"Unsupported GPU {gpu!r}. Choose from {SUPPORTED_GPUS}.")
 
     rate = DEFAULT_HOURLY_RATES[gpu_norm] if hourly_rate < 0 else hourly_rate
+
+    if sweep_mb:
+        print(f"Launching micro-batch sweep on Modal (GPU={gpu_norm}, up to 80)...")
+        res = sweep_micro_batch.with_options(gpu=gpu_norm).remote(num_workers=num_workers)
+        print("Micro-batch sweep finished:", res)
+        return
 
     if benchmark:
         print(f"Launching throughput benchmark on Modal (GPU={gpu_norm}, batches={benchmark_batches})...")
