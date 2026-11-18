@@ -1,8 +1,8 @@
 # AnchorShift Stage B — TRUST Reproduction & Validation Plan
 
-**Document Version:** 2.0 (Corrected against `arXiv:2609.00300v1`)  
+**Document Version:** 2.1 (Final Pre-Training Correction — Critical Fixes A–I)  
 **Date:** 2026-11-18  
-**Status:** **CONDITIONAL GO** — Code corrections & 13/13 local unit/parity tests PASSED; cloud L40S online-vs-cached parity pilot pending user execution before Stage B4 training.  
+**Status:** **CONDITIONAL GO** — Critical Fixes A–I implemented & **20/20** local CPU tests PASSED (`reports/final_pre_training_readiness_audit.md`); cloud Stage-1 audit/build, T4 smoke test, 1,200-image L40S Mammo-CLIP parity pilot, and 5-batch extraction benchmark pending user execution before Stage B4 training.  
 **Workspace:** `hasinishrak2015` (Modal) / `d:\Breast Cancer Research`  
 **GitHub Repository:** `https://github.com/Research-TRR-HI/Breast-Cancer`
 
@@ -12,7 +12,7 @@
 
 This document details the reproduction of **TRUST (2026)** (*Threshold-Recalibrated Uncertainty-Safe Training for Certified Dismissal in Breast Cancer Screening*, arXiv:2609.00300) and its comparison with the standard Cross-Entropy (CE-only) baseline on the **RSNA Screening Mammography** dataset, establishing locked operating thresholds before zero-label transfer to **NLBS**.
 
-All code has been audited directly against `arXiv:2609.00300v1` (see [`reports/trust_paper_implementation_traceability.md`](trust_paper_implementation_traceability.md) and [`reports/pre_training_go_no_go.md`](pre_training_go_no_go.md)). The 13-test local CPU verification suite (covering model loading, hand-calculated losses, CP95/CP99 calibration, full DICOM LUT/crop/mirror/augmentation preprocessing, sampler parity, augmentation-aware cache integrity, 3-epoch CPU parity pilot, and deterministic RNG checkpoint resume) passed 100% locally.
+All code has been audited directly against `arXiv:2609.00300v1` (see [`reports/trust_paper_implementation_traceability.md`](trust_paper_implementation_traceability.md) and [`reports/final_pre_training_readiness_audit.md`](final_pre_training_readiness_audit.md)). The 20-test local CPU verification suite (covering model loading, RNG-isolated head init, hand-calculated losses + exact micro-batch positive weighting, CP95/CP99 calibration, strict DICOM LUT/laterality/segmentation preprocessing, sampler parity, Stage-1 `uint16` & `v2` feature cache integrity, 3-epoch CPU parity pilot, and deterministic `v2` RNG checkpoint resume) passed 20/20 locally.
 
 ---
 
@@ -53,7 +53,7 @@ All code has been audited directly against `arXiv:2609.00300v1` (see [`reports/t
 
 ### 2.4 Training Hyperparameters
 - **Epochs:** 20 (fixed 20-epoch schedule; **no early stopping and no `val_calib` best-checkpoint selection** — final 20th-epoch checkpoint used).
-- **Epoch Sampling Policy (`paper_independent`):** Per TRUST Section 3.9, each minibatch of 80 independently draws 20 cancer-positive and 60 cancer-negative images (allowing minority reuse across batches). Because the paper does not state an explicit integer batch count per epoch, `steps_per_epoch` defaults to `ceil(N_neg / 60) = 620` batches/epoch (`full_neg_pass` remains available only as a documented alternative).
+- **Epoch Sampling Policy (`paper_independent`):** Per TRUST Section 3.9, each minibatch of 80 independently draws 20 cancer-positive and 60 cancer-negative images (allowing minority reuse across batches). Because the paper does not state an explicit integer batch count per epoch, `steps_per_epoch` defaults to `ceil(37,444 / 60) = 625` batches/epoch (`1,000,000` 20-epoch occurrences; `full_neg_pass` remains available only as a documented alternative).
 - **Batch Size:** 80 images (20 pos, 60 neg); fits in a single pass (`micro_batch_size = 80`) on NVIDIA L40S (`24.90 GB / 44.44 GB`).
 - **Optimizer:** AdamW, learning rate $\eta = 3 \times 10^{-5}$, weight decay $10^{-4}$.
 - **Input Resolution:** $1520 \times 912$ (Height 1520, Width 912), 3 channels.
@@ -63,8 +63,8 @@ All code has been audited directly against `arXiv:2609.00300v1` (see [`reports/t
 
 ### 2.5 Verified Deviations vs. TRUST (`arXiv:2609.00300v1`)
 1. **Source-Only RSNA Split Protocol (Intentional AnchorShift Design):** Paper uses 5-fold CV (70/10/20) for in-domain evaluation and 90/10 RSNA + 20% **labeled NLBS** threshold calibration for external RSNA→NLBS evaluation. AnchorShift intentionally uses a single patient-level **70/10/20 RSNA split** so all source operating thresholds (95% & 98% recall) are calibrated on RSNA alone with zero NLBS label exposure.
-2. **Epoch Step Count:** `steps_per_epoch = 620` is explicitly specified since Section 3.9 does not publish an explicit minibatch count per epoch.
-3. **One-Feature-Per-Image Benchmark Note:** Historical L40S benchmark (`ap-KidtVEoMzokd7fsFzpMeFo`, `$17.06` / `429.6 MB`) measured unaugmented 1-feature-per-image throughput and does NOT establish stochastic-augmentation 20-epoch training equivalence. See `reports/pre_training_go_no_go.md` Section 5 for recalculated estimates (`~8.26 GB` augmentation-aware cache, `~$19.36` with CPU Stage-1 pre-crop).
+2. **Epoch Step Count:** `steps_per_epoch = 625` (`ceil(37,444 / 60)` matching `datasets/rsna/splits_seed42.csv` -> `1,000,000` occurrences across 20 epochs) is explicitly specified since Section 3.9 does not publish an explicit minibatch count per epoch.
+3. **One-Feature-Per-Image Benchmark Note:** Historical L40S benchmark (`ap-KidtVEoMzokd7fsFzpMeFo`, `$17.06` / `429.6 MB`) measured unaugmented 1-feature-per-image throughput and does NOT establish stochastic-augmentation 20-epoch training equivalence. See [`reports/final_pre_training_readiness_audit.md`](final_pre_training_readiness_audit.md) Section 6 for recalculated storage (`8.327 GB` FP32 `v2` feature cache) and Stage-1 CPU pre-crop projections.
 
 ---
 
@@ -78,7 +78,7 @@ Splits are generated strictly by `patient_id` to prevent any image, view, or lat
 - **Leakage Verification:** Pairwise intersection of patient sets is confirmed to be exactly **0**.
 
 ### 3.2 Complete Section 3.2 Preprocessing & Stochastic Augmentation
-- **Stage 1 (DICOM -> cropped 16-bit representation):** Applies DICOM Modality LUT & VOI LUT (`pydicom.pixels`), inverts `MONOCHROME1` so dense tissue is bright, min-max normalizes to `[0, 1]`, horizontally mirrors right-breast images (`ImageLaterality == "R"`), segments the breast using border-median thresholding + hole filling + `9x9` morphological closing + largest-component filtering, zeroes background outside the breast mask, crops to bounding box + `10%` margin (never stretching uncropped frames), and quantizes through 16-bit precision.
+- **Stage 1 (DICOM -> cropped 16-bit representation):** Applies DICOM Modality LUT & VOI LUT (`pydicom.pixels`, strict error propagation), inverts `MONOCHROME1` so dense tissue is bright, min-max normalizes to `[0, 1]`, horizontally mirrors right-breast images under `laterality_policy="strict"`, segments the breast using border-median thresholding + hole filling + `9x9` morphological closing (`use_largest_cc=False` verbatim TRUST default, `strict_segmentation=True`), zeroes background outside the breast mask, crops to bounding box + `10%` margin (never stretching uncropped frames), and quantizes to lossless `uint16` shards (`src/data/stage1_cache.py`).
 - **Stage 2 (Loader -> `(3, 1520, 912)` tensor):** Bilinear resize to `(1520, 912)`, `[0, 1]` re-normalization, training-only stochastic augmentation (rotation `±10°`, isotropic scale `0.90–1.10`, translation `±5%`, brightness `±0.05`, contrast `0.90–1.10`, `[0, 1]` clip), 3-channel replication, and Mammo-CLIP standardization (`mean=0.3089279`, `std=0.25053555408335154`). Evaluation (`train_calib`, `val_calib`) is strictly deterministic with zero augmentation.
 
 ---
@@ -104,14 +104,15 @@ Splits are generated strictly by `patient_id` to prevent any image, view, or lat
 
 ## 5. Hardware Recommendations & Recalculated Cost Estimates
 
-*(See `reports/pre_training_go_no_go.md` Section 5 for complete recalculated costs.)*
+*(See `reports/final_pre_training_readiness_audit.md` Section 6 for complete recalculated storage and cost projections.)*
 
 | Stage | Recommended Modal Compute | VRAM / Storage | Rationale | Estimated Cost |
 |---|---|---|---|---|
-| **Mammo-CLIP Download** | CPU-only (`cpu=1.0, memory=2048`) | 0 GB / 1.65 GB | Pinned SHA-256 download only. | ~$0.005 |
-| **Stage B Smoke Test** | T4 (`gpu="T4"`) | ~0.85 GB peak | 10 DICOMs, strict `852/852` & updated LUT/crop pipeline. | ~$0.01 (1 min) |
-| **L40S Parity Pilot** | L40S (`gpu="L40S"`) | ~24.9 GB peak | 1,000 imgs, 20-ep online vs. cached equivalence gate (`scripts/pilot_parity_modal.py`). | Pending run |
-| **Stage-1 Pre-Crop + Aug Cache** | CPU workers + L40S (`mb=80`) | 24.9 GB / ~8.26 GB FP32 | Pre-crop 54,706 DICOMs on CPU (~$2.05) + extract 992k augmented features once on L40S (~$17.23). | ~$19.28 (estimate) |
+| **Mammo-CLIP Download** | CPU-only (`cpu=1.0, memory=2048`) | 0 GB / 1.65 GB | Pinned SHA-256 download only. | ~$0.005 (DONE) |
+| **Stage-1 Audit & Build** | CPU-only (`cpu=8.0, memory=16384`) | 0 GB / uint16 shards | Pre-crop all `54,706` RSNA DICOMs once so DICOMs are never decoded 1M times. | ~$1.5–$3.1 (estimate) |
+| **Stage B Smoke Test** | T4 (`gpu="T4"`) | ~0.85 GB peak | 10 DICOMs, strict `852/852` & strict LUT/crop pipeline. | ~$0.01 (1 min) |
+| **L40S Parity Pilot** | L40S (`gpu="L40S"`) | ~24.9 GB peak | `1,200` imgs (`500/500/200`), 20-ep online vs. cached equivalence gate (`scripts/pilot_parity_modal.py`). | Pending run |
+| **Aug Cache Extract (`1M`)** | L40S (`mb=80`, Stage-1 input) | 24.9 GB / `8.327 GB` FP32 | Extract `1,000,000` augmented embeddings + `16,455` eval features once on L40S (benchmark 5 batches first). | Measure via Gate 5 |
 | **Cached CE + TRUST (20 ep each)** | L40S (`gpu="L40S"`) | <0.5 GB | Trains `LayerNorm+Dropout+Linear` heads on verified FP32 cache (~2 min total). | ~$0.08 (estimate) |
 
 *(Note: The prior `$17.06` / `429.6 MB` single-feature-per-image projection from `ap-KidtVEoMzokd7fsFzpMeFo` characterizes unaugmented inference/encoding throughput only and does NOT apply to stochastic-augmentation 20-epoch TRUST training.)*
