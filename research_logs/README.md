@@ -1,0 +1,47 @@
+# AnchorShift Research Logs
+
+Welcome to **AnchorShift Research Logs** directory (`research_logs/`). This directory houses detailed, evidence-backed, reproducible records of every substantial milestone, forensic audit, dataset leakage analysis, architecture design, loss formulation, calibration verification, and benchmark evaluation in the AnchorShift breast cancer screening AI project.
+
+---
+
+## 1. Role & Relationship to `memory/`
+
+To maintain clarity and separation of concerns across human researchers, AI coding agents (Antigravity), and external collaborators:
+
+- **`memory/` (High-Level State & Dashboard)**:
+  - Houses the authoritative, concise project dashboard (`state.md`), chronological overview (`history.md`), official mission (`purpose.md`), directory map (`index.md`), and developer persona guidelines (`personality.md`).
+  - Read at the start of every session for rapid orientation and tracking active goals.
+- **`research_logs/` (Detailed Technical Evidence & Audit Reports)**:
+  - Houses deep-dive forensic audits, mathematical formulations, loss derivations, DICOM integrity verifications, patient split leak proofs, unit test traces, and copy-pasteable execution commands.
+  - Every major audit, dataset split, model architecture milestone, or cloud experiment must produce a dedicated, numbered research log.
+
+---
+
+## 2. Mandatory Research Logging Rules
+
+1. **Standardized Naming Convention**:
+   - Every research log file must follow the pattern:
+     `research_logs/YYYY-MM-DD_<topic_in_snake_case>.md`
+     *(Example: `research_logs/2026-11-17_trust_reproduction_and_rsna_splits.md`)*
+2. **Template Adherence**:
+   - All logs must strictly follow the standard structure defined in [`research_logs/TEMPLATE.md`](TEMPLATE.md).
+3. **Empirical Evidence & Zero Fabrication**:
+   - Never invent numbers, patient counts, DICOM tags, test results, or commit SHAs.
+   - Record exact paths, Modal volumes, split seeds, and cryptographic hashes.
+4. **Unlabeled Target Quarantine Rule**:
+   - NLBS cancer labels are strictly quarantined for evaluation only. Zero exposure during training, hyperparameter tuning, checkpoint selection, or threshold calibration.
+5. **Index Maintenance**:
+   - Whenever a new research log is created, add an entry to the master index table below (ordered newest first).
+6. **Research Quality & Limitation Disclosure**:
+   - Explicitly document all scanner heterogeneity, inverted polarities, unlinked cross-folder repeats, and compute constraints. Never claim a pipeline is publication-ready without empirical verification.
+
+---
+
+## 3. Chronological Index of Research Logs
+
+| Date                 | Log File                                                                                                                          | Milestone / Topic                                                              | Summary of Actions & Findings                                                                                                                                                                                                                                                                                                          | Status                                           |
+| :------------------- | :-------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------- |
+| **2026-11-18** | [2026-11-18_stage_b_gpu_smoke_test_and_mammoclip_verification.md](2026-11-18_stage_b_gpu_smoke_test_and_mammoclip_verification.md) | Stage B Cloud GPU Smoke Test & Mammo-CLIP Weights Verification                 | End-to-end GPU smoke test on Tesla T4; resolved PyTorch 2.6 `weights_only=True` unpickler collision for `omegaconf`; verified 1.65 GB Mammo-CLIP B5 weights loaded (`checkpoint_loaded: True`); 10 RSNA DICOMs decoded in 8.75s (0.88s/img); verified peak VRAM = 0.78 GB / 14.58 GB (5.3%); confirmed frozen encoder isolation. | VERIFIED COMPLETE (CERTIFIED PASS)               |
+| **2026-11-17** | [2026-11-17_trust_reproduction_and_rsna_splits.md](2026-11-17_trust_reproduction_and_rsna_splits.md)                               | Stage B TRUST Reproduction, Mammo-CLIP B5 Loading & Zero-Leakage RSNA Splits   | Complete PyTorch reproduction of TRUST (arXiv:2609.00300) focal/dismissal loss, frozen Mammo-CLIP EfficientNet-B5 loader, deterministic patient-level RSNA split (8,339 train, 1,192 train-calib, 2,382 val-calib; 0 patient leakage), BalancedBatchSampler (20 pos / 60 neg), and 5/5 unit tests passed locally.                      | CODE & SPLITS COMPLETE / AWAITING USER MODAL RUN |
+| **2026-11-17** | [2026-11-17_nlbs_exam_manifest_and_leakage_clustering.md](2026-11-17_nlbs_exam_manifest_and_leakage_clustering.md)                 | Stage A3 NLBS Extraction, FRDR SHA-256 Certification & Exam Leakage Clustering | Verified 8/8 FRDR SHA-256 hashes bit-for-bit; extracted 26,988 DICOMs; resolved 149 positive patients vs 151 positive exams (`p_4334` & `p_4461` repeat visits); isolated 71 shared `StudyInstanceUID`s; derived 5,942 atomic `split_cluster_id` components via Union-Find.                                                    | VERIFIED COMPLETE / MANIFESTS COMMITTED          |
+| **2026-11-17** | [2026-11-17_rsna_nlbs_dataset_audit.md](2026-11-17_rsna_nlbs_dataset_audit.md)                                                     | Stage A Complete Dataset Audit (RSNA & NLBS Volumes)                           | Complete forensic audit on CPU Modal; verified 54,706 RSNA DICOMs (4.08% patient positive), discovered 40/200 `MONOCHROME1` inverted polarities; verified 26,988 NLBS DICOMs across 3 archives, discovered Siemens Mammomat Novation DR scanner in NLBS.                                                                             | AUDIT COMPLETE / READINESS CERTIFIED             |
