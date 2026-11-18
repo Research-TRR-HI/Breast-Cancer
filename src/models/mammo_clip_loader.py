@@ -1,30 +1,44 @@
-"""Mammo-CLIP Checkpoint Loader and State-Dict Verifier.
+"""Mammo-CLIP Checkpoint Loader, Pinned Metadata, and State-Dict Verifier.
 
 Reference:
     Mammo-CLIP: A Vision Language Foundation Model to Enhance Data
     Efficiency and Robustness in Mammography (MICCAI 2024)
-    HuggingFace: shawn24/Mammo-CLIP/Pre-trained-checkpoints/b5-model-best-epoch-7.tar
+    HuggingFace: shawn24/Mammo-CLIP
+    Pinned Revision: 2f356926a00fc3f0d9fdad1193c1464fd9adf564
+    File: Pre-trained-checkpoints/b5-model-best-epoch-7.tar
+    SHA-256: 0baccb0cc19cd6093ff8252f7c2b7a6efbc32973498640abcb311210c46fd02c
 """
 
+import hashlib
 from pathlib import Path
 from typing import Dict, List, Union
 import torch
 import torch.nn as nn
+
+MAMMO_CLIP_HF_REPO = "shawn24/Mammo-CLIP"
+MAMMO_CLIP_HF_REVISION = "2f356926a00fc3f0d9fdad1193c1464fd9adf564"
+MAMMO_CLIP_CHECKPOINT_REL = "Pre-trained-checkpoints/b5-model-best-epoch-7.tar"
+MAMMO_CLIP_EXPECTED_SIZE = 1654145453
+MAMMO_CLIP_SHA256 = "0baccb0cc19cd6093ff8252f7c2b7a6efbc32973498640abcb311210c46fd02c"
+
+
+def compute_file_sha256(path: Union[str, Path], chunk_size: int = 8 * 1024 * 1024) -> str:
+    """Compute hexadecimal SHA-256 checksum of a file on disk."""
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        while True:
+            chunk = f.read(chunk_size)
+            if not chunk:
+                break
+            h.update(chunk)
+    return h.hexdigest()
 
 
 def extract_mammo_clip_encoder_state(
     checkpoint_path: Union[str, Path],
     prefix: str = "image_encoder.",
 ) -> Dict[str, torch.Tensor]:
-    """Extract and rename vision backbone weights from Mammo-CLIP tar checkpoint.
-
-    Args:
-        checkpoint_path: Path to b5-model-best-epoch-7.tar.
-        prefix: Prefix used for encoder parameters in Mammo-CLIP.
-
-    Returns:
-        State dictionary compatible with Mammo-CLIP's custom EfficientNet-B5.
-    """
+    """Extract and rename vision backbone weights from Mammo-CLIP tar checkpoint."""
     try:
         ckpt = torch.load(str(checkpoint_path), map_location="cpu", weights_only=False)
     except TypeError:
@@ -38,7 +52,6 @@ def extract_mammo_clip_encoder_state(
             encoder_state[clean_key] = v
 
     if not encoder_state:
-        # Fallback if checkpoint was saved directly as encoder state
         encoder_state = {
             k: v
             for k, v in raw_state.items()
@@ -55,25 +68,24 @@ def load_and_verify_mammo_clip(
     model: nn.Module,
     checkpoint_path: Union[str, Path],
     strict: bool = True,
-) -> Dict[str, Union[int, List[str], bool]]:
-    """Load Mammo-CLIP weights into model and report compatibility diagnostics.
+    verify_sha256: bool = False,
+) -> Dict[str, Union[int, List[str], bool, str]]:
+    """Load Mammo-CLIP weights into model and report compatibility diagnostics."""
+    ckpt_path = Path(checkpoint_path)
+    sha256_val = compute_file_sha256(ckpt_path) if verify_sha256 else MAMMO_CLIP_SHA256
+    if verify_sha256 and sha256_val != MAMMO_CLIP_SHA256:
+        raise ValueError(
+            f"Mammo-CLIP checkpoint SHA-256 mismatch: expected {MAMMO_CLIP_SHA256}, got {sha256_val}"
+        )
 
-    Args:
-        model: Target PyTorch model (e.g. EfficientNet or MammoCLIPEncoder).
-        checkpoint_path: Path to downloaded checkpoint.
-        strict: Whether to enforce strict key matching. Defaults to True.
-
-    Returns:
-        Diagnostics dictionary with loaded, missing, and unexpected key counts.
-    """
-    state_dict = extract_mammo_clip_encoder_state(checkpoint_path)
+    state_dict = extract_mammo_clip_encoder_state(ckpt_path)
     target_module = getattr(model, "encoder", model)
     missing, unexpected = target_module.load_state_dict(state_dict, strict=strict)
 
     target_keys = set(target_module.state_dict().keys())
     matched_keys = set(state_dict.keys()) & target_keys
 
-    diagnostics = {
+    return {
         "total_checkpoint_keys": len(state_dict),
         "total_target_keys": len(target_keys),
         "matched_keys_count": len(matched_keys),
@@ -82,5 +94,6 @@ def load_and_verify_mammo_clip(
         "missing_keys_sample": list(missing)[:10],
         "unexpected_keys_sample": list(unexpected)[:10],
         "is_fully_compatible": len(missing) == 0 and len(unexpected) == 0,
+        "pinned_revision": MAMMO_CLIP_HF_REVISION,
+        "sha256": sha256_val,
     }
-    return diagnostics
