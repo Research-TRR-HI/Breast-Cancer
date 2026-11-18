@@ -56,6 +56,13 @@ class BalancedBatchSampler(Sampler[List[int]]):
     """Batch sampler enforcing fixed positive/negative ratio per batch.
 
     TRUST default: batch size 80 = 20 positives + 60 negatives.
+
+    Epoch policies:
+        - "full_neg_pass" (default): Every epoch visits 100% of negative images once
+          (ceil(N_neg / n_neg) batches), while cycling and reshuffling positives
+          with wraparound to maintain the exact n_pos:n_neg ratio per minibatch.
+        - "pos_pass" (legacy): floor(N_pos / n_pos) batches per epoch; undersamples
+          negatives in imbalanced datasets and is kept only for ablation.
     """
 
     def __init__(
@@ -65,6 +72,7 @@ class BalancedBatchSampler(Sampler[List[int]]):
         n_pos: int = 20,
         seed: int = 42,
         shuffle: bool = True,
+        epoch_policy: str = "full_neg_pass",
     ) -> None:
         super().__init__()
         labels_arr = np.asarray(labels).flatten()
@@ -76,10 +84,15 @@ class BalancedBatchSampler(Sampler[List[int]]):
         self.n_neg = batch_size - self.n_pos
         self.seed = seed
         self.shuffle = shuffle
+        self.epoch_policy = epoch_policy
         self.rng = np.random.RandomState(seed)
 
-        # Number of batches determined by exhausting the positive samples
-        self.n_batches = max(len(self.pos_indices) // self.n_pos, 1)
+        if epoch_policy == "full_neg_pass":
+            self.n_batches = max(int(np.ceil(len(self.neg_indices) / max(self.n_neg, 1))), 1)
+        elif epoch_policy == "pos_pass":
+            self.n_batches = max(len(self.pos_indices) // max(self.n_pos, 1), 1)
+        else:
+            raise ValueError(f"Unknown epoch_policy: {epoch_policy!r}. Expected 'full_neg_pass' or 'pos_pass'.")
 
     def __len__(self) -> int:
         return self.n_batches
