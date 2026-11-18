@@ -1,0 +1,313 @@
+{
+  "rsna": {
+    "exists": true,
+    "total_files": 54714,
+    "total_gb": 293.11,
+    "extensions": {
+      ".dcm": 54710,
+      ".csv": 3,
+      ".zip": 1
+    },
+    "top_dirs": {
+      "raw": 54713,
+      "<root>": 1
+    },
+    "metadata_files": [
+      {
+        "path": "raw/sample_submission.csv",
+        "size_bytes": 75
+      },
+      {
+        "path": "raw/test.csv",
+        "size_bytes": 239
+      },
+      {
+        "path": "raw/train.csv",
+        "size_bytes": 2559541
+      },
+      {
+        "path": "train.csv.zip",
+        "size_bytes": 569367
+      }
+    ],
+    "sample_paths": [
+      "train.csv.zip",
+      "raw/sample_submission.csv",
+      "raw/test.csv",
+      "raw/train.csv",
+      "raw/test_images/10008/1591370361.dcm",
+      "raw/test_images/10008/361203119.dcm",
+      "raw/test_images/10008/68070693.dcm",
+      "raw/test_images/10008/736471439.dcm",
+      "raw/train_images/10006/1459541791.dcm",
+      "raw/train_images/10006/1864590858.dcm",
+      "raw/train_images/10006/1874946579.dcm",
+      "raw/train_images/10006/462822612.dcm",
+      "raw/train_images/10011/1031443799.dcm",
+      "raw/train_images/10011/220375232.dcm",
+      "raw/train_images/10011/270344397.dcm"
+    ]
+  },
+  "rsna_tables": {
+    "raw/sample_submission.csv": {
+      "columns": [
+        "prediction_id",
+        "cancer"
+      ],
+      "sample_rows": [
+        {
+          "prediction_id": "10008_L",
+          "cancer": 0.0211676964135561
+        },
+        {
+          "prediction_id": "10008_R",
+          "cancer": 0.0211676964135561
+        }
+      ]
+    },
+    "raw/test.csv": {
+      "columns": [
+        "site_id",
+        "patient_id",
+        "image_id",
+        "laterality",
+        "view",
+        "age",
+        "implant",
+        "machine_id",
+        "prediction_id"
+      ],
+      "sample_rows": [
+        {
+          "site_id": 2,
+          "patient_id": 10008,
+          "image_id": 736471439,
+          "laterality": "L",
+          "view": "MLO",
+          "age": 81,
+          "implant": 0,
+          "machine_id": 21,
+          "prediction_id": "10008_L"
+        },
+        {
+          "site_id": 2,
+          "patient_id": 10008,
+          "image_id": 1591370361,
+          "laterality": "L",
+          "view": "CC",
+          "age": 81,
+          "implant": 0,
+          "machine_id": 21,
+          "prediction_id": "10008_L"
+        },
+        {
+          "site_id": 2,
+          "patient_id": 10008,
+          "image_id": 68070693,
+          "laterality": "R",
+          "view": "MLO",
+          "age": 81,
+          "implant": 0,
+          "machine_id": 21,
+          "prediction_id": "10008_R"
+        }
+      ]
+    },
+    "raw/train.csv": {
+      "columns": [
+        "site_id",
+        "patient_id",
+        "image_id",
+        "laterality",
+        "view",
+        "age",
+        "cancer",
+        "biopsy",
+        "invasive",
+        "BIRADS",
+        "implant",
+        "density",
+        "machine_id",
+        "difficult_negative_case"
+      ],
+      "sample_rows": [
+        {
+          "site_id": 2,
+          "patient_id": 10006,
+          "image_id": 462822612,
+          "laterality": "L",
+          "view": "CC",
+          "age": 61,
+          "cancer": 0,
+          "biopsy": 0,
+          "invasive": 0,
+          "BIRADS": NaN,
+          "implant": 0,
+          "density": NaN,
+          "machine_id": 29,
+          "difficult_negative_case": false
+        },
+        {
+          "site_id": 2,
+          "patient_id": 10006,
+          "image_id": 1459541791,
+          "laterality": "L",
+          "view": "MLO",
+          "age": 61,
+          "cancer": 0,
+          "biopsy": 0,
+          "invasive": 0,
+          "BIRADS": NaN,
+          "implant": 0,
+          "density": NaN,
+          "machine_id": 29,
+          "difficult_negative_case": false
+        },
+        {
+          "site_id": 2,
+          "patient_id": 10006,
+          "image_id": 1864590858,
+          "laterality": "R",
+          "view": "MLO",
+          "age": 61,
+          "cancer": 0,
+          "biopsy": 0,
+          "invasive": 0,
+          "BIRADS": NaN,
+          "implant": 0,
+          "density": NaN,
+          "machine_id": 29,
+          "difficult_negative_case": false
+        }
+      ]
+    }
+  },
+  "nlbs": {
+    "exists": true,
+    "total_files": 9,
+    "total_gb": 84.562,
+    "extensions": {
+      ".txt": 5,
+      ".7z": 3,
+      ".csv": 1
+    },
+    "top_dirs": {
+      "raw": 9
+    },
+    "metadata_files": [
+      {
+        "path": "raw/CITATION.txt",
+        "size_bytes": 250
+      },
+      {
+        "path": "raw/LICENSE.txt",
+        "size_bytes": 13308
+      },
+      {
+        "path": "raw/NLBSD_Metadata.csv",
+        "size_bytes": 3933003
+      },
+      {
+        "path": "raw/README.txt",
+        "size_bytes": 5863
+      },
+      {
+        "path": "raw/README_version_history_2025-11-25.txt",
+        "size_bytes": 396
+      },
+      {
+        "path": "raw/frdr-dfdr-checksums.txt",
+        "size_bytes": 1680
+      }
+    ],
+    "sample_paths": [
+      "raw/CITATION.txt",
+      "raw/False Positive.7z",
+      "raw/LICENSE.txt",
+      "raw/NLBSD_Metadata.csv",
+      "raw/README.txt",
+      "raw/README_version_history_2025-11-25.txt",
+      "raw/abnormal.7z",
+      "raw/frdr-dfdr-checksums.txt",
+      "raw/normal.7z"
+    ]
+  },
+  "nlbs_tables": {
+    "raw/NLBSD_Metadata.csv": {
+      "columns": [
+        "File Path",
+        "Anode Target Material",
+        "Energy Settings",
+        "Exam Date",
+        "Image Laterality",
+        "View Position",
+        "Age",
+        "Window Center",
+        "Window Width",
+        "Collimator Shape",
+        "Collimator Left Vertical Edge",
+        "Collimator Right Vertical Edge",
+        "Collimator Upper Horizontal Edge",
+        "Collimator Lower Horizontal Edge",
+        "Cancer",
+        "Hard to State Negative"
+      ],
+      "sample_rows": [
+        {
+          "File Path": "normal\\p_1024\\left\\MLO\\IM-0100-0004-0001.dcm",
+          "Anode Target Material": "RHODIUM",
+          "Energy Settings": 31,
+          "Exam Date": NaN,
+          "Image Laterality": "L",
+          "View Position": "MLO",
+          "Age": 55,
+          "Window Center": "[[2797, 2851, 2683]]",
+          "Window Width": "[[900, 750, 1050]]",
+          "Collimator Shape": "RECTANGULAR",
+          "Collimator Left Vertical Edge": 0,
+          "Collimator Right Vertical Edge": 2395,
+          "Collimator Upper Horizontal Edge": 0,
+          "Collimator Lower Horizontal Edge": 3063,
+          "Cancer": 0,
+          "Hard to State Negative": 0
+        },
+        {
+          "File Path": "normal\\p_1024\\left\\CC\\IM-0098-0002-0001.dcm",
+          "Anode Target Material": "RHODIUM",
+          "Energy Settings": 29,
+          "Exam Date": NaN,
+          "Image Laterality": "L",
+          "View Position": "CC",
+          "Age": 55,
+          "Window Center": "[[2935, 2977, 2869]]",
+          "Window Width": "[[900, 750, 1050]]",
+          "Collimator Shape": "RECTANGULAR",
+          "Collimator Left Vertical Edge": 0,
+          "Collimator Right Vertical Edge": 2395,
+          "Collimator Upper Horizontal Edge": 0,
+          "Collimator Lower Horizontal Edge": 3063,
+          "Cancer": 0,
+          "Hard to State Negative": 0
+        },
+        {
+          "File Path": "normal\\p_1024\\right\\MLO\\IM-0099-0003-0001.dcm",
+          "Anode Target Material": "RHODIUM",
+          "Energy Settings": 29,
+          "Exam Date": NaN,
+          "Image Laterality": "R",
+          "View Position": "MLO",
+          "Age": 55,
+          "Window Center": "[[2923, 2965, 2833]]",
+          "Window Width": "[[900, 750, 1050]]",
+          "Collimator Shape": "RECTANGULAR",
+          "Collimator Left Vertical Edge": 0,
+          "Collimator Right Vertical Edge": 2395,
+          "Collimator Upper Horizontal Edge": 0,
+          "Collimator Lower Horizontal Edge": 3063,
+          "Cancer": 0,
+          "Hard to State Negative": 0
+        }
+      ]
+    }
+  }
+}
