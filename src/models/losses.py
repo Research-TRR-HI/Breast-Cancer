@@ -1,13 +1,13 @@
-"""Loss Functions for CE Baseline and TRUST Training.
+"""Loss Functions for CE Baseline, Ablations, and TRUST Training.
 
 Reference:
-    TRUST (2026): Section 3.2
-    - Binary Cross Entropy (BCE) Loss
-    - Focal Loss (focuses on hard negatives/positives and class imbalance)
-    - Dynamic Dismissal Loss:
-        L_dismiss = (1 / N_pos) * sum_{i in pos} max(0, tau_t + margin - p_i)
-        where tau_t is the dynamic provisional threshold recalculated per epoch,
-        margin is safety distance (default 0.05), and p_i is the model probability.
+    TRUST (Shafie et al., 2026, arXiv:2609.00300v1): Section 3.8 & 3.10 (Eq. 6-8, 11-14)
+    - Binary Cross Entropy (BCE) Loss:
+        L_CE = -(1/N) * sum [y_i log(p_i) + (1 - y_i) log(1 - p_i)]
+    - Focal Loss (no alpha weighting in Eq. 12, gamma = 2.0, lambda_focal = 1.0):
+        L_focal = -(1/N) * sum [y_i (1 - p_i)^gamma log(p_i) + (1 - y_i) p_i^gamma log(1 - p_i)]
+    - Dynamic Dismissal Loss (margin m = 0.10, lambda_dismiss = 0.05, initial tau_t = 0.05):
+        L_dismiss = (1 / N_C+) * sum_{i: y_i=1} max(0, tau_t + m - p_i)
 """
 
 from typing import Optional, Tuple
@@ -17,59 +17,69 @@ import torch.nn.functional as F
 
 
 class FocalLoss(nn.Module):
-    """Numerically stable binary Focal Loss with logits input.
+    """Numerically stable binary Focal Loss with logits input matching TRUST Eq. (12).
 
-    FL(p_t) = -alpha_t * (1 - p_t)^gamma * log(p_t)
+    When ``alpha`` is ``None`` (default, matching TRUST Eq. 12), no alpha class
+    weighting is applied:
+        FL = -(1/N) * sum [ y*(1-p)^gamma*log(p) + (1-y)*p^gamma*log(1-p) ]
     """
 
-    def __init__(self, alpha: float = 0.25, gamma: float = 2.0, reduction: str = "mean") -> None:
+    def __init__(
+        self,
+        gamma: float = 2.0,
+        alpha: Optional[float] = None,
+        reduction: str = "mean",
+    ) -> None:
         super().__init__()
-        self.alpha = alpha
-        self.gamma = gamma
+        if gamma < 0:
+            raise ValueError(f"gamma must be non-negative, got {gamma}")
+        if alpha is not None and not (0.0 <= alpha <= 1.0):
+            raise ValueError(f"alpha must be in [0, 1] or None, got {alpha}")
+        if reduction not in ("mean", "sum", "none"):
+            raise ValueError(f"Unsupported reduction: {reduction}")
+        self.gamma = float(gamma)
+        self.alpha = float(alpha) if alpha is not None else None
         self.reduction = reduction
 
     def forward(self, logits: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
-        """Forward pass.
+        """Compute binary focal loss from logits and binary targets."""
+        logits_flat = logits.view(-1)
+        targets_flat = targets.view(-1).float()
 
-        Args:
-            logits: Predicted logits of shape (B, 1) or (B,).
-            targets: Binary ground truth labels (0 or 1) of same shape.
+        bce = F.binary_cross_entropy_with_logits(logits_flat, targets_flat, reduction="none")
+        probs = torch.sigmoid(logits_flat)
+        p_t = targets_flat * probs + (1.0 - targets_flat) * (1.0 - probs)
+        modulating_factor = (1.0 - p_t).clamp(min=0.0) ** self.gamma
 
-        Returns:
-            Scalar loss tensor.
-        """
-        logits = logits.view(-1)
-        targets = targets.view(-1).float()
-
-        bce = F.binary_cross_entropy_with_logits(logits, targets, reduction="none")
-        probs = torch.sigmoid(logits)
-        p_t = targets * probs + (1 - targets) * (1 - probs)
-        alpha_t = targets * self.alpha + (1 - targets) * (1 - self.alpha)
-
-        loss = alpha_t * ((1 - p_t) ** self.gamma) * bce
+        loss = modulating_factor * bce
+        if self.alpha is not None:
+            alpha_t = targets_flat * self.alpha + (1.0 - targets_flat) * (1.0 - self.alpha)
+            loss = alpha_t * loss
 
         if self.reduction == "mean":
             return loss.mean()
-        elif self.reduction == "sum":
+        if self.reduction == "sum":
             return loss.sum()
         return loss
 
 
 class DynamicDismissalLoss(nn.Module):
-    """TRUST Dynamic Dismissal Loss on positive images.
+    """TRUST Dynamic Dismissal Loss on cancer-positive images (Eq. 7 & 14).
 
-    Penalizes cancer-positive images whose prediction score p_i is below
-    or dangerously close to the current provisional dismissal threshold tau_t:
+    Penalizes cancer-positive images whose prediction score p_i falls below
+    tau_t + margin:
 
-        L_dismiss = (1 / max(N_pos, 1)) * sum_{i in pos} relu(tau_t + margin - p_i)
+        L_dismiss = (1 / N_C+) * sum_{i: y_i = 1} max(0, tau_t + m - p_i)
 
     Args:
-        margin: Safety margin above threshold (default: 0.05).
+        margin: Safety margin m above provisional threshold tau_t (paper default: 0.10).
     """
 
-    def __init__(self, margin: float = 0.05) -> None:
+    def __init__(self, margin: float = 0.10) -> None:
         super().__init__()
-        self.margin = margin
+        if margin < 0:
+            raise ValueError(f"margin must be non-negative, got {margin}")
+        self.margin = float(margin)
 
     def forward(
         self,
@@ -77,58 +87,67 @@ class DynamicDismissalLoss(nn.Module):
         targets: torch.Tensor,
         tau_t: float,
     ) -> Tuple[torch.Tensor, int]:
-        """Forward pass.
+        """Compute dismissal hinge penalty on positive samples."""
+        probs_flat = probs.view(-1)
+        targets_flat = targets.view(-1)
 
-        Args:
-            probs: Predicted probabilities in [0, 1] of shape (B, 1) or (B,).
-            targets: Binary ground truth labels of same shape.
-            tau_t: Current epoch's provisional threshold.
-
-        Returns:
-            Tuple of (scalar dismissal loss, number of positive images in batch).
-        """
-        probs = probs.view(-1)
-        targets = targets.view(-1)
-
-        pos_mask = targets == 1
+        pos_mask = targets_flat == 1
         n_pos = int(pos_mask.sum().item())
-
         if n_pos == 0:
-            return probs.sum() * 0.0, 0
+            return probs_flat.sum() * 0.0, 0
 
-        pos_probs = probs[pos_mask]
-        penalty = F.relu(tau_t + self.margin - pos_probs)
-        loss = penalty.sum() / max(n_pos, 1)
+        pos_probs = probs_flat[pos_mask]
+        penalty = F.relu(float(tau_t) + self.margin - pos_probs)
+        loss = penalty.mean()
         return loss, n_pos
 
 
 class TRUSTLoss(nn.Module):
-    """Unified loss module for CE-only baseline and TRUST training.
+    """Unified objective for CE-only, CE+Focal, Fixed-tau, and TRUST closed-loop training.
 
-    Total loss:
-        L_total = L_bce + lambda_focal * L_focal + lambda_dismiss * L_dismiss
+    Total loss (TRUST Eq. 6 & 13):
+        L = L_CE + lambda_focal * L_focal + lambda_dismiss * L_dismiss
 
-    Setting lambda_focal = 0 and lambda_dismiss = 0 recovers the pure CE baseline.
+    Paper defaults (arXiv:2609.00300v1 Section 3.8 & 3.10):
+        - gamma = 2.0, focal_alpha = None (unweighted Eq. 12)
+        - lambda_focal = 1.0
+        - lambda_dismiss = 0.05
+        - margin = 0.10
+        - initial tau_t = 0.05
     """
+
+    SUPPORTED_BASELINES = ("ce", "ce_focal", "fixed_tau", "trust")
 
     def __init__(
         self,
         baseline: str = "trust",
-        margin: float = 0.05,
-        focal_alpha: float = 0.25,
+        margin: float = 0.10,
         focal_gamma: float = 2.0,
+        focal_alpha: Optional[float] = None,
         lambda_focal: float = 1.0,
-        lambda_dismiss: float = 1.0,
+        lambda_dismiss: float = 0.05,
     ) -> None:
         super().__init__()
         self.baseline = baseline.lower()
-        self.margin = margin
-        self.lambda_focal = lambda_focal if self.baseline == "trust" else 0.0
-        self.lambda_dismiss = lambda_dismiss if self.baseline == "trust" else 0.0
+        if self.baseline not in self.SUPPORTED_BASELINES:
+            raise ValueError(
+                f"Unsupported baseline={baseline!r}. Choose from {self.SUPPORTED_BASELINES}."
+            )
+
+        self.margin = float(margin)
+        if self.baseline == "ce":
+            self.lambda_focal = 0.0
+            self.lambda_dismiss = 0.0
+        elif self.baseline == "ce_focal":
+            self.lambda_focal = float(lambda_focal)
+            self.lambda_dismiss = 0.0
+        else:
+            self.lambda_focal = float(lambda_focal)
+            self.lambda_dismiss = float(lambda_dismiss)
 
         self.bce = nn.BCEWithLogitsLoss()
-        self.focal = FocalLoss(alpha=focal_alpha, gamma=focal_gamma)
-        self.dismissal = DynamicDismissalLoss(margin=margin)
+        self.focal = FocalLoss(gamma=focal_gamma, alpha=focal_alpha)
+        self.dismissal = DynamicDismissalLoss(margin=self.margin)
 
     def forward(
         self,
@@ -136,37 +155,30 @@ class TRUSTLoss(nn.Module):
         targets: torch.Tensor,
         tau_t: Optional[float] = None,
     ) -> Tuple[torch.Tensor, dict]:
-        """Compute combined loss and return loss breakdown.
+        """Compute total loss and component breakdown."""
+        logits_col = logits.view(-1, 1)
+        targets_col = targets.view(-1, 1).float()
+        l_bce = self.bce(logits_col, targets_col)
 
-        Args:
-            logits: Output logits of shape (B, 1) or (B,).
-            targets: Target binary labels of shape (B, 1) or (B,).
-            tau_t: Provisional dismissal threshold for current epoch (TRUST only).
-
-        Returns:
-            Tuple of (total_loss, dict_of_components).
-        """
-        targets_f = targets.view(-1, 1).float()
-        l_bce = self.bce(logits, targets_f)
-
+        effective_tau = 0.05 if (tau_t is None and self.baseline == "fixed_tau") else tau_t
         components = {
             "loss_bce": float(l_bce.detach().cpu().item()),
             "loss_focal": 0.0,
             "loss_dismiss": 0.0,
-            "tau_t": float(tau_t) if tau_t is not None else 0.0,
+            "tau_t": float(effective_tau) if effective_tau is not None else 0.0,
         }
         total_loss = l_bce
 
-        if self.baseline == "trust":
-            l_focal = self.focal(logits, targets_f)
+        if self.lambda_focal > 0.0:
+            l_focal = self.focal(logits_col, targets_col)
             components["loss_focal"] = float(l_focal.detach().cpu().item())
             total_loss = total_loss + self.lambda_focal * l_focal
 
-            if tau_t is not None and self.lambda_dismiss > 0:
-                probs = torch.sigmoid(logits)
-                l_dismiss, _ = self.dismissal(probs, targets_f, tau_t=tau_t)
-                components["loss_dismiss"] = float(l_dismiss.detach().cpu().item())
-                total_loss = total_loss + self.lambda_dismiss * l_dismiss
+        if self.lambda_dismiss > 0.0 and effective_tau is not None:
+            probs = torch.sigmoid(logits_col)
+            l_dismiss, _ = self.dismissal(probs, targets_col, tau_t=effective_tau)
+            components["loss_dismiss"] = float(l_dismiss.detach().cpu().item())
+            total_loss = total_loss + self.lambda_dismiss * l_dismiss
 
         components["loss_total"] = float(total_loss.detach().cpu().item())
         return total_loss, components
