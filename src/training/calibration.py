@@ -15,7 +15,8 @@ Reference:
       Training uses 95% confidence (delta=0.05); final case-level evaluation uses 99% (delta=0.01).
 """
 
-from typing import Dict, Optional, Union
+import math
+from typing import Any, Dict, Optional, Tuple, Union
 import numpy as np
 from scipy import stats
 
@@ -65,24 +66,25 @@ def clopper_pearson_upper_bound(
     return float(min(max(ub, 0.0), 1.0))
 
 
-def compute_dynamic_training_threshold(
+def compute_dynamic_training_threshold_with_diagnostics(
     image_scores: np.ndarray,
     image_labels: np.ndarray,
     max_upper_bound: float = 0.01,
     confidence: float = 0.95,
-) -> float:
-    """Compute training-time provisional threshold tau_t on image-level train_calib predictions.
+) -> Tuple[float, Dict[str, Any]]:
+    """Compute training-time provisional threshold tau_t plus explicit Clopper-Pearson diagnostics.
 
     Matches TRUST Section 3.8 (Page 9):
         - Evaluates candidate thresholds under dismissal rule ``score < tau``.
         - Computes one-sided ``confidence`` (95%) Clopper-Pearson upper bound on
           positive-image prevalence among dismissed calibration images.
-        - Returns the largest candidate threshold whose upper bound <= ``max_upper_bound`` (0.01).
-        - Returns 0.0 if no candidate threshold satisfies the bound.
+        - Returns ``(tau_t, diagnostics)`` where ``tau_t`` is the largest candidate threshold
+          whose upper bound <= ``max_upper_bound`` (0.01), or ``0.0`` if none satisfies the bound.
     """
     scores = np.asarray(image_scores, dtype=np.float64).reshape(-1)
     labels = np.asarray(image_labels, dtype=np.int64).reshape(-1)
-    if len(scores) == 0 or len(scores) != len(labels):
+    n_calib = int(len(scores))
+    if n_calib == 0 or n_calib != len(labels):
         raise ValueError(
             f"image_scores ({len(scores)}) and image_labels ({len(labels)}) must be non-empty and equal length"
         )
@@ -91,8 +93,12 @@ def compute_dynamic_training_threshold(
     if not (0.0 < max_upper_bound < 1.0):
         raise ValueError(f"max_upper_bound must be in (0, 1), got {max_upper_bound}")
 
-    # Evaluate unique score cutoffs in descending order.
-    # Also include slightly above max(scores) only if dismissing all images is valid (e.g., 0 positives and large N).
+    # Exact minimum zero-miss dismissed count so 1 - (1 - confidence)^(1 / N) <= max_upper_bound
+    min_zero_miss_n = int(math.ceil(math.log(1.0 - float(confidence)) / math.log(1.0 - float(max_upper_bound))))
+    n_neg = int(np.sum(labels == 0))
+    n_pos = int(np.sum(labels == 1))
+    zero_miss_feasible = bool(n_calib >= min_zero_miss_n and n_neg >= min_zero_miss_n)
+
     unique_scores = np.unique(scores)
     candidates = np.concatenate([unique_scores, [float(unique_scores[-1]) + 1e-7]])
 
@@ -104,9 +110,52 @@ def compute_dynamic_training_threshold(
         k_d = int(np.sum((labels == 1) & dismissed_mask))
         ub = clopper_pearson_upper_bound(k_missed=k_d, n_dismissed=n_d, confidence=confidence)
         if ub <= max_upper_bound:
-            return float(tau)
+            tau_val = float(tau)
+            diagnostics = {
+                "tau_t": tau_val,
+                "n_calib": n_calib,
+                "n_pos_calib": n_pos,
+                "n_neg_calib": n_neg,
+                "min_zero_miss_dismissed_required": min_zero_miss_n,
+                "zero_miss_feasible": zero_miss_feasible,
+                "n_dismissed": n_d,
+                "k_missed": k_d,
+                "cp_upper_bound": float(ub),
+                "is_nonzero_threshold": bool(tau_val > 0.0),
+                "used_zero_fallback": bool(tau_val == 0.0),
+            }
+            return tau_val, diagnostics
 
-    return 0.0
+    diagnostics = {
+        "tau_t": 0.0,
+        "n_calib": n_calib,
+        "n_pos_calib": n_pos,
+        "n_neg_calib": n_neg,
+        "min_zero_miss_dismissed_required": min_zero_miss_n,
+        "zero_miss_feasible": zero_miss_feasible,
+        "n_dismissed": 0,
+        "k_missed": 0,
+        "cp_upper_bound": 1.0,
+        "is_nonzero_threshold": False,
+        "used_zero_fallback": True,
+    }
+    return 0.0, diagnostics
+
+
+def compute_dynamic_training_threshold(
+    image_scores: np.ndarray,
+    image_labels: np.ndarray,
+    max_upper_bound: float = 0.01,
+    confidence: float = 0.95,
+) -> float:
+    """Compute training-time provisional threshold tau_t on image-level train_calib predictions."""
+    tau, _ = compute_dynamic_training_threshold_with_diagnostics(
+        image_scores=image_scores,
+        image_labels=image_labels,
+        max_upper_bound=max_upper_bound,
+        confidence=confidence,
+    )
+    return float(tau)
 
 
 def compute_target_recall_threshold(
