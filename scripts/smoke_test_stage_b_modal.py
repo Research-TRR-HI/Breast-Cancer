@@ -119,6 +119,12 @@ def run_gpu_smoke_test() -> dict:
         flush=True,
     )
     assert diag["is_fully_compatible"], f"Incompatible Mammo-CLIP checkpoint load: {diag}"
+    assert (
+        diag["matched_keys_count"] == 852
+        and diag["total_target_keys"] == 852
+        and diag["missing_keys_count"] == 0
+        and diag["unexpected_keys_count"] == 0
+    ), f"Expected strict 852/852 Mammo-CLIP key parity, got: {diag}"
 
     model = TRUSTClassifier(encoder=encoder, embed_dim=2048, dropout_rate=0.3, freeze_encoder=True).to(device)
     optimizer = torch.optim.AdamW(
