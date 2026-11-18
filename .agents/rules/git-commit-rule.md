@@ -5,11 +5,12 @@ trigger: always_on
 # Project Git Commit Rule (Strict)
 
 1. **One File Per Commit**:
-   - Stage and commit each modified or added file **separately** (1 file = 1 commit).
+   - Stage and commit each modified or added file **separately** (`1 file = 1 commit`).
    - Never commit or push `git commit.md`.
 
-2. **Alternate GitHub Identities on Every Commit**:
-   - Strictly alternate author and committer identities on each consecutive commit between the two accounts below (check `git log -1 --format="%ae"` before committing to pick the opposite account):
+2. **Alternate GitHub Identities Per Task (Consistent Within a Task)**:
+   - Use **one consistent author and committer identity for every commit belonging to the same task / milestone**.
+   - When starting commits for a **new task**, check `git log -1 --format="%ae"` and switch to the opposite account below for all commits in that task:
 
    **Account A — Tahsin Raihan Robbani:**
    ```powershell
