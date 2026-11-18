@@ -20,8 +20,12 @@ import subprocess
 import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+import sys
 from typing import Dict, List, Optional, Tuple
 import modal
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from src.utils.env_metadata import PINNED_MODAL_PIP_PACKAGES, PINNED_MODAL_PYTHON_VERSION
 
 APP_NAME = "anchorshift-l40s-comparison"
 RSNA_VOL = modal.Volume.from_name("rsna-mammography-vol")
@@ -39,22 +43,9 @@ DEFAULT_RAM_GIB_RATE = 0.00799
 app = modal.App(APP_NAME)
 
 image = (
-    modal.Image.debian_slim(python_version="3.11")
+    modal.Image.debian_slim(python_version=PINNED_MODAL_PYTHON_VERSION)
     .apt_install("libgl1-mesa-glx", "libglib2.0-0")
-    .pip_install(
-        "torch>=2.2.0",
-        "torchvision>=0.17.0",
-        "omegaconf>=2.3.0",
-        "pandas>=2.2.0",
-        "pydicom>=2.4.4",
-        "opencv-python-headless>=4.10.0",
-        "pylibjpeg>=2.0.0",
-        "pylibjpeg-libjpeg>=2.1.0",
-        "pylibjpeg-openjpeg>=2.1.0",
-        "python-gdcm>=3.0.24",
-        "scipy>=1.12.0",
-        "numpy>=1.26.0",
-    )
+    .pip_install(*PINNED_MODAL_PIP_PACKAGES)
     .add_local_python_source("src")
 )
 
@@ -116,6 +107,9 @@ def _decode_and_preprocess_timed(
             laterality=lat,
             target_size=(1520, 912),
             invert_monochrome1=True,
+            laterality_policy="strict",
+            use_largest_cc=False,
+            strict_segmentation=True,
             standardize=True,
         )
 
@@ -132,15 +126,9 @@ def _decode_and_preprocess_timed(
 
 
 def _make_head(embed_dim: int, device, seed: int = 42):
-    import torch
-    import torch.nn as nn
+    from src.training.engine import build_trust_head
 
-    torch.manual_seed(seed)
-    return nn.Sequential(
-        nn.LayerNorm(embed_dim),
-        nn.Dropout(0.3),
-        nn.Linear(embed_dim, 1),
-    ).to(device)
+    return build_trust_head(embed_dim=embed_dim, dropout_rate=0.3, seed=seed, device=device)
 
 
 @app.function(
@@ -171,6 +159,7 @@ def run_l40s_comparison(
     from src.models.mammo_clip_loader import load_and_verify_mammo_clip
     from src.models.losses import TRUSTLoss
     from src.training.calibration import compute_target_recall_threshold
+    from src.utils.env_metadata import collect_runtime_environment_metadata
 
     assert sample_size == 1000, "Representative benchmark subset is fixed at 1,000 images."
     assert batch_size == 80, "TRUST effective & micro batch size is fixed at 80."
@@ -574,6 +563,7 @@ def run_l40s_comparison(
         }
 
     report = {
+        "environment_metadata": collect_runtime_environment_metadata(precision_policy="amp"),
         "hardware": {
             "gpu_name": gpu_name,
             "total_vram_gb": round(total_vram_gb, 2),
