@@ -1,20 +1,19 @@
-"""Controlled Online-vs-Cached Equivalence Pilot (Part 6.4).
+"""Controlled Online-vs-Cached Equivalence Pilot (Critical Fixes A, C, D, E, H).
 
 Compares:
     Approach A (Online):
-        cropped image -> Stage 2 resize & norm -> stochastic augmentation(aug_params)
-        -> 3ch + standardize -> frozen encoder -> classification head
+        Stage-1 uint16/float32 crop -> Stage 2 resize & norm -> stochastic augmentation(aug_params)
+        -> 3ch + standardize -> frozen encoder -> shared engine classification head
     Approach B (Augmentation-Aware Cached):
-        cropped image -> Stage 2 resize & norm -> IDENTICAL stochastic augmentation(aug_params)
+        Stage-1 uint16/float32 crop -> Stage 2 resize & norm -> IDENTICAL stochastic augmentation
         -> 3ch + standardize -> frozen encoder -> sharded FP32 feature cache
-        -> classification head
+        -> shared engine classification head
 
-Both pipelines share identical seeds, TrainingDrawSchedule, initial head weights,
-Dropout RNG sequences, AdamW optimizer, TRUSTLoss, dynamic CP95 tau_t updates,
-and post-training val_calib case-level evaluation.
+Both pipelines use the EXACT shared production engine (`src/training/engine.py`),
+identical seeds, TrainingDrawSchedule, isolated head init, Dropout RNG sequences,
+AdamW optimizer, TRUSTLoss, dynamic CP95 tau_t updates, and val_calib evaluation.
 """
 
-import math
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 import numpy as np
@@ -25,6 +24,7 @@ import torch.nn as nn
 from src.data.feature_cache import (
     compute_bytes_sha256,
     extract_or_resume_cache,
+    get_cache_manifest_sha256,
     load_epoch_batches_from_cache,
     verify_cache_integrity,
 )
@@ -32,6 +32,7 @@ from src.data.preprocessing import (
     MAMMO_CLIP_MEAN,
     MAMMO_CLIP_STD,
     get_preprocessing_config_hash,
+    get_stage1_config_hash,
     prepare_tensor_from_cropped,
 )
 from src.data.rsna_dataset import (
@@ -42,19 +43,53 @@ from src.data.rsna_dataset import (
 from src.models.losses import TRUSTLoss
 from src.models.trust_model import aggregate_case_labels, aggregate_case_scores
 from src.training.calibration import (
-    compute_dynamic_training_threshold,
+    compute_dynamic_training_threshold_with_diagnostics,
     compute_target_recall_threshold,
     evaluate_dismissal_at_threshold,
 )
+from src.training.engine import build_trust_head, run_effective_batch_step
+from src.utils.env_metadata import collect_runtime_environment_metadata
 
 
-def _make_trust_head(embed_dim: int, device: torch.device, seed: int) -> nn.Module:
-    torch.manual_seed(seed)
-    return nn.Sequential(
-        nn.LayerNorm(embed_dim),
-        nn.Dropout(0.3),
-        nn.Linear(embed_dim, 1),
-    ).to(device)
+def sample_pilot_1200(
+    df_full: pd.DataFrame,
+    seed: int = 42,
+) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Sample a 1,200-image patient-disjoint stratified RSNA subset for the parity pilot.
+
+    Split sizes preserve RSNA ~4.1% prevalence while giving ``train_calib`` 500 images
+    (20 positive, 480 negative >= 299 required so zero-miss 95% Clopper-Pearson <= 1%
+    can activate a nonzero training threshold tau_t during the 20-epoch run):
+        - train:       500 (21 positive, 479 negative)
+        - train_calib: 500 (20 positive, 480 negative)
+        - val_calib:   200 ( 8 positive, 192 negative)
+    """
+    specs = {
+        "train": (21, 479),
+        "train_calib": (20, 480),
+        "val_calib": (8, 192),
+    }
+    out: Dict[str, pd.DataFrame] = {}
+    for split_name, (n_pos, n_neg) in specs.items():
+        sub = df_full[df_full["split"] == split_name]
+        pos_df = sub[sub["cancer"] == 1]
+        neg_df = sub[sub["cancer"] == 0]
+        if len(pos_df) < n_pos or len(neg_df) < n_neg:
+            raise ValueError(
+                f"Insufficient samples in split={split_name!r}: need pos={n_pos}/neg={n_neg}, "
+                f"found pos={len(pos_df)}/neg={len(neg_df)}"
+            )
+        sampled_pos = pos_df.sample(n=n_pos, random_state=seed)
+        sampled_neg = neg_df.sample(n=n_neg, random_state=seed)
+        out[split_name] = pd.concat([sampled_pos, sampled_neg], ignore_index=True)
+
+    tr_pts = set(out["train"]["patient_id"].astype(str))
+    tc_pts = set(out["train_calib"]["patient_id"].astype(str))
+    vc_pts = set(out["val_calib"]["patient_id"].astype(str))
+    if (tr_pts & tc_pts) or (tr_pts & vc_pts) or (tc_pts & vc_pts):
+        raise AssertionError("Patient overlap detected across pilot splits!")
+
+    return out["train"], out["train_calib"], out["val_calib"]
 
 
 def _split_records_eval(
@@ -64,7 +99,7 @@ def _split_records_eval(
     head: Optional[nn.Module],
     device: torch.device,
     use_amp: bool,
-    batch_size: int = 32,
+    batch_size: int = 80,
 ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[torch.Tensor]]:
     """Run deterministic Stage-2 preprocessing and frozen encoder (and optional head) on eval split."""
     feats_chunks = []
@@ -74,6 +109,7 @@ def _split_records_eval(
     if head is not None:
         head.eval()
 
+    amp_enabled = bool(use_amp and device.type == "cuda")
     with torch.no_grad():
         for start in range(0, len(cropped_list), batch_size):
             end = min(start + batch_size, len(cropped_list))
@@ -91,7 +127,7 @@ def _split_records_eval(
                 ]
             ).to(device)
 
-            with torch.amp.autocast("cuda", enabled=use_amp and device.type == "cuda"):
+            with torch.amp.autocast("cuda", enabled=amp_enabled):
                 feats = encoder(bx).float()
                 feats_chunks.append(feats.cpu())
                 if head is not None:
@@ -133,11 +169,13 @@ def run_online_vs_cached_parity_pilot(
     use_amp: bool = False,
     device: Optional[torch.device] = None,
     model_checkpoint_sha256: str = "pilot_encoder",
+    stage1_config_hash: Optional[str] = None,
     micro_batch_size: int = 80,
     batches_per_shard: int = 10,
+    environment_metadata: Optional[Dict[str, Any]] = None,
     on_progress: Optional[Callable[[str], None]] = None,
 ) -> Dict[str, Any]:
-    """Run controlled Approach A (Online) vs Approach B (Augmentation-Aware Cached) pilot."""
+    """Run controlled Approach A (Online) vs Approach B (Cached) pilot using shared engine."""
     if device is None:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     encoder = encoder.to(device)
@@ -145,13 +183,20 @@ def run_online_vs_cached_parity_pilot(
     for p in encoder.parameters():
         p.requires_grad = False
 
+    precision_policy = "amp" if use_amp else "fp32"
+    s1_hash = stage1_config_hash or get_stage1_config_hash()
+    preprocess_hash = get_preprocessing_config_hash(target_size=target_size)
+    env_meta = environment_metadata or collect_runtime_environment_metadata(precision_policy=precision_policy)
+
     train_labels = train_df["cancer"].values.astype(np.int64)
     train_image_ids = train_df["image_id"].astype(str).tolist()
     tc_labels = train_calib_df["cancer"].values.astype(np.int64)
+    tc_image_ids = train_calib_df["image_id"].astype(str).tolist()
+    tc_patient_ids = train_calib_df["patient_id"].astype(str).tolist()
     vc_labels = val_calib_df["cancer"].values.astype(np.int64)
+    vc_image_ids = val_calib_df["image_id"].astype(str).tolist()
     vc_patient_ids = val_calib_df["patient_id"].astype(str).tolist()
 
-    # Build identical TrainingDrawSchedule across all epochs
     sampler = BalancedBatchSampler(
         labels=train_labels,
         batch_size=batch_size,
@@ -165,32 +210,30 @@ def run_online_vs_cached_parity_pilot(
         ep: build_epoch_draw_schedule(sampler, ep, aug_rng) for ep in range(1, epochs + 1)
     }
 
-    preprocess_hash = get_preprocessing_config_hash(target_size=target_size)
     split_sha = compute_bytes_sha256(
-        ",".join(train_image_ids + train_calib_df["image_id"].astype(str).tolist()).encode("utf-8")
+        ",".join(train_image_ids + tc_image_ids + vc_image_ids).encode("utf-8")
     )
 
-    # -------------------------------------------------------------------------
-    # Build & verify augmentation-aware cache for Approach B
-    # -------------------------------------------------------------------------
     def _extract_batch(rec: BatchDrawRecord) -> Tuple[torch.Tensor, torch.Tensor, List[str]]:
-        imgs = [
-            prepare_tensor_from_cropped(
-                train_cropped[idx],
-                target_size=target_size,
-                augment_params=aug,
-                standardize=True,
-                mean=MAMMO_CLIP_MEAN,
-                std=MAMMO_CLIP_STD,
-            )
-            for idx, aug in zip(rec.indices, rec.aug_params)
-        ]
-        bx = torch.stack(imgs)
+        bx = torch.stack(
+            [
+                prepare_tensor_from_cropped(
+                    train_cropped[idx],
+                    target_size=target_size,
+                    augment_params=aug,
+                    standardize=True,
+                    mean=MAMMO_CLIP_MEAN,
+                    std=MAMMO_CLIP_STD,
+                )
+                for idx, aug in zip(rec.indices, rec.aug_params)
+            ]
+        )
         feat_chunks = []
+        amp_enabled = bool(use_amp and device.type == "cuda")
         with torch.no_grad():
             for s in range(0, len(bx), micro_batch_size):
                 mb = bx[s : s + micro_batch_size].to(device)
-                with torch.amp.autocast("cuda", enabled=use_amp and device.type == "cuda"):
+                with torch.amp.autocast("cuda", enabled=amp_enabled):
                     feat_chunks.append(encoder(mb).float().cpu())
         feats_fp32 = torch.cat(feat_chunks, dim=0)
         lbls = torch.tensor([train_labels[i] for i in rec.indices], dtype=torch.float32)
@@ -214,6 +257,7 @@ def run_online_vs_cached_parity_pilot(
             sdf["patient_id"].astype(str).tolist(),
         )
 
+    cache_root = Path(cache_root)
     manifest = extract_or_resume_cache(
         cache_root=cache_root,
         schedules_by_epoch=schedules_by_epoch,
@@ -221,25 +265,40 @@ def run_online_vs_cached_parity_pilot(
         eval_extract_fn=_eval_extract,
         model_checkpoint_sha256=model_checkpoint_sha256,
         preprocess_config_hash=preprocess_hash,
+        stage1_config_hash=s1_hash,
         split_manifest_sha256=split_sha,
         seed=seed,
         batch_size=batch_size,
         n_pos=n_pos,
         epoch_policy=epoch_policy,
         embed_dim=embed_dim,
+        encoder_precision=precision_policy,
         batches_per_shard=batches_per_shard,
+        environment_metadata=env_meta,
         on_progress=on_progress,
     )
     verify_cache_integrity(
         cache_root=cache_root,
         expected_model_sha256=model_checkpoint_sha256,
         expected_preprocess_hash=preprocess_hash,
+        expected_stage1_hash=s1_hash,
         expected_split_sha256=split_sha,
         expected_epochs=epochs,
         expected_steps_per_epoch=len(sampler),
+        expected_batch_size=batch_size,
+        expected_n_pos=n_pos,
+        expected_epoch_policy=epoch_policy,
+        expected_embed_dim=embed_dim,
+        expected_encoder_precision=precision_policy,
+        expected_seed=seed,
         expected_schedules=schedules_by_epoch,
+        expected_eval_meta={
+            "train_calib": (tc_image_ids, tc_patient_ids, tc_labels.tolist()),
+            "val_calib": (vc_image_ids, vc_patient_ids, vc_labels.tolist()),
+        },
         verify_shard_checksums=True,
     )
+    cache_manifest_sha = get_cache_manifest_sha256(cache_root)
 
     tc_cache = torch.load(
         str(cache_root / manifest["eval_splits"]["train_calib"]["file"]),
@@ -252,9 +311,6 @@ def run_online_vs_cached_parity_pilot(
         weights_only=False,
     )
 
-    # -------------------------------------------------------------------------
-    # Run Approach A (Online) and Approach B (Cached) with identical RNG & setup
-    # -------------------------------------------------------------------------
     criterion = TRUSTLoss(
         baseline="trust",
         margin=margin,
@@ -265,31 +321,36 @@ def run_online_vs_cached_parity_pilot(
     )
 
     def _run_pipeline(mode: str) -> Dict[str, Any]:
-        head = _make_trust_head(embed_dim, device, seed=seed)
+        head = build_trust_head(embed_dim=embed_dim, dropout_rate=0.3, seed=seed, device=device)
         optimizer = torch.optim.AdamW(head.parameters(), lr=lr, weight_decay=weight_decay)
-        scaler = torch.amp.GradScaler("cuda", enabled=use_amp and device.type == "cuda")
+        scaler = torch.amp.GradScaler("cuda", enabled=bool(use_amp and device.type == "cuda"))
 
         tau_t = float(initial_tau)
         tau_trajectory: List[float] = []
+        tau_diag_trajectory: List[Dict[str, Any]] = []
         step_losses: List[float] = []
         epoch_losses: List[float] = []
         captured_grads: Dict[str, Dict[str, torch.Tensor]] = {}
         first_batch_feats: Optional[torch.Tensor] = None
 
-        global_step = 0
-        total_steps = epochs * len(sampler)
-
+        n_batches_per_ep = len(sampler)
         for epoch in range(1, epochs + 1):
-            # TRUST Section 3.8: recalculate tau_t at beginning of each epoch (using epoch>=2 update; epoch 1 uses initial_tau=0.05)
             if epoch >= 2:
                 head.eval()
                 if mode == "online":
                     _, _, tc_probs = _split_records_eval(
-                        train_calib_cropped, target_size, encoder, head, device, use_amp=use_amp, batch_size=micro_batch_size
+                        train_calib_cropped,
+                        target_size,
+                        encoder,
+                        head,
+                        device,
+                        use_amp=use_amp,
+                        batch_size=micro_batch_size,
                     )
                     tc_probs_np = tc_probs.squeeze(1).numpy()
                 else:
-                    with torch.no_grad(), torch.amp.autocast("cuda", enabled=use_amp and device.type == "cuda"):
+                    amp_enabled = bool(use_amp and device.type == "cuda")
+                    with torch.no_grad(), torch.amp.autocast("cuda", enabled=amp_enabled):
                         tc_probs_np = (
                             torch.sigmoid(head(tc_cache["features"].to(device)))
                             .float()
@@ -297,11 +358,18 @@ def run_online_vs_cached_parity_pilot(
                             .cpu()
                             .numpy()
                         )
-                tau_t = compute_dynamic_training_threshold(
+                tau_t, tau_diag = compute_dynamic_training_threshold_with_diagnostics(
                     tc_probs_np, tc_labels, max_upper_bound=0.01, confidence=0.95
                 )
+            else:
+                tau_diag = {
+                    "tau_t": tau_t,
+                    "n_calib": int(len(tc_labels)),
+                    "is_epoch1_initial": True,
+                }
 
             tau_trajectory.append(float(tau_t))
+            tau_diag_trajectory.append(tau_diag)
             head.train()
             ep_loss_sum = 0.0
 
@@ -312,13 +380,9 @@ def run_online_vs_cached_parity_pilot(
                 iter_items = list(zip(schedules_by_epoch[epoch], cached_batches))
 
             for b_idx, item in enumerate(iter_items):
-                global_step += 1
-                # Lock per-step Dropout RNG identically across Online and Cached
-                torch.manual_seed(seed * 100000 + global_step)
-                if device.type == "cuda":
-                    torch.cuda.manual_seed_all(seed * 100000 + global_step)
-
-                optimizer.zero_grad()
+                is_first = epoch == 1 and b_idx == 0
+                is_last = epoch == epochs and b_idx == (n_batches_per_ep - 1)
+                cap = is_first or is_last
 
                 if mode == "online":
                     rec: BatchDrawRecord = item
@@ -335,71 +399,67 @@ def run_online_vs_cached_parity_pilot(
                             for idx, aug in zip(rec.indices, rec.aug_params)
                         ]
                     )
-                    by = torch.tensor([train_labels[i] for i in rec.indices], dtype=torch.float32).unsqueeze(1).to(device)
-                    accum_steps = max(math.ceil(len(bx) / micro_batch_size), 1)
-                    step_loss_val = 0.0
-                    feats_acc = []
-                    for mb_start in range(0, len(bx), micro_batch_size):
-                        mb_x = bx[mb_start : mb_start + micro_batch_size].to(device)
-                        mb_y = by[mb_start : mb_start + micro_batch_size]
-                        with torch.amp.autocast("cuda", enabled=use_amp and device.type == "cuda"):
-                            with torch.no_grad():
-                                f = encoder(mb_x)
-                            if global_step == 1:
-                                feats_acc.append(f.float().detach().cpu())
-                            logits = head(f.float() if not use_amp else f)
-                            loss_mb, _ = criterion(logits.float(), mb_y, tau_t=tau_t)
-                            loss_scaled = loss_mb * (len(mb_x) / float(len(bx)))
-                        scaler.scale(loss_scaled).backward()
-                        step_loss_val += float(loss_scaled.detach().cpu().item())
-                    if global_step == 1:
-                        first_batch_feats = torch.cat(feats_acc, dim=0)
+                    by = torch.tensor([train_labels[i] for i in rec.indices], dtype=torch.float32)
+                    step_loss, _, cap_feats, cap_grads = run_effective_batch_step(
+                        head=head,
+                        optimizer=optimizer,
+                        scaler=scaler,
+                        criterion=criterion,
+                        batch_targets=by,
+                        tau_t=tau_t,
+                        micro_batch_size=micro_batch_size,
+                        grad_clip=grad_clip,
+                        use_amp=use_amp,
+                        device=device,
+                        seed=seed,
+                        epoch=epoch,
+                        batch_idx=b_idx,
+                        batch_inputs=bx,
+                        encoder=encoder,
+                        capture_features_and_grads=cap,
+                    )
                 else:
                     rec, (c_feats, c_labels, _c_idx) = item
-                    if global_step == 1:
-                        first_batch_feats = c_feats.clone()
-                    by = c_labels.unsqueeze(1).to(device)
-                    accum_steps = max(math.ceil(len(c_feats) / micro_batch_size), 1)
-                    step_loss_val = 0.0
-                    for mb_start in range(0, len(c_feats), micro_batch_size):
-                        mb_f = c_feats[mb_start : mb_start + micro_batch_size].to(device)
-                        mb_y = by[mb_start : mb_start + micro_batch_size]
-                        with torch.amp.autocast("cuda", enabled=use_amp and device.type == "cuda"):
-                            logits = head(mb_f.half() if (use_amp and device.type == "cuda") else mb_f)
-                            loss_mb, _ = criterion(logits.float(), mb_y, tau_t=tau_t)
-                            loss_scaled = loss_mb * (len(mb_f) / float(len(c_feats)))
-                        scaler.scale(loss_scaled).backward()
-                        step_loss_val += float(loss_scaled.detach().cpu().item())
+                    step_loss, _, cap_feats, cap_grads = run_effective_batch_step(
+                        head=head,
+                        optimizer=optimizer,
+                        scaler=scaler,
+                        criterion=criterion,
+                        batch_targets=c_labels,
+                        tau_t=tau_t,
+                        micro_batch_size=micro_batch_size,
+                        grad_clip=grad_clip,
+                        use_amp=use_amp,
+                        device=device,
+                        seed=seed,
+                        epoch=epoch,
+                        batch_idx=b_idx,
+                        batch_features=c_feats,
+                        capture_features_and_grads=cap,
+                    )
 
-                scaler.unscale_(optimizer)
-                torch.nn.utils.clip_grad_norm_(head.parameters(), grad_clip)
+                if is_first and cap_feats is not None:
+                    first_batch_feats = cap_feats
+                if is_first and cap_grads is not None:
+                    captured_grads["step_1"] = cap_grads
+                if is_last and cap_grads is not None:
+                    captured_grads["final_step"] = cap_grads
 
-                if global_step in (1, total_steps):
-                    tag = "step_1" if global_step == 1 else "final_step"
-                    captured_grads[tag] = {
-                        n: p.grad.detach().cpu().clone()
-                        for n, p in head.named_parameters()
-                        if p.grad is not None
-                    }
-
-                scaler.step(optimizer)
-                scaler.update()
-
-                step_losses.append(step_loss_val)
-                ep_loss_sum += step_loss_val
+                step_losses.append(step_loss)
+                ep_loss_sum += step_loss
 
             epoch_losses.append(ep_loss_sum / max(len(iter_items), 1))
 
-        # Final val_calib evaluation (after final epoch)
         head.eval()
         if mode == "online":
             vc_feats_out, vc_logits, vc_probs = _split_records_eval(
                 val_calib_cropped, target_size, encoder, head, device, use_amp=use_amp, batch_size=micro_batch_size
             )
         else:
-            with torch.no_grad(), torch.amp.autocast("cuda", enabled=use_amp and device.type == "cuda"):
+            amp_enabled = bool(use_amp and device.type == "cuda")
+            with torch.no_grad(), torch.amp.autocast("cuda", enabled=amp_enabled):
                 vf = vc_cache["features"].to(device)
-                vc_logits = head(vf.half() if (use_amp and device.type == "cuda") else vf).float().cpu()
+                vc_logits = head(vf).float().cpu()
                 vc_probs = torch.sigmoid(vc_logits)
                 vc_feats_out = vc_cache["features"]
 
@@ -426,6 +486,7 @@ def run_online_vs_cached_parity_pilot(
             "val_probs": vc_probs.squeeze(1),
             "case_scores": c_scores,
             "tau_trajectory": tau_trajectory,
+            "tau_diag_trajectory": tau_diag_trajectory,
             "tau_95": tau_95,
             "tau_98": tau_98,
             "eval_95": eval_95,
@@ -435,7 +496,6 @@ def run_online_vs_cached_parity_pilot(
     res_a = _run_pipeline("online")
     res_b = _run_pipeline("cached")
 
-    # Compute all 10 numerical parity comparisons
     feat_diff_train = float((res_a["first_batch_feats"] - res_b["first_batch_feats"]).abs().max().item())
     feat_diff_val = float((res_a["val_feats"] - res_b["val_feats"]).abs().max().item())
     max_feat_diff = max(feat_diff_train, feat_diff_val)
@@ -490,12 +550,19 @@ def run_online_vs_cached_parity_pilot(
         and near_agree_98 == 1.0
     )
 
+    epoch2_plus_taus = [float(t) for t in res_a["tau_trajectory"][1:]]
+    saw_nonzero_epoch2_plus_tau = any(t > 0.0 for t in epoch2_plus_taus)
+
     return {
         "status": "PASS" if passed else "FAIL",
-        "precision": "amp" if use_amp else "fp32",
+        "precision": precision_policy,
         "tolerance": tol,
         "epochs": epochs,
         "steps_per_epoch": len(sampler),
+        "cache_manifest_sha256": cache_manifest_sha,
+        "stage1_config_hash": s1_hash,
+        "preprocess_config_hash": preprocess_hash,
+        "environment_metadata": env_meta,
         "max_abs_feature_diff": max_feat_diff,
         "max_abs_step_loss_diff": max_step_loss_diff,
         "max_abs_epoch_loss_diff": max_epoch_loss_diff,
@@ -507,10 +574,13 @@ def run_online_vs_cached_parity_pilot(
         "prediction_agreement_95": agree_95,
         "prediction_agreement_98": agree_98,
         "boundary_agreement_98": near_agree_98,
+        "saw_nonzero_epoch2_plus_tau": saw_nonzero_epoch2_plus_tau,
         "online_eval_95": res_a["eval_95"],
         "cached_eval_95": res_b["eval_95"],
         "online_eval_98": res_a["eval_98"],
         "cached_eval_98": res_b["eval_98"],
         "online_tau_trajectory": res_a["tau_trajectory"],
         "cached_tau_trajectory": res_b["tau_trajectory"],
+        "online_tau_diag_trajectory": res_a["tau_diag_trajectory"],
+        "cached_tau_diag_trajectory": res_b["tau_diag_trajectory"],
     }
