@@ -1,0 +1,354 @@
+{
+  "rsna": {
+    "train_csv_rows": 54706,
+    "train_images_on_disk": 54706,
+    "test_csv_rows": 4,
+    "test_images_on_disk": 4,
+    "missing_on_disk_count": 0,
+    "missing_on_disk_sample": [],
+    "extra_on_disk_count": 0,
+    "extra_on_disk_sample": [],
+    "duplicate_image_id_rows": 0,
+    "duplicate_patient_image_rows": 0,
+    "duplicate_patient_laterality_view_rows": 7018,
+    "unique_patients": 11913,
+    "cancer_positive_patients": 486,
+    "cancer_negative_patients": 11427,
+    "unique_breasts": 23826,
+    "cancer_positive_breasts": 492,
+    "cancer_negative_breasts": 23334,
+    "cancer_positive_images": 1158,
+    "cancer_negative_images": 53548,
+    "inconsistent_breast_labels": 0,
+    "site_id_patients": {
+      "1": 5818,
+      "2": 6095
+    },
+    "site_id_images": {
+      "1": 29519,
+      "2": 25187
+    },
+    "machine_id_images": {
+      "49": 23529,
+      "48": 8699,
+      "29": 8267,
+      "21": 8221,
+      "93": 1915,
+      "216": 1908,
+      "210": 1070,
+      "170": 923,
+      "190": 145,
+      "197": 29
+    },
+    "view_counts": {
+      "MLO": 27903,
+      "CC": 26765,
+      "AT": 19,
+      "LM": 10,
+      "ML": 8,
+      "LMO": 1
+    },
+    "laterality_counts": {
+      "R": 27439,
+      "L": 27267
+    },
+    "breasts_with_both_cc_mlo": 23826,
+    "breasts_missing_cc": 0,
+    "breasts_missing_mlo": 0,
+    "dicom_sample_tested": 200,
+    "dicom_sample_ok": 200,
+    "dicom_sample_fail_count": 0,
+    "dicom_sample_failures": [],
+    "dicom_transfer_syntaxes": {
+      "1.2.840.10008.1.2.4.70": 140,
+      "1.2.840.10008.1.2.4.90": 60
+    },
+    "dicom_photometric": {
+      "MONOCHROME2": 160,
+      "MONOCHROME1": 40
+    },
+    "dicom_bits_stored": {
+      "12": 160,
+      "10": 20,
+      "16": 20
+    },
+    "dicom_top_shapes": {
+      "[2294, 1914]": 57,
+      "[4096, 3328]": 44,
+      "[2776, 2082]": 20,
+      "[5355, 4915]": 20,
+      "[3328, 2560]": 16,
+      "[4740, 3540]": 15,
+      "[3062, 2394]": 10,
+      "[2850, 2394]": 9,
+      "[5928, 4728]": 5,
+      "[2473, 2045]": 2
+    }
+  },
+  "nlbs": {
+    "readme_excerpt": "\ufeffThis README.txt file was generated on 2025-03-11 by MATTHEW HAMILTON\n\n\n--------------------\nGENERAL INFORMATION\n--------------------\n\n\n1. Title of Dataset: Newfoundland and Labrador Breast Screening (NLBS) Dataset (NL-Breast-Screen)\n\n\n2. Author Information\n        A. Principal Investigator Contact Information\n                Name: Edward Kendall\n                Institution:  Memorial University\n                Email: edward.kendall@mun.ca\n\n\n        B. Associate or Co-investigator Contact Information\n                Name: Parham Hajishafiezahramini\n                Institution: Memorial University of Newfoundland\n                Email: \n\n\n        C. Principal Investigator Contact Information\n                Name: Matthew Hamilton\n                Institution: Memorial University of Newfoundland\n                Email: mhamilton@mun.ca\n\n\n        D. Associate or Co-investigator Contact Information\n                Name: Gregory Doyle\n                Institution: Newfoundland and Labrador Health Services - Cancer Care\n                Email: gregory.doyle@nlhealthservices.ca\n\n\n        E. Principal Investigator Contact Information\n                Name: Nancy Wadden\n                Institution: Memorial University of Newfoundland/Newfoundland Health Services\n                Email: nancy.wadden@easternhealth.ca\n\n\n        F. Associate or Co-investigator Contact Information\n                Name: Oscar Meruvia-Pastor\n                Institution: Memorial University of Newfoundland\n                Email: oscar@mun.ca\n\n\n3. Date of data collection (single date, range, approximate date): \n\n\n2010-2011 approximately.\n\n\n4. Geographic location of data collection: \n\n\nProvince of Newfoundland and Labrador, Canada.\n\n5. Research ethics:\n\nDistribution of this dataset was subject to review and approval by the Newfoundland and Labrador Health Research Ethics board under HREB reference # 2025.020.\n\n\n---------------------------\nSHARING/ACCESS INFORMATION\n---------------------------\n\n\n1. Licenses/restrictions placed on the data: \n\n\nThese data are available under Creative Commons Attribution 4.0 International license (CC BY 4.0) https://creativecommons.org/licenses/by/4.0/\n\n\n2. Links to publications that cite or use the data: \n\n\nFull Field Digital Mammography Dataset from a Population Screening Program\nEdward Kendall, Paraham Hajishafiezahramini, Matthew Hamilton, Gregory Doyle, Nancy Wadden, Oscar Meruvia-Pastor\n\n\nhttps://arxiv.org/abs/2411.02710\n\n\n3. Was data derived from another source",
+    "version_history": "============================\nVERSION UPDATE 2025-11-25\n============================\nUpdate made to rename directories to prevent link between similarly named exams (repeats) as we cannot reliably establish that link at this stage. Also,\nthis rebuild may have fixed some label errors.\n\nDue to this, the previous versions of the data SHOULD NOT be used. Please always use this latest version.",
+    "checksums": {
+      "exists": true,
+      "files": [
+        {
+          "file": "file is automatically-generated by [www.frdr-dfdr.ca](https://www.frdr-dfdr.ca).",
+          "status": "missing"
+        },
+        {
+          "file": "is not part of the submitted dataset. It contains file checksums",
+          "status": "missing"
+        },
+        {
+          "file": "the submission to aid users of the dataset.",
+          "status": "missing"
+        },
+        {
+          "file": "generated: 2026-05-20 13:03:58 +0000 UTC",
+          "status": "missing"
+        },
+        {
+          "file": "fichier est g\u00e9n\u00e9r\u00e9 automatiquement par [www.frdr-dfdr.ca](https://www.frdr-dfdr.ca).",
+          "status": "missing"
+        },
+        {
+          "file": "ne fait pas partie de l\u2019ensemble de donn\u00e9es soumis. Il contient les sommes de contr\u00f4le",
+          "status": "missing"
+        },
+        {
+          "file": "la soumission \u00e0 l\u2019aide aux utilisateurs du jeu de donn\u00e9es.",
+          "status": "missing"
+        },
+        {
+          "file": "de g\u00e9n\u00e9ration: 2026-05-20 13:03:58 +0000 UTC",
+          "status": "missing"
+        },
+        {
+          "file": "normal.7z",
+          "status": "unknown_hash_len_17"
+        },
+        {
+          "file": "Checksum/Sommes de contr\u00f4le: 227a9eb57e36620f61bd86674d43e3b61fdcf3db87e30a2728cc5e2ea4dfffd7",
+          "status": "missing"
+        },
+        {
+          "file": "LICENSE.txt",
+          "status": "unknown_hash_len_17"
+        },
+        {
+          "file": "Checksum/Sommes de contr\u00f4le: 4f5ef9a7d5edcf894bdd7f7c5330b0e8107ee4350cad294ae7581e9bebd3aa35",
+          "status": "missing"
+        },
+        {
+          "file": "README_version_history_2025-11-25.txt",
+          "status": "unknown_hash_len_17"
+        },
+        {
+          "file": "Checksum/Sommes de contr\u00f4le: 3aa471b38a1da3dd6ce33bbc82d5a6f5b2582179802acc8a78a4c01625668c1f",
+          "status": "missing"
+        },
+        {
+          "file": "README.txt",
+          "status": "unknown_hash_len_17"
+        },
+        {
+          "file": "Checksum/Sommes de contr\u00f4le: b10191327c588af94b3b2b02fa960f12d6cc9e07b30bcb8bbdf12fd155c49899",
+          "status": "missing"
+        },
+        {
+          "file": "abnormal.7z",
+          "status": "unknown_hash_len_17"
+        },
+        {
+          "file": "Checksum/Sommes de contr\u00f4le: e59c4957403631bc8d9b232847bce90b096009c0c3493ef9110989bcc4c5fcf2",
+          "status": "missing"
+        },
+        {
+          "file": "False Positive.7z",
+          "status": "unknown_hash_len_17"
+        },
+        {
+          "file": "Checksum/Sommes de contr\u00f4le: bb50508ad0e2a237a06af2149cfcf1b6630db524456c45d18cdc16db94a337d2",
+          "status": "missing"
+        },
+        {
+          "file": "NLBSD_Metadata.csv",
+          "status": "unknown_hash_len_17"
+        },
+        {
+          "file": "Checksum/Sommes de contr\u00f4le: 4e1a2bca27051a48240330646fba8ba020ab4623ed0f1e27e8c025175fe37af3",
+          "status": "missing"
+        },
+        {
+          "file": "CITATION.txt",
+          "status": "unknown_hash_len_17"
+        },
+        {
+          "file": "Checksum/Sommes de contr\u00f4le: 0c40f9f347783408616655bebefa315e63e5631fe3252b0a71f08021edbd10ad",
+          "status": "missing"
+        }
+      ]
+    },
+    "archives": {
+      "normal.7z": {
+        "exists": true,
+        "size_gb": 61.381,
+        "integrity_ok": true,
+        "dcm_count": 19942,
+        "sample_entries": [
+          "normal/p_0001/left/CC/IM-0043-0002-0001.dcm",
+          "normal/p_0001/left/MLO/IM-0045-0004-0001.dcm",
+          "normal/p_0001/right/CC/IM-0042-0001-0001.dcm",
+          "normal/p_0001/right/MLO/IM-0044-0003-0001.dcm",
+          "normal/p_0002/left/CC/IM-0043-0002-0001.dcm"
+        ],
+        "note": "OK"
+      },
+      "abnormal.7z": {
+        "exists": true,
+        "size_gb": 2.161,
+        "integrity_ok": true,
+        "dcm_count": 652,
+        "sample_entries": [
+          "abnormal/p_4333/left-c/CC/IM-0126-0002-0001.dcm",
+          "abnormal/p_4333/left-c/MLO/IM-0128-0004-0001.dcm",
+          "abnormal/p_4333/right/CC/IM-0125-0001-0001.dcm",
+          "abnormal/p_4333/right/MLO/IM-0127-0003-0001.dcm",
+          "abnormal/p_4334/left/CC/IM-0002-0002-0001.dcm"
+        ],
+        "note": "OK"
+      },
+      "False Positive.7z": {
+        "exists": true,
+        "size_gb": 21.017,
+        "integrity_ok": true,
+        "dcm_count": 6394,
+        "sample_entries": [
+          "False Positive/p_4482/left/CC/IM-0145-0002-0001.dcm",
+          "False Positive/p_4482/left/MLO/IM-0147-0004-0001.dcm",
+          "False Positive/p_4482/right/CC/IM-0144-0001-0001.dcm",
+          "False Positive/p_4482/right/MLO/IM-0146-0003-0001.dcm",
+          "False Positive/p_4483/left/CC/IM-0036-0002-0001.dcm"
+        ],
+        "note": "OK"
+      }
+    },
+    "metadata_csv_rows": 26988,
+    "archived_dcm_total": 26988,
+    "missing_in_archives_count": 0,
+    "missing_in_archives_sample": [],
+    "extra_in_archives_count": 0,
+    "extra_in_archives_sample": [],
+    "duplicate_rel_path_rows": 0,
+    "cohort_group_image_counts": {
+      "normal": 19942,
+      "False Positive": 6394,
+      "abnormal": 652
+    },
+    "cohort_group_case_counts": {
+      "False Positive": 1516,
+      "abnormal": 149,
+      "normal": 4332
+    },
+    "unique_case_ids": 5997,
+    "total_cases_group_plus_id": 5997,
+    "cancer_positive_cases": 149,
+    "cancer_negative_cases": 5848,
+    "cancer_positive_images": 337,
+    "cancer_negative_images": 26651,
+    "hard_to_state_negative_images": 6394,
+    "inconsistent_case_labels": 145,
+    "cross_cohort_case_ids_count": 0,
+    "cross_cohort_case_ids": [],
+    "multi_age_case_ids_count": 320,
+    "breasts_with_both_cc_mlo": 11825,
+    "breasts_missing_cc": 7,
+    "breasts_missing_mlo": 159,
+    "view_counts": {
+      "CC": 13800,
+      "MLO": 13188
+    },
+    "laterality_counts": {
+      "R": 13549,
+      "L": 13439
+    },
+    "dicom_sample_ok": 60,
+    "dicom_sample_fail_count": 0,
+    "dicom_sample_failures": [],
+    "dicom_manufacturers": {
+      "GE MEDICAL SYSTEMS": 56,
+      "SIEMENS": 4
+    },
+    "dicom_models": {
+      "Senographe Essential VERSION ADS_53.10.10": 52,
+      "Senographe Essential VERSION ADS_53.40": 4,
+      "Mammomat Novation DR": 4
+    },
+    "dicom_transfer_syntaxes": {
+      "1.2.840.10008.1.2.1": 60
+    },
+    "dicom_photometric": {
+      "MONOCHROME2": 60
+    },
+    "dicom_bits_stored": {
+      "12": 60
+    },
+    "dicom_top_shapes": {
+      "[3062, 2394]": 51,
+      "[2294, 1914]": 5,
+      "[4084, 3328]": 4
+    },
+    "sample_dicom_patient_ids": [
+      {
+        "rel_path": "normal/p_1024/left/MLO/IM-0100-0004-0001.dcm",
+        "dicom_PatientID": "",
+        "StudyInstanceUID_prefix": "1.2.124.113532.10.77.16."
+      },
+      {
+        "rel_path": "normal/p_1024/left/CC/IM-0098-0002-0001.dcm",
+        "dicom_PatientID": "",
+        "StudyInstanceUID_prefix": "1.2.124.113532.10.77.16."
+      },
+      {
+        "rel_path": "normal/p_1024/right/MLO/IM-0099-0003-0001.dcm",
+        "dicom_PatientID": "",
+        "StudyInstanceUID_prefix": "1.2.124.113532.10.77.16."
+      },
+      {
+        "rel_path": "normal/p_1024/right/CC/IM-0097-0001-0001.dcm",
+        "dicom_PatientID": "",
+        "StudyInstanceUID_prefix": "1.2.124.113532.10.77.16."
+      },
+      {
+        "rel_path": "normal/p_2129/left/MLO/IM-0008-0004-0001.dcm",
+        "dicom_PatientID": "",
+        "StudyInstanceUID_prefix": "1.2.124.113532.10.77.16."
+      },
+      {
+        "rel_path": "normal/p_2129/left/CC/IM-0006-0002-0001.dcm",
+        "dicom_PatientID": "",
+        "StudyInstanceUID_prefix": "1.2.124.113532.10.77.16."
+      },
+      {
+        "rel_path": "normal/p_2129/right/MLO/IM-0007-0003-0001.dcm",
+        "dicom_PatientID": "",
+        "StudyInstanceUID_prefix": "1.2.124.113532.10.77.16."
+      },
+      {
+        "rel_path": "normal/p_2129/right/CC/IM-0005-0001-0001.dcm",
+        "dicom_PatientID": "",
+        "StudyInstanceUID_prefix": "1.2.124.113532.10.77.16."
+      },
+      {
+        "rel_path": "normal/p_2581/left/MLO/IM-0024-0004-0001.dcm",
+        "dicom_PatientID": "",
+        "StudyInstanceUID_prefix": "1.2.124.113532.10.77.16."
+      },
+      {
+        "rel_path": "normal/p_2581/left/CC/IM-0022-0002-0001.dcm",
+        "dicom_PatientID": "",
+        "StudyInstanceUID_prefix": "1.2.124.113532.10.77.16."
+      }
+    ]
+  }
+}
