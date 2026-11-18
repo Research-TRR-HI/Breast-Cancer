@@ -21,6 +21,7 @@ import pandas as pd
 import torch
 import torch.nn as nn
 
+from src.data.rsna_dataset import BalancedBatchSampler
 from src.models.trust_model import TRUSTClassifier, aggregate_case_scores
 from src.models.losses import FocalLoss, DynamicDismissalLoss, TRUSTLoss
 from src.training.calibration import (
@@ -171,6 +172,25 @@ def test_rsna_splits_leakage_and_proportions() -> None:
     assert 0.69 < train_pct < 0.71, f"Train frac {train_pct} deviated from 0.70"
     assert 0.09 < calib_pct < 0.11, f"Calib frac {calib_pct} deviated from 0.10"
     assert 0.19 < test_pct < 0.21, f"Test frac {test_pct} deviated from 0.20"
+
+
+def test_balanced_batch_sampler_full_neg_pass() -> None:
+    """Verify full_neg_pass visits 100% of negatives per epoch while keeping 20:60 ratio."""
+    labels = np.array([1] * 40 + [0] * 180)
+    sampler = BalancedBatchSampler(labels, batch_size=80, n_pos=20, seed=42, epoch_policy="full_neg_pass")
+    assert len(sampler) == 3  # ceil(180 / 60) == 3
+
+    batches = list(sampler)
+    assert len(batches) == 3
+    seen_neg = set()
+    for b in batches:
+        assert len(b) == 80
+        b_labels = labels[b]
+        assert int((b_labels == 1).sum()) == 20
+        assert int((b_labels == 0).sum()) == 60
+        seen_neg.update(idx for idx in b if labels[idx] == 0)
+
+    assert len(seen_neg) == 180, f"Expected all 180 negatives visited, got {len(seen_neg)}"
 
 
 if __name__ == "__main__":
