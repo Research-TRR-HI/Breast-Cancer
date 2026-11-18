@@ -1,42 +1,23 @@
-"""Threshold Calibration and Certified Dismissal Metrics.
+"""Threshold Calibration, Dynamic Training Threshold, and Certified Dismissal Metrics.
 
 Reference:
-    TRUST (2026): Section 3.2, 3.11, 4.3
-    - Dynamic training-time threshold tau_t computed on internal training-calibration set.
-    - Post-training operating threshold selection at target recall (95% and 98%).
-    - Clopper-Pearson one-sided 99% upper confidence bound on cancer prevalence among dismissed cases.
+    TRUST (Shafie et al., 2026, arXiv:2609.00300v1): Sections 3.5, 3.7, 3.8, 3.12
+    - Training-time dynamic threshold tau_t (Section 3.8, Page 9):
+      Updated at the beginning of each epoch using image-level predictions on the
+      training-calibration subset. Selects the largest threshold for which the one-sided
+      95% Clopper-Pearson upper bound on positive-image rate among dismissed calibration
+      images is <= 1% (0.01). Defaults to 0.0 if no threshold satisfies the bound.
+    - Post-training operating threshold selection (Section 3.7, Page 8):
+      Selects the largest threshold whose empirical case-level recall meets or exceeds
+      the target recall (98% or 95%) under strict dismissal (score < tau -> dismissed).
+    - Clopper-Pearson one-sided upper confidence bound (Eq. 5, Page 8):
+      1.0 when n_d == 0 or k_d == n_d; Beta^{-1}_{confidence}(k_d + 1, n_d - k_d) otherwise.
+      Training uses 95% confidence (delta=0.05); final case-level evaluation uses 99% (delta=0.01).
 """
 
-from typing import Dict, List, Tuple
+from typing import Dict, Optional, Union
 import numpy as np
 from scipy import stats
-
-
-def compute_target_recall_threshold(
-    positive_scores: np.ndarray,
-    target_recall: float = 0.98,
-) -> float:
-    """Compute the decision threshold tau that achieves target recall on positive scores.
-
-    To achieve recall >= target_recall, threshold tau must be at or below
-    the (1 - target_recall) empirical quantile of positive scores:
-        Recall = P(p >= tau | Y = 1) >= target_recall
-
-    Args:
-        positive_scores: 1D array of predicted probabilities for cancer-positive samples.
-        target_recall: Desired recall (e.g. 0.95 or 0.98).
-
-    Returns:
-        Float threshold tau.
-    """
-    if len(positive_scores) == 0:
-        return 0.0
-
-    scores_sorted = np.sort(positive_scores)
-    # Target percentile: (1 - target_recall)
-    percentile = (1.0 - target_recall) * 100.0
-    tau = float(np.percentile(scores_sorted, percentile))
-    return tau
 
 
 def clopper_pearson_upper_bound(
@@ -44,25 +25,121 @@ def clopper_pearson_upper_bound(
     n_dismissed: int,
     confidence: float = 0.99,
 ) -> float:
-    """Calculate the one-sided Clopper-Pearson exact upper confidence bound on missed-cancer rate.
+    """Calculate the one-sided Clopper-Pearson exact upper confidence bound (TRUST Eq. 5).
 
     Args:
-        k_missed: Number of cancer-positive cases among dismissed cases.
-        n_dismissed: Total number of dismissed cases.
-        confidence: Desired one-sided confidence level (default: 0.99).
+        k_missed: Number of positive observations among dismissed observations.
+        n_dismissed: Total number of dismissed observations.
+        confidence: One-sided confidence level in (0, 1) (e.g. 0.95 training, 0.99 eval).
 
     Returns:
-        Upper confidence bound in [0.0, 1.0].
+        Exact one-sided upper confidence bound in [0.0, 1.0].
     """
-    if n_dismissed <= 0:
-        return 0.0
-    if k_missed <= 0:
-        # Rule of three / exact beta formula for 0 successes
-        return float(1.0 - (1.0 - confidence) ** (1.0 / n_dismissed))
+    if not (0.0 < confidence < 1.0):
+        raise ValueError(f"confidence must be strictly between 0 and 1, got {confidence}")
+    if isinstance(k_missed, bool) or isinstance(n_dismissed, bool):
+        raise ValueError("k_missed and n_dismissed must be integer counts, not bool")
+    k_val = int(k_missed)
+    n_val = int(n_dismissed)
+    if k_val != k_missed or n_val != n_dismissed:
+        raise ValueError(f"k_missed ({k_missed}) and n_dismissed ({n_dismissed}) must be integers")
+    if n_val < 0 or k_val < 0:
+        raise ValueError(f"Counts must be non-negative, got k_missed={k_val}, n_dismissed={n_val}")
+    if k_val > n_val:
+        raise ValueError(f"k_missed ({k_val}) cannot exceed n_dismissed ({n_val})")
 
-    # Upper bound from Beta distribution percent-point function
-    ub = stats.beta.ppf(confidence, k_missed + 1, n_dismissed - k_missed)
-    return float(ub)
+    # TRUST Eq. (5): return 1.0 when n_d == 0 or k_d == n_d
+    if n_val == 0 or k_val == n_val:
+        return 1.0
+
+    if k_val == 0:
+        # Exact Beta^{-1}_{confidence}(1, n_d) = 1 - (1 - confidence)^(1 / n_d)
+        ub = 1.0 - (1.0 - float(confidence)) ** (1.0 / float(n_val))
+    else:
+        ub = float(stats.beta.ppf(float(confidence), k_val + 1, n_val - k_val))
+
+    if not np.isfinite(ub):
+        raise ValueError(
+            f"Non-finite Clopper-Pearson bound computed for k={k_val}, n={n_val}, confidence={confidence}"
+        )
+    return float(min(max(ub, 0.0), 1.0))
+
+
+def compute_dynamic_training_threshold(
+    image_scores: np.ndarray,
+    image_labels: np.ndarray,
+    max_upper_bound: float = 0.01,
+    confidence: float = 0.95,
+) -> float:
+    """Compute training-time provisional threshold tau_t on image-level train_calib predictions.
+
+    Matches TRUST Section 3.8 (Page 9):
+        - Evaluates candidate thresholds under dismissal rule ``score < tau``.
+        - Computes one-sided ``confidence`` (95%) Clopper-Pearson upper bound on
+          positive-image prevalence among dismissed calibration images.
+        - Returns the largest candidate threshold whose upper bound <= ``max_upper_bound`` (0.01).
+        - Returns 0.0 if no candidate threshold satisfies the bound.
+    """
+    scores = np.asarray(image_scores, dtype=np.float64).reshape(-1)
+    labels = np.asarray(image_labels, dtype=np.int64).reshape(-1)
+    if len(scores) == 0 or len(scores) != len(labels):
+        raise ValueError(
+            f"image_scores ({len(scores)}) and image_labels ({len(labels)}) must be non-empty and equal length"
+        )
+    if not np.all(np.isin(labels, [0, 1])):
+        raise ValueError("image_labels must contain only binary values {0, 1}")
+    if not (0.0 < max_upper_bound < 1.0):
+        raise ValueError(f"max_upper_bound must be in (0, 1), got {max_upper_bound}")
+
+    # Evaluate unique score cutoffs in descending order.
+    # Also include slightly above max(scores) only if dismissing all images is valid (e.g., 0 positives and large N).
+    unique_scores = np.unique(scores)
+    candidates = np.concatenate([unique_scores, [float(unique_scores[-1]) + 1e-7]])
+
+    for tau in candidates[::-1]:
+        dismissed_mask = scores < tau
+        n_d = int(np.sum(dismissed_mask))
+        if n_d == 0:
+            continue
+        k_d = int(np.sum((labels == 1) & dismissed_mask))
+        ub = clopper_pearson_upper_bound(k_missed=k_d, n_dismissed=n_d, confidence=confidence)
+        if ub <= max_upper_bound:
+            return float(tau)
+
+    return 0.0
+
+
+def compute_target_recall_threshold(
+    positive_scores: np.ndarray,
+    target_recall: float = 0.98,
+) -> float:
+    """Select the largest operating threshold achieving empirical recall >= target_recall.
+
+    Matches TRUST Section 3.7 (Page 8):
+        Under strict dismissal (``score < tau`` is dismissed; ``score >= tau`` is retained),
+        the largest threshold retaining at least ``ceil(target_recall * C)`` positive cases
+        (accounting for ties and finite-sample discrete recall) is the ``k_max``-th smallest
+        positive score where ``k_max = C - ceil(target_recall * C)``.
+    """
+    if not (0.0 < target_recall <= 1.0):
+        raise ValueError(f"target_recall must be in (0, 1], got {target_recall}")
+    pos = np.asarray(positive_scores, dtype=np.float64).reshape(-1)
+    n_pos = len(pos)
+    if n_pos == 0:
+        return 0.0
+
+    scores_sorted = np.sort(pos)
+    min_retained = int(np.ceil(float(target_recall) * float(n_pos) - 1e-12))
+    min_retained = min(max(min_retained, 1), n_pos)
+    k_max_missed = n_pos - min_retained
+    tau = float(scores_sorted[k_max_missed])
+
+    achieved = float(np.mean(pos >= tau))
+    if achieved + 1e-12 < target_recall:
+        raise RuntimeError(
+            f"Selected threshold {tau} achieved recall {achieved:.6f} < target {target_recall:.6f}"
+        )
+    return tau
 
 
 def evaluate_dismissal_at_threshold(
@@ -70,42 +147,45 @@ def evaluate_dismissal_at_threshold(
     case_labels: np.ndarray,
     threshold: float,
     confidence: float = 0.99,
-) -> Dict[str, float]:
-    """Evaluate screening dismissal metrics at a fixed operating threshold.
+    target_recall: Optional[float] = None,
+) -> Dict[str, Union[float, int, bool, Optional[float]]]:
+    """Evaluate case-level screening dismissal metrics at a fixed operating threshold.
 
     Decision rule:
-        If case_score < threshold: DISMISSED (safe to skip radiologist review)
-        If case_score >= threshold: RETAINED (sent for radiologist review)
-
-    Args:
-        case_scores: 1D array of case-level maximum scores.
-        case_labels: 1D array of binary case-level cancer labels (1 = cancer, 0 = benign/normal).
-        threshold: Operating cutoff tau.
-        confidence: Confidence level for Clopper-Pearson bound (default: 0.99).
-
-    Returns:
-        Dictionary of clinical screening triage metrics.
+        case_score < threshold  -> DISMISSED
+        case_score >= threshold -> RETAINED
     """
-    total_cases = len(case_scores)
-    total_cancers = int(np.sum(case_labels == 1))
+    scores = np.asarray(case_scores, dtype=np.float64).reshape(-1)
+    labels = np.asarray(case_labels, dtype=np.int64).reshape(-1)
+    if len(scores) == 0 or len(scores) != len(labels):
+        raise ValueError(
+            f"case_scores ({len(scores)}) and case_labels ({len(labels)}) must be non-empty and equal length"
+        )
+    if not np.all(np.isin(labels, [0, 1])):
+        raise ValueError("case_labels must contain only binary values {0, 1}")
 
-    dismissed_mask = case_scores < threshold
+    total_cases = len(scores)
+    total_cancers = int(np.sum(labels == 1))
+
+    dismissed_mask = scores < float(threshold)
     retained_mask = ~dismissed_mask
 
     n_dismissed = int(np.sum(dismissed_mask))
     n_retained = int(np.sum(retained_mask))
+    dismissal_rate = float(n_dismissed) / float(total_cases)
 
-    dismissal_rate = float(n_dismissed) / max(total_cases, 1)
+    missed_cancers = int(np.sum((labels == 1) & dismissed_mask))
+    detected_cancers = int(np.sum((labels == 1) & retained_mask))
+    triage_recall = float(detected_cancers) / float(total_cancers) if total_cancers > 0 else 1.0
 
-    # Missed cancers = cancer cases that fall below dismissal threshold
-    missed_cancers = int(np.sum((case_labels == 1) & dismissed_mask))
-    detected_cancers = int(np.sum((case_labels == 1) & retained_mask))
-
-    triage_recall = float(detected_cancers) / max(total_cancers, 1) if total_cancers > 0 else 1.0
-
-    # Cancer prevalence among dismissed cases (false omission rate)
-    cancer_prev_dismissed = float(missed_cancers) / max(n_dismissed, 1) if n_dismissed > 0 else 0.0
+    cancer_prev_dismissed = float(missed_cancers) / float(n_dismissed) if n_dismissed > 0 else 0.0
     cp_upper_bound = clopper_pearson_upper_bound(missed_cancers, n_dismissed, confidence=confidence)
+
+    meets_target = (
+        bool(triage_recall + 1e-12 >= float(target_recall))
+        if target_recall is not None
+        else True
+    )
 
     return {
         "threshold": float(threshold),
@@ -119,4 +199,6 @@ def evaluate_dismissal_at_threshold(
         "triage_recall": triage_recall,
         "cancer_prev_dismissed": cancer_prev_dismissed,
         "clopper_pearson_99_ub": cp_upper_bound,
+        "meets_target_recall": meets_target,
+        "reported_dismissal_rate": dismissal_rate if meets_target else None,
     }
