@@ -86,6 +86,7 @@ class DynamicDismissalLoss(nn.Module):
         probs: torch.Tensor,
         targets: torch.Tensor,
         tau_t: float,
+        reduction: str = "mean",
     ) -> Tuple[torch.Tensor, int]:
         """Compute dismissal hinge penalty on positive samples."""
         probs_flat = probs.view(-1)
@@ -98,8 +99,11 @@ class DynamicDismissalLoss(nn.Module):
 
         pos_probs = probs_flat[pos_mask]
         penalty = F.relu(float(tau_t) + self.margin - pos_probs)
-        loss = penalty.mean()
-        return loss, n_pos
+        if reduction == "sum":
+            return penalty.sum(), n_pos
+        if reduction == "mean":
+            return penalty.mean(), n_pos
+        raise ValueError(f"Unsupported reduction: {reduction}")
 
 
 class TRUSTLoss(nn.Module):
@@ -145,8 +149,10 @@ class TRUSTLoss(nn.Module):
             self.lambda_focal = float(lambda_focal)
             self.lambda_dismiss = float(lambda_dismiss)
 
-        self.bce = nn.BCEWithLogitsLoss()
-        self.focal = FocalLoss(gamma=focal_gamma, alpha=focal_alpha)
+        self.bce_mean = nn.BCEWithLogitsLoss(reduction="mean")
+        self.bce_sum = nn.BCEWithLogitsLoss(reduction="sum")
+        self.focal_mean = FocalLoss(gamma=focal_gamma, alpha=focal_alpha, reduction="mean")
+        self.focal_sum = FocalLoss(gamma=focal_gamma, alpha=focal_alpha, reduction="sum")
         self.dismissal = DynamicDismissalLoss(margin=self.margin)
 
     def forward(
@@ -155,12 +161,40 @@ class TRUSTLoss(nn.Module):
         targets: torch.Tensor,
         tau_t: Optional[float] = None,
     ) -> Tuple[torch.Tensor, dict]:
-        """Compute total loss and component breakdown."""
+        """Compute total loss over a complete effective batch."""
         logits_col = logits.view(-1, 1)
         targets_col = targets.view(-1, 1).float()
-        l_bce = self.bce(logits_col, targets_col)
+        return self.forward_microbatch(
+            logits_col,
+            targets_col,
+            tau_t=tau_t,
+            total_batch_size=int(logits_col.shape[0]),
+            total_pos_in_batch=int((targets_col == 1).sum().item()),
+        )
 
+    def forward_microbatch(
+        self,
+        logits: torch.Tensor,
+        targets: torch.Tensor,
+        tau_t: Optional[float],
+        total_batch_size: int,
+        total_pos_in_batch: int,
+    ) -> Tuple[torch.Tensor, dict]:
+        """Compute micro-batch contribution whose sum across all micro-batches equals full-batch loss.
+
+        BCE and Focal Loss are divided by ``total_batch_size`` across the full effective batch,
+        whereas Dynamic Dismissal Loss is divided by ``max(total_pos_in_batch, 1)`` so uneven
+        positive counts across micro-batches remain mathematically exact.
+        """
+        if total_batch_size <= 0:
+            raise ValueError(f"total_batch_size must be positive, got {total_batch_size}")
+
+        logits_col = logits.view(-1, 1)
+        targets_col = targets.view(-1, 1).float()
+
+        l_bce = self.bce_sum(logits_col, targets_col) / float(total_batch_size)
         effective_tau = 0.05 if (tau_t is None and self.baseline == "fixed_tau") else tau_t
+
         components = {
             "loss_bce": float(l_bce.detach().cpu().item()),
             "loss_focal": 0.0,
@@ -170,13 +204,14 @@ class TRUSTLoss(nn.Module):
         total_loss = l_bce
 
         if self.lambda_focal > 0.0:
-            l_focal = self.focal(logits_col, targets_col)
+            l_focal = self.focal_sum(logits_col, targets_col) / float(total_batch_size)
             components["loss_focal"] = float(l_focal.detach().cpu().item())
             total_loss = total_loss + self.lambda_focal * l_focal
 
         if self.lambda_dismiss > 0.0 and effective_tau is not None:
             probs = torch.sigmoid(logits_col)
-            l_dismiss, _ = self.dismissal(probs, targets_col, tau_t=effective_tau)
+            l_dismiss_sum, _ = self.dismissal(probs, targets_col, tau_t=effective_tau, reduction="sum")
+            l_dismiss = l_dismiss_sum / float(max(total_pos_in_batch, 1))
             components["loss_dismiss"] = float(l_dismiss.detach().cpu().item())
             total_loss = total_loss + self.lambda_dismiss * l_dismiss
 
