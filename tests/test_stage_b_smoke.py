@@ -204,4 +204,6 @@ if __name__ == "__main__":
     print("PASS: test_case_aggregation_and_dismissal_eval")
     test_rsna_splits_leakage_and_proportions()
     print("PASS: test_rsna_splits_leakage_and_proportions")
+    test_balanced_batch_sampler_full_neg_pass()
+    print("PASS: test_balanced_batch_sampler_full_neg_pass")
     print("\nALL UNIT TESTS PASSED LOCALLY!")
