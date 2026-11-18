@@ -170,27 +170,58 @@ def aggregate_case_scores(
     image_scores: Union[torch.Tensor, List[float]],
     case_ids: List[str],
 ) -> Dict[str, float]:
-    """Aggregate image-level cancer scores to case-level using max aggregation.
-
-    TRUST Rule: Case score is the maximum image score across all views
-    belonging to that examination:
-        s_case = max_{i in case} p_i
+    """Aggregate image-level cancer scores to case-level using max aggregation (TRUST Eq. 1).
 
     Args:
         image_scores: Sequence of float scores in [0, 1].
-        case_ids: Corresponding case/exam identifier for each score.
+        case_ids: Corresponding case/exam identifier for each score (same length).
 
     Returns:
         Dict mapping case_id to maximum score.
     """
-    case_max: Dict[str, float] = {}
     if isinstance(image_scores, torch.Tensor):
         scores_list = image_scores.detach().cpu().view(-1).tolist()
     else:
-        scores_list = list(image_scores)
+        scores_list = [float(s) for s in image_scores]
 
+    if len(scores_list) == 0:
+        raise ValueError("image_scores and case_ids must not be empty")
+    if len(scores_list) != len(case_ids):
+        raise ValueError(
+            f"Length mismatch between image_scores ({len(scores_list)}) and case_ids ({len(case_ids)})"
+        )
+
+    case_max: Dict[str, float] = {}
     for score, cid in zip(scores_list, case_ids):
-        if cid not in case_max or score > case_max[cid]:
-            case_max[cid] = float(score)
+        key = str(cid)
+        val = float(score)
+        if key not in case_max or val > case_max[key]:
+            case_max[key] = val
+
+    return case_max
+
+
+def aggregate_case_labels(
+    image_labels: Union[torch.Tensor, List[int]],
+    case_ids: List[str],
+) -> Dict[str, int]:
+    """Aggregate image-level binary cancer labels to case-level via max aggregation (TRUST Eq. 2)."""
+    if isinstance(image_labels, torch.Tensor):
+        labels_list = [int(v) for v in image_labels.detach().cpu().view(-1).tolist()]
+    else:
+        labels_list = [int(v) for v in image_labels]
+
+    if len(labels_list) == 0:
+        raise ValueError("image_labels and case_ids must not be empty")
+    if len(labels_list) != len(case_ids):
+        raise ValueError(
+            f"Length mismatch between image_labels ({len(labels_list)}) and case_ids ({len(case_ids)})"
+        )
+
+    case_max: Dict[str, int] = {}
+    for label, cid in zip(labels_list, case_ids):
+        key = str(cid)
+        if key not in case_max or label > case_max[key]:
+            case_max[key] = label
 
     return case_max
