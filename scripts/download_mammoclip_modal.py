@@ -29,11 +29,13 @@ RSNA_VOL = modal.Volume.from_name("rsna-mammography-vol")
 MOUNT_PATH = Path("/data")
 COMMIT_INTERVAL_SEC = 60
 
+PINNED_REVISION = "2f356926a00fc3f0d9fdad1193c1464fd9adf564"
 CHECKPOINT_URL = (
-    "https://huggingface.co/shawn24/Mammo-CLIP/resolve/main/"
+    f"https://huggingface.co/shawn24/Mammo-CLIP/resolve/{PINNED_REVISION}/"
     "Pre-trained-checkpoints/b5-model-best-epoch-7.tar"
 )
 EXPECTED_SIZE = 1654145453
+EXPECTED_SHA256 = "0baccb0cc19cd6093ff8252f7c2b7a6efbc32973498640abcb311210c46fd02c"
 
 app = modal.App(APP_NAME)
 image = modal.Image.debian_slim(python_version="3.11").pip_install(
@@ -125,12 +127,16 @@ def download_mammoclip_checkpoint(force: bool = False) -> dict:
         sha256_hash = h.hexdigest()
         print(f"[download] Download complete: {target_file} ({target_file.stat().st_size} bytes)", flush=True)
         print(f"[download] SHA-256: {sha256_hash}", flush=True)
+        if sha256_hash != EXPECTED_SHA256:
+            raise ValueError(f"Checksum mismatch: expected {EXPECTED_SHA256}, got {sha256_hash}")
 
         return {
             "status": "downloaded",
             "path": str(target_file),
             "size": target_file.stat().st_size,
             "sha256": sha256_hash,
+            "sha256_matches_expected": sha256_hash == EXPECTED_SHA256,
+            "pinned_revision": PINNED_REVISION,
             "size_matches_expected": target_file.stat().st_size == EXPECTED_SIZE,
         }
     finally:
