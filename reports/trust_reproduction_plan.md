@@ -28,7 +28,7 @@ All code has been prepared in modular PyTorch modules under `src/` and Modal scr
    - Pretrained nature: Genuinely contrastively pretrained on UPMC screening mammogram-report pairs, NOT fine-tuned downstream on RSNA.
 
 ### 2.2 Exact Architecture
-- **Backbone:** EfficientNet-B5 (`tf_efficientnet_b5.ns_jft_in1k` via `timm`, feature dimension $d = 2048$).
+- **Backbone:** Canonical Mammo-CLIP `efficientnet_custom` EfficientNet-B5 (`852/852` keys, `strict=True`, feature dimension $d = 2048$).
 - **Encoder State:** Strictly frozen (`requires_grad = False`, evaluated in `eval()` mode throughout training).
 - **Classification Head:**
   $$\text{Embedding } (B, 2048) \longrightarrow \text{LayerNorm}(2048) \longrightarrow \text{Dropout}(0.3) \longrightarrow \text{Linear}(2048, 1) \longrightarrow \text{Sigmoid} \longrightarrow p_i \in [0, 1]$$
@@ -53,11 +53,19 @@ All code has been prepared in modular PyTorch modules under `src/` and Modal scr
 
 ### 2.4 Training Hyperparameters
 - **Epochs:** 20
+- **Epoch Sampling Policy (`full_neg_pass`):** Every epoch iterates through 100% of negative `train` images once (`ceil(N_neg / 60)` batches/epoch) while cycling and reshuffling positive `train` images with wraparound to preserve the exact 20:60 pos:neg ratio per 80-image minibatch (replacing the legacy `len(pos_idx) // 20` policy which only covered ~6.4% of negatives per epoch).
 - **Batch Size:** 80 images (strictly balanced: 20 cancer-positive, 60 cancer-negative). On GPU hardware, implemented using micro-batching (8 images per micro-batch: 2 pos, 6 neg) and gradient accumulation over 10 steps ($8 \times 10 = 80$).
 - **Optimizer:** AdamW, learning rate $\eta = 3 \times 10^{-5}$, weight decay $10^{-4}$.
 - **Input Resolution:** $1520 \times 912$ (Height 1520, Width 912), 3 channels.
-- **Precision:** Mixed precision (`torch.cuda.amp.autocast`).
+- **Precision:** Mixed precision (`torch.amp.autocast("cuda")`).
 - **Gradient Clipping:** Max norm 5.0.
+- **Dynamic GPU Selection & Resume:** Modal GPU selection via `.with_options(gpu=gpu)` supporting `L40S`; per-epoch `val_calib` monitoring, `_latest.pt` / `_best.pt` checkpointing, and `--resume`.
+
+### 2.5 Parameter Verification & Documented Deviations vs. TRUST (arXiv:2609.00300)
+1. **Reference Source Constraint:** `arXiv:2609.00300` PDF is not stored locally (the workspace PDF by Mohandas et al. 2026 is a separate tabular-WDBC paper sharing the acronym); hyperparameters (`margin=0.05`, `focal_alpha=0.25`, `focal_gamma=2.0`, `lambda_focal=1.0`, `lambda_dismiss=1.0`, `tau_target_recall=0.98`) are reproduced from the prior Section 3 audit and exposed via CLI flags.
+2. **Dynamic `tau_t` Granularity:** `tau_t` is updated per epoch from **image-level** `train_calib` positive scores (matching image-level `DynamicDismissalLoss` inputs $p_i$), whereas `val_calib` operating thresholds use **case-level max** aggregation across `patient_id`.
+3. **Epoch Coverage:** `full_neg_pass` ensures 100% negative coverage per epoch while keeping 20:60 pos:neg minibatches.
+4. **Input Standardization:** Applies Mammo-CLIP ImageNet mean/std standardization (`standardize=True`) after `MONOCHROME1` inversion and min-max scaling.
 
 ---
 
