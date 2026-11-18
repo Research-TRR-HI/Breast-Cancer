@@ -31,6 +31,7 @@ image = (
         "omegaconf>=2.3.0",
         "pandas>=2.2.0",
         "pydicom>=2.4.4",
+        "opencv-python-headless>=4.10.0",
         "pylibjpeg>=2.0.0",
         "pylibjpeg-libjpeg>=2.1.0",
         "pylibjpeg-openjpeg>=2.1.0",
@@ -132,7 +133,7 @@ def run_gpu_smoke_test() -> dict:
         lr=3e-5,
         weight_decay=1e-4,
     )
-    criterion = TRUSTLoss(baseline="trust", margin=0.05, lambda_focal=1.0, lambda_dismiss=1.0)
+    criterion = TRUSTLoss(baseline="trust", margin=0.10, lambda_focal=1.0, lambda_dismiss=0.05)
 
     # Forward + backward pass on micro-batch of 2
     torch.cuda.reset_peak_memory_stats(device)
@@ -140,7 +141,7 @@ def run_gpu_smoke_test() -> dict:
     model.train()  # keeps frozen encoder in eval() automatically
     with torch.amp.autocast("cuda"):
         logits, _ = model(batch_x[:2])
-        total_loss, loss_comp = criterion(logits, batch_y[:2], tau_t=0.5)
+        total_loss, loss_comp = criterion(logits, batch_y[:2], tau_t=0.05)
 
     optimizer.zero_grad()
     total_loss.backward()
