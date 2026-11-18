@@ -1,0 +1,225 @@
+{
+  "checksums": [
+    {
+      "file": "normal.7z",
+      "exists": true,
+      "size_bytes": 65907091947,
+      "match": true,
+      "sha256": "227a9eb57e36620f61bd86674d43e3b61fdcf3db87e30a2728cc5e2ea4dfffd7"
+    },
+    {
+      "file": "LICENSE.txt",
+      "exists": true,
+      "size_bytes": 13308,
+      "match": true,
+      "sha256": "4f5ef9a7d5edcf894bdd7f7c5330b0e8107ee4350cad294ae7581e9bebd3aa35"
+    },
+    {
+      "file": "README_version_history_2025-11-25.txt",
+      "exists": true,
+      "size_bytes": 396,
+      "match": true,
+      "sha256": "3aa471b38a1da3dd6ce33bbc82d5a6f5b2582179802acc8a78a4c01625668c1f"
+    },
+    {
+      "file": "README.txt",
+      "exists": true,
+      "size_bytes": 5863,
+      "match": true,
+      "sha256": "b10191327c588af94b3b2b02fa960f12d6cc9e07b30bcb8bbdf12fd155c49899"
+    },
+    {
+      "file": "abnormal.7z",
+      "exists": true,
+      "size_bytes": 2319999125,
+      "match": true,
+      "sha256": "e59c4957403631bc8d9b232847bce90b096009c0c3493ef9110989bcc4c5fcf2"
+    },
+    {
+      "file": "False Positive.7z",
+      "exists": true,
+      "size_bytes": 22567101176,
+      "match": true,
+      "sha256": "bb50508ad0e2a237a06af2149cfcf1b6630db524456c45d18cdc16db94a337d2"
+    },
+    {
+      "file": "NLBSD_Metadata.csv",
+      "exists": true,
+      "size_bytes": 3933003,
+      "match": true,
+      "sha256": "4e1a2bca27051a48240330646fba8ba020ab4623ed0f1e27e8c025175fe37af3"
+    },
+    {
+      "file": "CITATION.txt",
+      "exists": true,
+      "size_bytes": 250,
+      "match": true,
+      "sha256": "0c40f9f347783408616655bebefa315e63e5631fe3252b0a71f08021edbd10ad"
+    }
+  ],
+  "all_checksums_match": true,
+  "extracted_dcm_count": 26988,
+  "expected_dcm_count": 26988,
+  "missing_extracted_count": 0,
+  "extra_extracted_count": 0,
+  "header_error_count": 0,
+  "header_errors_sample": [],
+  "unique_case_ids": 5997,
+  "unique_study_uids": 6359,
+  "total_exams": 6430,
+  "shared_studies_across_cases": 71,
+  "exams_per_case_distribution": {
+    "1": 5612,
+    "2": 378,
+    "3": 6,
+    "44": 1
+  },
+  "multi_visit_case_ids": 385,
+  "exams_with_multiple_ages": 0,
+  "exam_n_images_distribution": {
+    "1": 1,
+    "2": 3,
+    "3": 5,
+    "4": 5487,
+    "5": 716,
+    "6": 162,
+    "7": 9,
+    "8": 37,
+    "9": 3,
+    "10": 3,
+    "11": 1,
+    "12": 2,
+    "15": 1
+  },
+  "exam_cohort_counts": {
+    "normal": 4763,
+    "False Positive": 1516,
+    "abnormal": 151
+  },
+  "exam_cancer_positive": 151,
+  "exam_cancer_negative": 6279,
+  "full_manufacturers": [
+    [
+      "GE MEDICAL SYSTEMS",
+      26967
+    ],
+    [
+      "SIEMENS",
+      21
+    ]
+  ],
+  "full_models": [
+    [
+      "Senographe Essential VERSION ADS_53.10.10",
+      26863
+    ],
+    [
+      "Senographe Essential VERSION ADS_53.40",
+      96
+    ],
+    [
+      "Mammomat Novation DR",
+      21
+    ],
+    [
+      "",
+      4
+    ],
+    [
+      "Senographe Essential VERSION ADS_53.30",
+      4
+    ]
+  ],
+  "full_photometrics": [
+    [
+      "MONOCHROME2",
+      26988
+    ]
+  ],
+  "full_bits_stored": [
+    [
+      12,
+      26988
+    ]
+  ],
+  "full_transfer_syntaxes": [
+    [
+      "1.2.840.10008.1.2.1",
+      26988
+    ]
+  ],
+  "nonempty_dicom_patient_ids": 4,
+  "p_3280_exam_count": 44,
+  "p_3280_sample_exams": [
+    {
+      "exam_id": "p_3280_v1",
+      "n_images": 4,
+      "ages": "76",
+      "models": "",
+      "StudyInstanceUID": "1.2.124.113532.10.77.16.11.20090703.140158.13373368"
+    },
+    {
+      "exam_id": "p_3280_v2",
+      "n_images": 4,
+      "ages": "66",
+      "models": "Senographe Essential VERSION ADS_53.10.10",
+      "StudyInstanceUID": "1.2.124.113532.10.77.16.11.20090707.112956.13390231"
+    },
+    {
+      "exam_id": "p_3280_v3",
+      "n_images": 4,
+      "ages": "67",
+      "models": "Senographe Essential VERSION ADS_53.10.10",
+      "StudyInstanceUID": "1.2.124.113532.10.77.16.11.20090713.102137.13424812"
+    },
+    {
+      "exam_id": "p_3280_v4",
+      "n_images": 4,
+      "ages": "64",
+      "models": "Senographe Essential VERSION ADS_53.10.10",
+      "StudyInstanceUID": "1.2.124.113532.10.77.16.11.20090721.82132.13474258"
+    },
+    {
+      "exam_id": "p_3280_v5",
+      "n_images": 4,
+      "ages": "",
+      "models": "Senographe Essential VERSION ADS_53.10.10",
+      "StudyInstanceUID": "1.2.124.113532.10.77.16.11.20090730.115827.13536809"
+    },
+    {
+      "exam_id": "p_3280_v6",
+      "n_images": 4,
+      "ages": "74",
+      "models": "Senographe Essential VERSION ADS_53.10.10",
+      "StudyInstanceUID": "1.2.124.113532.10.77.16.11.20090813.120611.13611217"
+    },
+    {
+      "exam_id": "p_3280_v7",
+      "n_images": 4,
+      "ages": "",
+      "models": "Senographe Essential VERSION ADS_53.10.10",
+      "StudyInstanceUID": "1.2.124.113532.10.77.16.11.20090814.75700.13615472"
+    },
+    {
+      "exam_id": "p_3280_v8",
+      "n_images": 4,
+      "ages": "66",
+      "models": "Senographe Essential VERSION ADS_53.10.10",
+      "StudyInstanceUID": "1.2.124.113532.10.77.16.11.20090818.95755.13634742"
+    },
+    {
+      "exam_id": "p_3280_v9",
+      "n_images": 4,
+      "ages": "65",
+      "models": "Senographe Essential VERSION ADS_53.10.10",
+      "StudyInstanceUID": "1.2.124.113532.10.77.16.11.20090820.81533.13648375"
+    },
+    {
+      "exam_id": "p_3280_v10",
+      "n_images": 4,
+      "ages": "",
+      "models": "Senographe Essential VERSION ADS_53.10.10",
+      "StudyInstanceUID": "1.2.124.113532.10.77.16.11.20090824.143545.13670976"
+    }
+  ]
+}
