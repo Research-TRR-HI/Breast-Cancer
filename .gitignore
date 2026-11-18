@@ -44,3 +44,6 @@ wandb/
 Thumbs.db
 .vscode/
 .idea/
+
+# Local-only files
+git commit.md
