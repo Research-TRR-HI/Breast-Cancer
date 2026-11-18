@@ -1,17 +1,4 @@
-"""Augmentation-Aware Sharded Feature Cache with Integrity & Resume Recovery.
-
-Design rationale (Part 6 of AnchorShift audit):
-    Because TRUST uses stochastic training augmentation (random rotation, scaling,
-    translation, brightness, contrast) before the frozen Mammo-CLIP encoder, one
-    fixed embedding per original DICOM does NOT reproduce online training across
-    20 epochs.
-
-    - Evaluation splits (`train_calib`, `val_calib`) are deterministic (unaugmented)
-      and therefore cached once per image in FP32 (`eval_<split>_fp32.pt`).
-    - Training occurrences (`train`) are cached per `(epoch, batch_idx, slot_idx)`
-      in atomic FP32 shards (`train_epoch_EE_shard_SSS.pt`) alongside exact sample
-      indices, image IDs, and augmentation parameters.
-"""
+"""Augmentation-Aware Sharded Feature Cache with Strict Validation & Recovery (Critical Fix H)."""
 
 import hashlib
 import json
@@ -20,11 +7,10 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 import torch
 
-from src.data.preprocessing import AugmentationParams
 from src.data.rsna_dataset import BatchDrawRecord
 
 
-CACHE_SCHEMA_VERSION = "anchorshift_aug_cache_v1"
+CACHE_SCHEMA_VERSION = "anchorshift_aug_cache_v2"
 
 
 class CacheIntegrityError(RuntimeError):
@@ -46,6 +32,14 @@ def compute_file_sha256(path: Path, chunk_size: int = 8 * 1024 * 1024) -> str:
     return h.hexdigest()
 
 
+def get_cache_manifest_sha256(cache_root: Path) -> str:
+    """Return SHA-256 of cache_manifest.json for strict checkpoint linkage."""
+    mpath = Path(cache_root) / "cache_manifest.json"
+    if not mpath.exists():
+        raise CacheIntegrityError(f"Missing cache manifest at {mpath}")
+    return compute_file_sha256(mpath)
+
+
 def _atomic_write_json(path: Path, obj: Dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp_path = path.with_suffix(".json.tmp")
@@ -57,12 +51,13 @@ def _atomic_write_json(path: Path, obj: Dict[str, Any]) -> None:
 
 
 def _atomic_write_torch(path: Path, payload: Dict[str, Any]) -> str:
-    """Atomically write a torch payload and return its SHA-256 checksum."""
+    """Atomically write a torch payload with flush + fsync on writable descriptor before replace."""
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp_path = path.with_suffix(".pt.tmp")
-    torch.save(payload, str(tmp_path))
-    with open(tmp_path, "rb") as f:
+    with open(tmp_path, "wb") as f:
+        torch.save(payload, f)
         f.flush()
+        os.fsync(f.fileno())
     sha256 = compute_file_sha256(tmp_path)
     os.replace(tmp_path, path)
     return sha256
@@ -99,6 +94,8 @@ def save_eval_split_cache(
     fpath = cache_root / fname
     feat_fp32 = features.detach().cpu().to(torch.float32).contiguous()
     lbl_fp32 = labels.detach().cpu().to(torch.float32).contiguous()
+    if not torch.isfinite(feat_fp32).all():
+        raise CacheIntegrityError(f"Non-finite features detected while saving {split_name} cache")
     payload = {
         "split": split_name,
         "dtype": "float32",
@@ -136,6 +133,8 @@ def save_train_shard(
     feat_fp32 = features.detach().cpu().to(torch.float32).contiguous()
     lbl_fp32 = labels.detach().cpu().to(torch.float32).contiguous()
     idx_i64 = sample_indices.detach().cpu().to(torch.long).contiguous()
+    if not torch.isfinite(feat_fp32).all():
+        raise CacheIntegrityError(f"Non-finite features detected while saving {fname}")
 
     payload = {
         "epoch": int(epoch),
@@ -143,11 +142,11 @@ def save_train_shard(
         "batch_start": int(batch_start),
         "batch_end": int(batch_end),
         "dtype": "float32",
-        "features": feat_fp32,          # (N_batches, B, embed_dim)
-        "labels": lbl_fp32,             # (N_batches, B)
-        "sample_indices": idx_i64,      # (N_batches, B)
-        "image_ids": image_ids,         # List[List[str]]
-        "aug_params": aug_params,       # List[List[dict]]
+        "features": feat_fp32,
+        "labels": lbl_fp32,
+        "sample_indices": idx_i64,
+        "image_ids": image_ids,
+        "aug_params": aug_params,
     }
     sha = _atomic_write_torch(fpath, payload)
     return {
@@ -167,6 +166,7 @@ def save_train_shard(
 def build_cache_manifest(
     model_checkpoint_sha256: str,
     preprocess_config_hash: str,
+    stage1_config_hash: str,
     split_manifest_sha256: str,
     seed: int,
     epochs: int,
@@ -175,14 +175,38 @@ def build_cache_manifest(
     n_pos: int,
     epoch_policy: str,
     embed_dim: int,
+    encoder_precision: str,
     eval_splits: Dict[str, Dict[str, Any]],
     train_shards: List[Dict[str, Any]],
+    environment_metadata: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
+    cache_identity = compute_bytes_sha256(
+        "|".join(
+            [
+                CACHE_SCHEMA_VERSION,
+                str(model_checkpoint_sha256),
+                str(preprocess_config_hash),
+                str(stage1_config_hash),
+                str(split_manifest_sha256),
+                str(seed),
+                str(epochs),
+                str(steps_per_epoch),
+                str(batch_size),
+                str(n_pos),
+                str(epoch_policy),
+                str(embed_dim),
+                str(encoder_precision),
+            ]
+        ).encode("utf-8")
+    )
     return {
         "schema_version": CACHE_SCHEMA_VERSION,
+        "cache_identity": cache_identity,
         "dtype": "float32",
+        "encoder_precision": str(encoder_precision),
         "model_checkpoint_sha256": str(model_checkpoint_sha256),
         "preprocess_config_hash": str(preprocess_config_hash),
+        "stage1_config_hash": str(stage1_config_hash),
         "split_manifest_sha256": str(split_manifest_sha256),
         "seed": int(seed),
         "epochs": int(epochs),
@@ -191,6 +215,7 @@ def build_cache_manifest(
         "n_pos": int(n_pos),
         "epoch_policy": str(epoch_policy),
         "embed_dim": int(embed_dim),
+        "environment_metadata": environment_metadata or {},
         "eval_splits": eval_splits,
         "train_shards": sorted(train_shards, key=lambda s: (s["epoch"], s["shard_idx"])),
     }
@@ -214,72 +239,111 @@ def verify_cache_integrity(
     cache_root: Path,
     expected_model_sha256: str,
     expected_preprocess_hash: str,
+    expected_stage1_hash: Optional[str] = None,
     expected_split_sha256: Optional[str] = None,
     expected_epochs: Optional[int] = None,
     expected_steps_per_epoch: Optional[int] = None,
+    expected_batch_size: Optional[int] = None,
+    expected_n_pos: Optional[int] = None,
+    expected_epoch_policy: Optional[str] = None,
+    expected_embed_dim: Optional[int] = 2048,
+    expected_encoder_precision: Optional[str] = None,
+    expected_seed: Optional[int] = None,
     expected_schedules: Optional[Dict[int, List[BatchDrawRecord]]] = None,
+    expected_eval_meta: Optional[Dict[str, Tuple[List[str], List[str], List[int]]]] = None,
     verify_shard_checksums: bool = True,
 ) -> Dict[str, Any]:
-    """Validate cache metadata, shard SHA-256 checksums, completeness, and duplicate/missing draws."""
+    """Validate every cache metadata field, tensor shape/dtype/finiteness, checksum, and draw."""
     manifest = load_cache_manifest(cache_root)
     if manifest.get("schema_version") != CACHE_SCHEMA_VERSION:
         raise CacheIntegrityError(
             f"Schema mismatch: {manifest.get('schema_version')} != {CACHE_SCHEMA_VERSION}"
         )
-    if manifest.get("model_checkpoint_sha256") != expected_model_sha256:
-        raise CacheIntegrityError(
-            f"Model checkpoint hash mismatch: {manifest.get('model_checkpoint_sha256')} != {expected_model_sha256}"
-        )
-    if manifest.get("preprocess_config_hash") != expected_preprocess_hash:
-        raise CacheIntegrityError(
-            f"Preprocessing hash mismatch: {manifest.get('preprocess_config_hash')} != {expected_preprocess_hash}"
-        )
-    if expected_split_sha256 is not None and manifest.get("split_manifest_sha256") != expected_split_sha256:
-        raise CacheIntegrityError(
-            f"Split manifest hash mismatch: {manifest.get('split_manifest_sha256')} != {expected_split_sha256}"
-        )
+    if manifest.get("dtype") != "float32":
+        raise CacheIntegrityError(f"Stored cache dtype mismatch: {manifest.get('dtype')} != float32")
 
-    epochs = int(manifest["epochs"]) if expected_epochs is None else int(expected_epochs)
-    steps_per_epoch = (
-        int(manifest["steps_per_epoch"])
-        if expected_steps_per_epoch is None
-        else int(expected_steps_per_epoch)
-    )
+    checks = [
+        ("model_checkpoint_sha256", expected_model_sha256),
+        ("preprocess_config_hash", expected_preprocess_hash),
+        ("stage1_config_hash", expected_stage1_hash),
+        ("split_manifest_sha256", expected_split_sha256),
+        ("epochs", expected_epochs),
+        ("steps_per_epoch", expected_steps_per_epoch),
+        ("batch_size", expected_batch_size),
+        ("n_pos", expected_n_pos),
+        ("epoch_policy", expected_epoch_policy),
+        ("embed_dim", expected_embed_dim),
+        ("encoder_precision", expected_encoder_precision),
+        ("seed", expected_seed),
+    ]
+    for key, exp_val in checks:
+        if exp_val is not None and manifest.get(key) != exp_val:
+            raise CacheIntegrityError(f"Cache {key} mismatch: {manifest.get(key)!r} != {exp_val!r}")
 
-    # Verify eval split caches
-    for split_name, meta in manifest.get("eval_splits", {}).items():
+    epochs = int(manifest["epochs"])
+    steps_per_epoch = int(manifest["steps_per_epoch"])
+    batch_size = int(manifest["batch_size"])
+    embed_dim = int(manifest["embed_dim"])
+
+    # Verify eval splits
+    eval_splits = manifest.get("eval_splits", {})
+    for req_split in ("train_calib", "val_calib"):
+        if req_split not in eval_splits:
+            raise CacheIntegrityError(f"Missing required eval split {req_split!r} in cache manifest")
+        meta = eval_splits[req_split]
         fpath = cache_root / meta["file"]
         if not fpath.exists():
             raise CacheIntegrityError(f"Missing eval split cache file: {fpath}")
-        if verify_shard_checksums:
-            actual_sha = compute_file_sha256(fpath)
-            if actual_sha != meta["sha256"]:
-                raise CacheIntegrityError(
-                    f"Eval cache checksum mismatch for {fpath}: {actual_sha} != {meta['sha256']}"
-                )
+        if verify_shard_checksums and compute_file_sha256(fpath) != meta["sha256"]:
+            raise CacheIntegrityError(f"Eval cache checksum mismatch for {fpath}")
 
-    # Verify train shards for missing/duplicate (epoch, batch_idx) draws
+        edata = torch.load(str(fpath), map_location="cpu", weights_only=False)
+        efeats = edata["features"]
+        elbls = edata["labels"]
+        if efeats.dtype != torch.float32 or efeats.dim() != 2 or efeats.shape[1] != embed_dim:
+            raise CacheIntegrityError(f"Invalid eval feature tensor shape/dtype in {fpath}: {efeats.shape} {efeats.dtype}")
+        if not torch.isfinite(efeats).all():
+            raise CacheIntegrityError(f"Non-finite values in eval features {fpath}")
+        if len(elbls) != efeats.shape[0] or len(edata["image_ids"]) != efeats.shape[0] or len(edata["patient_ids"]) != efeats.shape[0]:
+            raise CacheIntegrityError(f"Metadata length mismatch in eval cache {fpath}")
+        if expected_eval_meta is not None and req_split in expected_eval_meta:
+            exp_img_ids, exp_pt_ids, exp_lbls = expected_eval_meta[req_split]
+            if edata["image_ids"] != exp_img_ids or edata["patient_ids"] != exp_pt_ids:
+                raise CacheIntegrityError(f"Eval ID order mismatch for {req_split}")
+            if [int(v) for v in elbls.tolist()] != [int(v) for v in exp_lbls]:
+                raise CacheIntegrityError(f"Eval label mismatch for {req_split}")
+
+    # Verify train shards & draw completeness
     seen_batches: Dict[Tuple[int, int], str] = {}
     for shard_meta in manifest.get("train_shards", []):
         ep = int(shard_meta["epoch"])
         fpath = cache_root / shard_meta["file"]
         if not fpath.exists():
             raise CacheIntegrityError(f"Missing train shard file: {fpath}")
-        if verify_shard_checksums:
-            actual_sha = compute_file_sha256(fpath)
-            if actual_sha != shard_meta["sha256"]:
-                raise CacheIntegrityError(
-                    f"Train shard checksum mismatch for {fpath}: {actual_sha} != {shard_meta['sha256']}"
-                )
+        if verify_shard_checksums and compute_file_sha256(fpath) != shard_meta["sha256"]:
+            raise CacheIntegrityError(f"Train shard checksum mismatch for {fpath}")
 
         shard_data = torch.load(str(fpath), map_location="cpu", weights_only=False)
         b_start = int(shard_data["batch_start"])
         b_end = int(shard_data["batch_end"])
-        n_batches = int(shard_data["features"].shape[0])
-        if (b_end - b_start) != n_batches:
+        feats = shard_data["features"]
+        lbls = shard_data["labels"]
+        idxs = shard_data["sample_indices"]
+        img_ids = shard_data["image_ids"]
+        augs = shard_data["aug_params"]
+
+        expected_nb = b_end - b_start
+        if feats.dtype != torch.float32 or tuple(feats.shape) != (expected_nb, batch_size, embed_dim):
             raise CacheIntegrityError(
-                f"Shard {fpath} batch range [{b_start}, {b_end}) != tensor batch count {n_batches}"
+                f"Invalid train shard shape/dtype in {fpath}: got {tuple(feats.shape)} {feats.dtype}, "
+                f"expected {(expected_nb, batch_size, embed_dim)} float32"
             )
+        if not torch.isfinite(feats).all():
+            raise CacheIntegrityError(f"Non-finite features in train shard {fpath}")
+        if tuple(lbls.shape) != (expected_nb, batch_size) or tuple(idxs.shape) != (expected_nb, batch_size):
+            raise CacheIntegrityError(f"Label/index shape mismatch in train shard {fpath}")
+        if not torch.all((lbls == 0.0) | (lbls == 1.0)):
+            raise CacheIntegrityError(f"Non-binary labels in train shard {fpath}")
 
         for local_b, global_b in enumerate(range(b_start, b_end)):
             key = (ep, global_b)
@@ -291,17 +355,12 @@ def verify_cache_integrity(
 
             if expected_schedules is not None and ep in expected_schedules:
                 rec = expected_schedules[ep][global_b]
-                cached_idx = shard_data["sample_indices"][local_b].tolist()
-                if cached_idx != rec.indices:
-                    raise CacheIntegrityError(
-                        f"Sample index mismatch at epoch={ep}, batch={global_b}"
-                    )
-                cached_aug = shard_data["aug_params"][local_b]
-                expected_aug = [a.to_dict() for a in rec.aug_params]
-                if cached_aug != expected_aug:
-                    raise CacheIntegrityError(
-                        f"Augmentation param mismatch at epoch={ep}, batch={global_b}"
-                    )
+                if idxs[local_b].tolist() != rec.indices:
+                    raise CacheIntegrityError(f"Sample index mismatch at epoch={ep}, batch={global_b}")
+                if augs[local_b] != [a.to_dict() for a in rec.aug_params]:
+                    raise CacheIntegrityError(f"Augmentation param mismatch at epoch={ep}, batch={global_b}")
+                if len(img_ids[local_b]) != batch_size:
+                    raise CacheIntegrityError(f"Image ID length mismatch at epoch={ep}, batch={global_b}")
 
     for ep in range(1, epochs + 1):
         for b in range(steps_per_epoch):
@@ -318,20 +377,19 @@ def extract_or_resume_cache(
     eval_extract_fn: Callable[[str], Tuple[torch.Tensor, torch.Tensor, List[str], List[str]]],
     model_checkpoint_sha256: str,
     preprocess_config_hash: str,
+    stage1_config_hash: str,
     split_manifest_sha256: str,
     seed: int,
     batch_size: int,
     n_pos: int,
     epoch_policy: str,
     embed_dim: int = 2048,
+    encoder_precision: str = "amp",
     batches_per_shard: int = 10,
+    environment_metadata: Optional[Dict[str, Any]] = None,
     on_progress: Optional[Callable[[str], None]] = None,
 ) -> Dict[str, Any]:
-    """Extract sharded augmentation-aware cache with automatic checkpoint/resume recovery.
-
-    Valid existing shards (matching manifest checksums and hashes) are preserved;
-    any temporary or corrupted shards are discarded and re-extracted cleanly.
-    """
+    """Extract sharded augmentation-aware cache with automatic checkpoint/resume recovery."""
     cache_root.mkdir(parents=True, exist_ok=True)
     _cleanup_stale_temp_files(cache_root)
 
@@ -347,7 +405,9 @@ def extract_or_resume_cache(
                 cand.get("schema_version") == CACHE_SCHEMA_VERSION
                 and cand.get("model_checkpoint_sha256") == model_checkpoint_sha256
                 and cand.get("preprocess_config_hash") == preprocess_config_hash
+                and cand.get("stage1_config_hash") == stage1_config_hash
                 and cand.get("split_manifest_sha256") == split_manifest_sha256
+                and cand.get("encoder_precision") == encoder_precision
                 and int(cand.get("seed", -1)) == int(seed)
                 and int(cand.get("epochs", -1)) == int(epochs)
                 and int(cand.get("steps_per_epoch", -1)) == int(steps_per_epoch)
@@ -389,11 +449,7 @@ def extract_or_resume_cache(
                 train_shards.append(valid_shards_by_key[key])
                 continue
 
-            shard_feats = []
-            shard_labels = []
-            shard_indices = []
-            shard_img_ids = []
-            shard_augs = []
+            shard_feats, shard_labels, shard_indices, shard_img_ids, shard_augs = [], [], [], [], []
             for rec in epoch_recs[b_start:b_end]:
                 b_feats, b_labels, b_img_ids = extract_batch_fn(rec)
                 shard_feats.append(b_feats.detach().cpu().to(torch.float32))
@@ -418,6 +474,7 @@ def extract_or_resume_cache(
             manifest = build_cache_manifest(
                 model_checkpoint_sha256=model_checkpoint_sha256,
                 preprocess_config_hash=preprocess_config_hash,
+                stage1_config_hash=stage1_config_hash,
                 split_manifest_sha256=split_manifest_sha256,
                 seed=seed,
                 epochs=epochs,
@@ -426,8 +483,10 @@ def extract_or_resume_cache(
                 n_pos=n_pos,
                 epoch_policy=epoch_policy,
                 embed_dim=embed_dim,
+                encoder_precision=encoder_precision,
                 eval_splits=eval_splits,
                 train_shards=train_shards,
+                environment_metadata=environment_metadata,
             )
             write_cache_manifest(cache_root, manifest)
             if on_progress:
@@ -436,6 +495,7 @@ def extract_or_resume_cache(
     final_manifest = build_cache_manifest(
         model_checkpoint_sha256=model_checkpoint_sha256,
         preprocess_config_hash=preprocess_config_hash,
+        stage1_config_hash=stage1_config_hash,
         split_manifest_sha256=split_manifest_sha256,
         seed=seed,
         epochs=epochs,
@@ -444,8 +504,10 @@ def extract_or_resume_cache(
         n_pos=n_pos,
         epoch_policy=epoch_policy,
         embed_dim=embed_dim,
+        encoder_precision=encoder_precision,
         eval_splits=eval_splits,
         train_shards=train_shards,
+        environment_metadata=environment_metadata,
     )
     write_cache_manifest(cache_root, final_manifest)
     return final_manifest
