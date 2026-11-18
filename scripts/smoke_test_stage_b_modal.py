@@ -14,7 +14,11 @@ Usage (DO NOT EXECUTE AUTOMATICALLY - for user execution):
 """
 
 from pathlib import Path
+import sys
 import modal
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from src.utils.env_metadata import PINNED_MODAL_PIP_PACKAGES, PINNED_MODAL_PYTHON_VERSION
 
 APP_NAME = "anchorshift-stage-b-smoke"
 RSNA_VOL = modal.Volume.from_name("rsna-mammography-vol")
@@ -23,22 +27,9 @@ MOUNT_PATH = Path("/data")
 app = modal.App(APP_NAME)
 
 image = (
-    modal.Image.debian_slim(python_version="3.11")
+    modal.Image.debian_slim(python_version=PINNED_MODAL_PYTHON_VERSION)
     .apt_install("libgl1-mesa-glx", "libglib2.0-0")
-    .pip_install(
-        "torch>=2.2.0",
-        "torchvision>=0.17.0",
-        "omegaconf>=2.3.0",
-        "pandas>=2.2.0",
-        "pydicom>=2.4.4",
-        "opencv-python-headless>=4.10.0",
-        "pylibjpeg>=2.0.0",
-        "pylibjpeg-libjpeg>=2.1.0",
-        "pylibjpeg-openjpeg>=2.1.0",
-        "python-gdcm>=3.0.24",
-        "scipy>=1.12.0",
-        "numpy>=1.26.0",
-    )
+    .pip_install(*PINNED_MODAL_PIP_PACKAGES)
     .add_local_python_source("src")
 )
 
@@ -62,6 +53,9 @@ def run_gpu_smoke_test() -> dict:
     from src.models.trust_model import MammoCLIPEncoder, TRUSTClassifier
     from src.models.mammo_clip_loader import load_and_verify_mammo_clip
     from src.models.losses import TRUSTLoss
+    from src.utils.env_metadata import collect_runtime_environment_metadata
+
+    env_meta = collect_runtime_environment_metadata(precision_policy="amp")
 
     print("[1/5] Checking GPU environment...", flush=True)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -99,8 +93,19 @@ def run_gpu_smoke_test() -> dict:
         p = rsna_raw / "train_images" / str(row["patient_id"]) / f"{row['image_id']}.dcm"
         ds_hdr = pydicom.dcmread(str(p), stop_before_pixels=True)
         photometrics.append(str(getattr(ds_hdr, "PhotometricInterpretation", "")).strip().upper())
+        row_lat = str(row["laterality"]).strip().upper() if "laterality" in row and pd.notna(row["laterality"]) else None
 
-        tensors.append(preprocess_dicom(p, target_size=(1520, 912), invert_monochrome1=True, standardize=True))
+        tensors.append(
+            preprocess_dicom(
+                p,
+                target_size=(1520, 912),
+                invert_monochrome1=True,
+                laterality=row_lat,
+                laterality_policy="strict",
+                strict_segmentation=True,
+                standardize=True,
+            )
+        )
         labels.append(int(row["cancer"]))
 
     batch_x = torch.stack(tensors).to(device)  # shape (10, 3, 1520, 912)
@@ -183,6 +188,7 @@ def run_gpu_smoke_test() -> dict:
         "checkpoint_exists": True,
         "checkpoint_loaded_strict": bool(diag["is_fully_compatible"]),
         "encoder_frozen_verified": True,
+        "environment_metadata": env_meta,
     }
 
 
