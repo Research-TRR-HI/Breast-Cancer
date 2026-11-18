@@ -1,0 +1,15 @@
+# Pinned Python & package lockfile for AnchorShift TRUST reproduction
+# Python: 3.12.10 (local verified) / 3.11 (Modal Debian-slim image)
+torch==2.5.1
+torchvision==0.20.1
+numpy==2.5.3
+pandas==2.3.3
+scipy==1.17.1
+pydicom==3.0.2
+opencv-python-headless==4.11.0.86
+pillow==12.3.0
+omegaconf==2.3.0
+pylibjpeg==2.0.0
+pylibjpeg-libjpeg==2.1.0
+pylibjpeg-openjpeg==2.1.0
+python-gdcm==3.0.24
