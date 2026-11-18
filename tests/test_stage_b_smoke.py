@@ -25,8 +25,10 @@ import torch
 import torch.nn as nn
 
 from src.data.feature_cache import (
+    CACHE_SCHEMA_VERSION,
     CacheIntegrityError,
     extract_or_resume_cache,
+    get_cache_manifest_sha256,
     load_cache_manifest,
     verify_cache_integrity,
     write_cache_manifest,
@@ -37,12 +39,20 @@ from src.data.preprocessing import (
     apply_trust_augmentation,
     decode_dicom_array,
     extract_cropped_mammogram,
+    extract_cropped_mammogram_with_metadata,
     get_preprocessing_config_hash,
+    get_stage1_config_hash,
     prepare_tensor_from_cropped,
     preprocess_dicom,
     sample_augmentation_params,
 )
 from src.data.rsna_dataset import BalancedBatchSampler, build_epoch_draw_schedule
+from src.data.stage1_cache import (
+    Stage1CacheError,
+    Stage1CroppedLoader,
+    build_or_resume_stage1_cache,
+    verify_stage1_cache,
+)
 from src.models.losses import DynamicDismissalLoss, FocalLoss, TRUSTLoss
 from src.models.mammo_clip_loader import load_and_verify_mammo_clip
 from src.models.trust_model import (
@@ -54,11 +64,19 @@ from src.models.trust_model import (
 from src.training.calibration import (
     clopper_pearson_upper_bound,
     compute_dynamic_training_threshold,
+    compute_dynamic_training_threshold_with_diagnostics,
     compute_target_recall_threshold,
     evaluate_dismissal_at_threshold,
 )
-from src.training.checkpointing import load_training_checkpoint, save_training_checkpoint
-from src.training.parity_pilot import run_online_vs_cached_parity_pilot
+from src.training.checkpointing import (
+    CHECKPOINT_SCHEMA_VERSION,
+    MANDATORY_CONFIG_KEYS,
+    load_training_checkpoint,
+    save_training_checkpoint,
+)
+from src.training.engine import build_trust_head, run_effective_batch_step
+from src.training.parity_pilot import run_online_vs_cached_parity_pilot, sample_pilot_1200
+from src.utils.env_metadata import PINNED_MODAL_PIP_PACKAGES, collect_runtime_environment_metadata
 
 
 def _create_synthetic_dicom(
@@ -439,35 +457,49 @@ class TestAnchorShiftPipeline(unittest.TestCase):
                 eval_extract_fn=_eval_extract,
                 model_checkpoint_sha256="model_sha_abc",
                 preprocess_config_hash="prep_hash_xyz",
+                stage1_config_hash="s1_hash_123",
                 split_manifest_sha256="split_sha_123",
                 seed=42,
                 batch_size=80,
                 n_pos=20,
                 epoch_policy="paper_independent",
                 embed_dim=16,
+                encoder_precision="fp32",
                 batches_per_shard=1,
             )
 
             # Valid verification passes
             verify_cache_integrity(
-                cache_root, "model_sha_abc", "prep_hash_xyz", "split_sha_123",
-                expected_epochs=2, expected_steps_per_epoch=2, expected_schedules=schedules
+                cache_root,
+                expected_model_sha256="model_sha_abc",
+                expected_preprocess_hash="prep_hash_xyz",
+                expected_stage1_hash="s1_hash_123",
+                expected_split_sha256="split_sha_123",
+                expected_epochs=2,
+                expected_steps_per_epoch=2,
+                expected_batch_size=80,
+                expected_n_pos=20,
+                expected_epoch_policy="paper_independent",
+                expected_embed_dim=16,
+                expected_encoder_precision="fp32",
+                expected_seed=42,
+                expected_schedules=schedules,
             )
 
             # Wrong checkpoint hash rejected
             with self.assertRaises(CacheIntegrityError):
-                verify_cache_integrity(cache_root, "wrong_sha", "prep_hash_xyz", "split_sha_123")
+                verify_cache_integrity(cache_root, "wrong_sha", "prep_hash_xyz", expected_split_sha256="split_sha_123", expected_embed_dim=16)
 
             # Wrong preprocessing hash rejected
             with self.assertRaises(CacheIntegrityError):
-                verify_cache_integrity(cache_root, "model_sha_abc", "wrong_prep", "split_sha_123")
+                verify_cache_integrity(cache_root, "model_sha_abc", "wrong_prep", expected_split_sha256="split_sha_123", expected_embed_dim=16)
 
             # Duplicate draw detection
             dup_manifest = dict(manifest)
             dup_manifest["train_shards"] = list(manifest["train_shards"]) + [manifest["train_shards"][0]]
             write_cache_manifest(cache_root, dup_manifest)
             with self.assertRaises(CacheIntegrityError):
-                verify_cache_integrity(cache_root, "model_sha_abc", "prep_hash_xyz", "split_sha_123")
+                verify_cache_integrity(cache_root, "model_sha_abc", "prep_hash_xyz", expected_split_sha256="split_sha_123", expected_embed_dim=16)
             write_cache_manifest(cache_root, manifest)
 
             # Missing/corrupted shard detected, and extract_or_resume_cache recovers cleanly
@@ -475,7 +507,7 @@ class TestAnchorShiftPipeline(unittest.TestCase):
             shard0.unlink()
             (cache_root / "stale.pt.tmp").write_bytes(b"corrupt")
             with self.assertRaises(CacheIntegrityError):
-                verify_cache_integrity(cache_root, "model_sha_abc", "prep_hash_xyz", "split_sha_123")
+                verify_cache_integrity(cache_root, "model_sha_abc", "prep_hash_xyz", expected_split_sha256="split_sha_123", expected_embed_dim=16)
 
             recovered = extract_or_resume_cache(
                 cache_root=cache_root,
@@ -484,18 +516,32 @@ class TestAnchorShiftPipeline(unittest.TestCase):
                 eval_extract_fn=_eval_extract,
                 model_checkpoint_sha256="model_sha_abc",
                 preprocess_config_hash="prep_hash_xyz",
+                stage1_config_hash="s1_hash_123",
                 split_manifest_sha256="split_sha_123",
                 seed=42,
                 batch_size=80,
                 n_pos=20,
                 epoch_policy="paper_independent",
                 embed_dim=16,
+                encoder_precision="fp32",
                 batches_per_shard=1,
             )
             self.assertFalse((cache_root / "stale.pt.tmp").exists())
             verify_cache_integrity(
-                cache_root, "model_sha_abc", "prep_hash_xyz", "split_sha_123",
-                expected_epochs=2, expected_steps_per_epoch=2, expected_schedules=schedules
+                cache_root,
+                expected_model_sha256="model_sha_abc",
+                expected_preprocess_hash="prep_hash_xyz",
+                expected_stage1_hash="s1_hash_123",
+                expected_split_sha256="split_sha_123",
+                expected_epochs=2,
+                expected_steps_per_epoch=2,
+                expected_batch_size=80,
+                expected_n_pos=20,
+                expected_epoch_policy="paper_independent",
+                expected_embed_dim=16,
+                expected_encoder_precision="fp32",
+                expected_seed=42,
+                expected_schedules=schedules,
             )
             self.assertEqual(len(recovered["train_shards"]), 4)
 
@@ -570,34 +616,77 @@ class TestAnchorShiftPipeline(unittest.TestCase):
         self.assertEqual(res["prediction_agreement_95"], 1.0)
         self.assertEqual(res["prediction_agreement_98"], 1.0)
         self.assertEqual(res["online_eval_98"], res["cached_eval_98"])
+        self.assertTrue(len(res["cache_manifest_sha256"]) == 64)
+        self.assertEqual(len(res["online_tau_diag_trajectory"]), 3)
+
+    @staticmethod
+    def _sample_v2_training_config(**overrides) -> dict:
+        cfg = {
+            "baseline": "trust",
+            "epochs": 2,
+            "batch_size": 80,
+            "n_pos": 20,
+            "steps_per_epoch": 2,
+            "epoch_policy": "paper_independent",
+            "lr": 1e-3,
+            "weight_decay": 1e-4,
+            "margin": 0.10,
+            "lambda_focal": 1.0,
+            "lambda_dismiss": 0.05,
+            "initial_tau": 0.05,
+            "grad_clip": 5.0,
+            "micro_batch_size": 80,
+            "precision_policy": "fp32",
+            "seed": 42,
+            "preprocess_config_hash": "prep_hash_v2",
+            "stage1_config_hash": "s1_hash_v2",
+            "model_checkpoint_sha256": "model_sha_v2",
+            "split_manifest_sha256": "split_sha_v2",
+            "use_cached_features": True,
+            "cache_manifest_sha256": "cache_manifest_sha_v2",
+        }
+        cfg.update(overrides)
+        return cfg
 
     def test_g2_checkpoint_save_and_exact_resume_parity(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             ckpt_path = Path(tmp) / "resume.pt"
             labels = np.array([1] * 25 + [0] * 100)
-            cfg = {"baseline": "trust", "seed": 42, "epochs": 2}
+            cfg = self._sample_v2_training_config()
 
             def _make_state():
                 random.seed(42)
                 np.random.seed(42)
                 torch.manual_seed(42)
-                head = nn.Sequential(nn.LayerNorm(16), nn.Dropout(0.3), nn.Linear(16, 1))
+                head = build_trust_head(embed_dim=16, dropout_rate=0.3, seed=42, device=torch.device("cpu"))
                 opt = torch.optim.AdamW(head.parameters(), lr=1e-3, weight_decay=1e-4)
                 sampler = BalancedBatchSampler(labels, batch_size=80, n_pos=20, seed=42, steps_per_epoch=2)
                 aug_rng = np.random.default_rng(777)
                 return head, opt, sampler, aug_rng
 
-            def _run_one_epoch(head, opt, sampler, aug_rng, crit, tau_t):
+            def _run_one_epoch(head, opt, sampler, aug_rng, crit, tau_t, epoch_num):
                 losses = []
-                for idxs in sampler:
+                for b_idx, idxs in enumerate(sampler):
                     _ = sample_augmentation_params(aug_rng)
                     bx = torch.randn(len(idxs), 16)
-                    by = torch.tensor(labels[idxs], dtype=torch.float32).unsqueeze(1)
-                    opt.zero_grad()
-                    loss, _ = crit(head(bx), by, tau_t=tau_t)
-                    loss.backward()
-                    opt.step()
-                    losses.append(float(loss.item()))
+                    by = torch.tensor(labels[idxs], dtype=torch.float32)
+                    step_loss, _, _, _ = run_effective_batch_step(
+                        head=head,
+                        optimizer=opt,
+                        scaler=None,
+                        criterion=crit,
+                        batch_targets=by,
+                        tau_t=tau_t,
+                        micro_batch_size=80,
+                        grad_clip=5.0,
+                        use_amp=False,
+                        device=torch.device("cpu"),
+                        seed=42,
+                        epoch=epoch_num,
+                        batch_idx=b_idx,
+                        batch_features=bx,
+                    )
+                    losses.append(float(step_loss))
                 return losses
 
             crit = TRUSTLoss(baseline="trust")
@@ -605,16 +694,16 @@ class TestAnchorShiftPipeline(unittest.TestCase):
             # Missing checkpoint must raise FileNotFoundError (never silently restart at epoch 1)
             h0, o0, s0, a0 = _make_state()
             with self.assertRaises(FileNotFoundError):
-                load_training_checkpoint(ckpt_path, h0, o0, None, torch.device("cpu"), sampler=s0, aug_rng=a0)
+                load_training_checkpoint(ckpt_path, h0, o0, None, torch.device("cpu"), sampler=s0, aug_rng=a0, expected_config=cfg)
 
             # Uninterrupted 2-epoch run
             h_full, o_full, s_full, a_full = _make_state()
-            _run_one_epoch(h_full, o_full, s_full, a_full, crit, 0.05)
-            ep2_losses_full = _run_one_epoch(h_full, o_full, s_full, a_full, crit, 0.12)
+            _run_one_epoch(h_full, o_full, s_full, a_full, crit, 0.05, epoch_num=1)
+            ep2_losses_full = _run_one_epoch(h_full, o_full, s_full, a_full, crit, 0.12, epoch_num=2)
 
             # Split run: epoch 1 -> save -> load -> epoch 2
             h_part, o_part, s_part, a_part = _make_state()
-            ep1_losses = _run_one_epoch(h_part, o_part, s_part, a_part, crit, 0.05)
+            ep1_losses = _run_one_epoch(h_part, o_part, s_part, a_part, crit, 0.05, epoch_num=1)
             save_training_checkpoint(
                 ckpt_path, h_part, o_part, None, epoch=1, tau_t=0.12,
                 history=[{"epoch": 1, "loss": ep1_losses[-1]}],
@@ -622,7 +711,6 @@ class TestAnchorShiftPipeline(unittest.TestCase):
             )
 
             h_res, o_res, s_res, a_res = _make_state()
-            # Corrupt weights deliberately before loading to prove restore overrides them
             with torch.no_grad():
                 h_res[2].weight.zero_()
             comp_ep, tau_res, _, _ = load_training_checkpoint(
@@ -630,17 +718,322 @@ class TestAnchorShiftPipeline(unittest.TestCase):
             )
             self.assertEqual(comp_ep, 1)
             self.assertEqual(tau_res, 0.12)
-            ep2_losses_res = _run_one_epoch(h_res, o_res, s_res, a_res, crit, tau_res)
+            ep2_losses_res = _run_one_epoch(h_res, o_res, s_res, a_res, crit, tau_res, epoch_num=2)
 
             self.assertEqual(ep2_losses_full, ep2_losses_res)
             for (n1, p1), (n2, p2) in zip(h_full.named_parameters(), h_res.named_parameters()):
                 self.assertTrue(torch.equal(p1, p2), f"Resumed parameter {n1} diverged")
 
             # Mismatched expected config raises ValueError
+            bad_cfg = self._sample_v2_training_config(baseline="ce")
             with self.assertRaises(ValueError):
                 load_training_checkpoint(
-                    ckpt_path, h_res, o_res, None, torch.device("cpu"), expected_config={"baseline": "ce"}
+                    ckpt_path, h_res, o_res, None, torch.device("cpu"), sampler=s_res, aug_rng=a_res, expected_config=bad_cfg
                 )
+
+    # =========================================================================
+    # H. Additional Critical Fix Validation Tests (A4, B2, C4, D2, F2, F3, G3)
+    # =========================================================================
+    def test_a4_head_initialization_invariant_to_prior_encoder_init(self) -> None:
+        torch.manual_seed(999)
+        outer_before = torch.get_rng_state()
+
+        # Cached mode: direct head construction
+        head_cached = build_trust_head(embed_dim=2048, dropout_rate=0.3, seed=42, device=torch.device("cpu"))
+        self.assertTrue(torch.equal(outer_before, torch.get_rng_state()))
+
+        # Online mode: construct heavy encoder before head construction, advancing outer RNG
+        _ = MammoCLIPEncoder(checkpoint_path=None, freeze=True, model_name="efficientnet-b5")
+        _ = torch.randn(100, 100)
+        head_online = build_trust_head(embed_dim=2048, dropout_rate=0.3, seed=42, device=torch.device("cpu"))
+
+        for (n1, p1), (n2, p2) in zip(head_cached.named_parameters(), head_online.named_parameters()):
+            self.assertEqual(n1, n2)
+            self.assertTrue(torch.equal(p1, p2), f"Initial parameter {n1} differed across encoder/no-encoder modes")
+
+    def test_b2_microbatch_positive_weighting_exact_equivalence(self) -> None:
+        torch.manual_seed(7)
+        feats = torch.randn(80, 32)
+        # Skewed ordering: all 60 negatives first, all 20 positives last (worst case for naive micro-batch averaging)
+        targets = torch.tensor([0.0] * 60 + [1.0] * 20, dtype=torch.float32)
+        crit = TRUSTLoss(baseline="trust", margin=0.10, lambda_focal=1.0, lambda_dismiss=0.05)
+
+        h_full = build_trust_head(embed_dim=32, dropout_rate=0.0, seed=42)
+        opt_full = torch.optim.AdamW(h_full.parameters(), lr=1e-3, weight_decay=1e-4)
+        loss_full, comp_full, _, grads_full = run_effective_batch_step(
+            head=h_full, optimizer=opt_full, scaler=None, criterion=crit,
+            batch_targets=targets, tau_t=0.50, micro_batch_size=80, grad_clip=5.0,
+            use_amp=False, device=torch.device("cpu"), seed=42, epoch=1, batch_idx=0,
+            batch_features=feats, capture_features_and_grads=True,
+        )
+
+        # Split into uneven micro-batches of 25 (mb0=[0..24] has 0 pos; mb1=[25..49] has 0 pos; mb2 has 15 pos; mb3 has 5 pos)
+        h_mb = build_trust_head(embed_dim=32, dropout_rate=0.0, seed=42)
+        opt_mb = torch.optim.AdamW(h_mb.parameters(), lr=1e-3, weight_decay=1e-4)
+        loss_mb, comp_mb, _, grads_mb = run_effective_batch_step(
+            head=h_mb, optimizer=opt_mb, scaler=None, criterion=crit,
+            batch_targets=targets, tau_t=0.50, micro_batch_size=25, grad_clip=5.0,
+            use_amp=False, device=torch.device("cpu"), seed=42, epoch=1, batch_idx=0,
+            batch_features=feats, capture_features_and_grads=True,
+        )
+
+        self.assertAlmostEqual(loss_full, loss_mb, places=5)
+        for k in ("loss_bce", "loss_focal", "loss_dismiss", "loss_total"):
+            self.assertAlmostEqual(comp_full[k], comp_mb[k], places=5, msg=f"Component {k} diverged")
+        for pname in grads_full:
+            diff = float((grads_full[pname] - grads_mb[pname]).abs().max().item())
+            self.assertLess(diff, 1e-5, f"Grad {pname} diverged: {diff}")
+
+    def test_c4_pilot_1200_split_and_nonzero_tau_calibration(self) -> None:
+        df_full = pd.read_csv("datasets/rsna/splits_seed42.csv")
+        tr_df, tc_df, vc_df = sample_pilot_1200(df_full, seed=42)
+
+        self.assertEqual(len(tr_df), 500)
+        self.assertEqual(int((tr_df["cancer"] == 1).sum()), 21)
+        self.assertEqual(len(tc_df), 500)
+        self.assertEqual(int((tc_df["cancer"] == 1).sum()), 20)
+        self.assertEqual(int((tc_df["cancer"] == 0).sum()), 480)
+        self.assertEqual(len(vc_df), 200)
+        self.assertEqual(int((vc_df["cancer"] == 1).sum()), 8)
+
+        tr_pts = set(tr_df["patient_id"].astype(str))
+        tc_pts = set(tc_df["patient_id"].astype(str))
+        vc_pts = set(vc_df["patient_id"].astype(str))
+        self.assertEqual(len(tr_pts & tc_pts), 0)
+        self.assertEqual(len(tr_pts & vc_pts), 0)
+        self.assertEqual(len(tc_pts & vc_pts), 0)
+
+        # N=500 with separated scores achieves nonzero tau_t under CP95 <= 1%
+        scores_500 = np.concatenate([np.linspace(0.01, 0.25, 480), np.linspace(0.70, 0.99, 20)])
+        labels_500 = np.array([0] * 480 + [1] * 20, dtype=np.int64)
+        tau_500, diag_500 = compute_dynamic_training_threshold_with_diagnostics(scores_500, labels_500)
+        self.assertEqual(diag_500["min_zero_miss_dismissed_required"], 299)
+        self.assertTrue(diag_500["zero_miss_feasible"])
+        self.assertTrue(diag_500["is_nonzero_threshold"])
+        self.assertGreater(tau_500, 0.25)
+        self.assertLessEqual(diag_500["cp_upper_bound"], 0.01)
+
+        # Legacy N=100 cannot achieve CP95 <= 1% even with perfect predictions -> exact 0.0 fallback
+        scores_100 = np.concatenate([np.linspace(0.01, 0.10, 96), np.linspace(0.90, 0.99, 4)])
+        labels_100 = np.array([0] * 96 + [1] * 4, dtype=np.int64)
+        tau_100, diag_100 = compute_dynamic_training_threshold_with_diagnostics(scores_100, labels_100)
+        self.assertFalse(diag_100["zero_miss_feasible"])
+        self.assertTrue(diag_100["used_zero_fallback"])
+        self.assertEqual(tau_100, 0.0)
+
+    def test_d2_preprocessing_strict_laterality_lut_and_seg_diagnostics(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            # 1. Missing laterality raises ValueError under strict policy
+            arr = np.zeros((100, 100), dtype=np.uint16)
+            arr[20:80, 10:60] = 50000
+            p_nolat = Path(tmp) / "nolat.dcm"
+            _create_synthetic_dicom(p_nolat, arr, photometric="MONOCHROME2", laterality="")
+            with self.assertRaises(ValueError):
+                preprocess_dicom(p_nolat, laterality_policy="strict")
+
+            # 2. Malformed ModalityLUTSequence must fail loudly rather than swallow LUT error
+            p_badlut = Path(tmp) / "badlut.dcm"
+            _create_synthetic_dicom(p_badlut, arr, photometric="MONOCHROME2", laterality="L")
+            ds = pydicom.dcmread(str(p_badlut))
+            from pydicom.dataset import Dataset
+            from pydicom.sequence import Sequence
+            bad_item = Dataset()
+            bad_item.LUTDescriptor = [1, 0, 16]
+            # Deliberately omit LUTData to corrupt LUT sequence
+            ds.ModalityLUTSequence = Sequence([bad_item])
+            ds.save_as(str(p_badlut))
+            with self.assertRaises(RuntimeError):
+                decode_dicom_array(p_badlut, apply_luts=True)
+
+            # 3. Empty mask raises ValueError under strict_segmentation=True and reports explicit status when False
+            uniform = np.full((80, 80), 100.0, dtype=np.float32)
+            with self.assertRaises(ValueError):
+                extract_cropped_mammogram_with_metadata(
+                    uniform, photometric="MONOCHROME2", laterality="L", strict_segmentation=True
+                )
+            diag_res = extract_cropped_mammogram_with_metadata(
+                uniform, photometric="MONOCHROME2", laterality="L", strict_segmentation=False
+            )
+            self.assertEqual(diag_res.segmentation_status, "empty_mask")
+            self.assertTrue(diag_res.used_fallback_uncropped)
+
+            # 4. Config hash sensitivity across Stage-1 & Stage-2 knobs + verbatim TRUST default use_largest_cc=False
+            h_default = get_stage1_config_hash()
+            self.assertNotEqual(h_default, get_stage1_config_hash(use_largest_cc=True))
+            self.assertNotEqual(h_default, get_stage1_config_hash(laterality_policy="heuristic_fallback"))
+            self.assertNotEqual(h_default, get_stage1_config_hash(crop_margin_frac=0.05))
+            self.assertNotEqual(
+                get_preprocessing_config_hash(use_largest_cc=False),
+                get_preprocessing_config_hash(use_largest_cc=True),
+            )
+
+    def test_f2_stage1_uint16_cache_build_verify_resume_and_stage2_parity(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            raw_root = Path(tmp) / "raw"
+            raw_root.mkdir(parents=True, exist_ok=True)
+            s1_root = Path(tmp) / "stage1"
+            rows = []
+            for idx, (phot, lat) in enumerate([("MONOCHROME1", "R"), ("MONOCHROME2", "L"), ("MONOCHROME2", "R"), ("MONOCHROME1", "L")]):
+                img = np.zeros((100, 90), dtype=np.uint16)
+                cols = slice(35, 85) if lat == "R" else slice(5, 55)
+                img[15:85, cols] = 52000
+                if phot == "MONOCHROME1":
+                    img = 65535 - img
+                rel = f"img_{idx}.dcm"
+                _create_synthetic_dicom(raw_root / rel, img, photometric=phot, laterality=lat)
+                rows.append({"image_id": f"id_{idx}", "patient_id": f"pt_{idx}", "split": "train", "rel_path": rel, "laterality": lat})
+
+            df = pd.DataFrame(rows)
+            s1_hash = get_stage1_config_hash()
+            manifest = build_or_resume_stage1_cache(
+                cache_root=s1_root, manifest_df=df, raw_root=raw_root,
+                split_manifest_sha256="split_sha_s1", images_per_shard=2, strict_segmentation=True,
+            )
+            self.assertEqual(manifest["summary"]["successful_segmentation_count"], 4)
+            self.assertEqual(manifest["summary"]["fallback_count"], 0)
+            verify_stage1_cache(s1_root, df, expected_stage1_hash=s1_hash, expected_split_sha256="split_sha_s1", verify_pixel_hashes=True)
+
+            # Stage-1 uint16 -> Stage-2 equals end-to-end preprocess_dicom bitwise
+            loader = Stage1CroppedLoader(s1_root, manifest)
+            aug = sample_augmentation_params(np.random.default_rng(7))
+            for _, row in df.iterrows():
+                t_direct = preprocess_dicom(raw_root / row["rel_path"], target_size=(64, 48), laterality=row["laterality"], augment_params=aug)
+                t_stage1 = prepare_tensor_from_cropped(loader.load_uint16(row["image_id"]), target_size=(64, 48), augment_params=aug)
+                self.assertTrue(torch.equal(t_direct, t_stage1))
+
+            # Recovery after deleting shard + pixel corruption rejection
+            (s1_root / manifest["shards"][0]["file"]).unlink()
+            (s1_root / "stale.pt.tmp").write_bytes(b"tmp")
+            with self.assertRaises(Stage1CacheError):
+                verify_stage1_cache(s1_root, df, expected_stage1_hash=s1_hash)
+            rebuilt = build_or_resume_stage1_cache(
+                cache_root=s1_root, manifest_df=df, raw_root=raw_root,
+                split_manifest_sha256="split_sha_s1", images_per_shard=2, strict_segmentation=True,
+            )
+            self.assertFalse((s1_root / "stale.pt.tmp").exists())
+            verify_stage1_cache(s1_root, df, expected_stage1_hash=s1_hash, verify_pixel_hashes=True)
+
+            # Corrupt a pixel directly inside shard -> verify_pixel_hashes catches mismatch
+            sp = s1_root / rebuilt["shards"][0]["file"]
+            sd = torch.load(str(sp), map_location="cpu", weights_only=False)
+            sd["images"]["id_0"][0, 0] ^= 1
+            torch.save(sd, str(sp))
+            with self.assertRaises(Stage1CacheError):
+                verify_stage1_cache(s1_root, df, expected_stage1_hash=s1_hash, verify_pixel_hashes=True)
+
+    def test_f3_feature_cache_v2_strict_dtype_shape_finiteness_and_metadata_validation(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            cache_root = Path(tmp) / "cache_v2"
+            labels = np.array([1] * 25 + [0] * 100)
+            sampler = BalancedBatchSampler(labels, batch_size=80, n_pos=20, seed=42, steps_per_epoch=2)
+            aug_rng = np.random.default_rng(11)
+            schedules = {ep: build_epoch_draw_schedule(sampler, ep, aug_rng) for ep in (1, 2)}
+
+            def _ex(rec):
+                return (
+                    torch.ones(len(rec.indices), 16, dtype=torch.float32),
+                    torch.tensor([labels[i] for i in rec.indices], dtype=torch.float32),
+                    [f"i_{x}" for x in rec.indices],
+                )
+
+            def _ev(sp):
+                return torch.ones(4, 16), torch.tensor([1, 0, 1, 0], dtype=torch.float32), [f"{sp}_{k}" for k in range(4)], [f"p_{k}" for k in range(4)]
+
+            manifest = extract_or_resume_cache(
+                cache_root=cache_root, schedules_by_epoch=schedules, extract_batch_fn=_ex, eval_extract_fn=_ev,
+                model_checkpoint_sha256="msha", preprocess_config_hash="phash", stage1_config_hash="s1h",
+                split_manifest_sha256="ssha", seed=42, batch_size=80, n_pos=20, epoch_policy="paper_independent",
+                embed_dim=16, encoder_precision="amp", batches_per_shard=2,
+            )
+            self.assertEqual(manifest["schema_version"], CACHE_SCHEMA_VERSION)
+            self.assertEqual(len(get_cache_manifest_sha256(cache_root)), 64)
+
+            eval_meta = {
+                "train_calib": ([f"train_calib_{k}" for k in range(4)], [f"p_{k}" for k in range(4)], [1, 0, 1, 0]),
+                "val_calib": ([f"val_calib_{k}" for k in range(4)], [f"p_{k}" for k in range(4)], [1, 0, 1, 0]),
+            }
+            verify_cache_integrity(
+                cache_root, "msha", "phash", expected_stage1_hash="s1h", expected_split_sha256="ssha",
+                expected_epochs=2, expected_steps_per_epoch=2, expected_batch_size=80, expected_n_pos=20,
+                expected_epoch_policy="paper_independent", expected_embed_dim=16, expected_encoder_precision="amp",
+                expected_seed=42, expected_schedules=schedules, expected_eval_meta=eval_meta,
+            )
+
+            for bad_kw in (
+                {"expected_encoder_precision": "fp32"},
+                {"expected_stage1_hash": "wrong_s1"},
+                {"expected_batch_size": 40},
+                {"expected_n_pos": 10},
+                {"expected_epoch_policy": "full_neg_pass"},
+                {"expected_seed": 99},
+                {"expected_eval_meta": {"train_calib": (eval_meta["train_calib"][0], eval_meta["train_calib"][1], [0, 0, 1, 0])}},
+            ):
+                with self.assertRaises(CacheIntegrityError):
+                    verify_cache_integrity(cache_root, "msha", "phash", expected_embed_dim=16, **bad_kw)
+
+            # Inject NaN feature and match manifest sha so finiteness validator itself fires
+            shard_path = cache_root / manifest["train_shards"][0]["file"]
+            sd = torch.load(str(shard_path), map_location="cpu", weights_only=False)
+            sd["features"][0, 0, 0] = float("nan")
+            torch.save(sd, str(shard_path))
+            with self.assertRaises(CacheIntegrityError):
+                verify_cache_integrity(
+                    cache_root, "msha", "phash", expected_embed_dim=16, verify_shard_checksums=False
+                )
+
+    def test_g3_checkpoint_v2_rejects_old_schema_missing_keys_missing_rng_and_hash_mismatch(self) -> None:
+        self.assertEqual(len(MANDATORY_CONFIG_KEYS), 22)
+        with tempfile.TemporaryDirectory() as tmp:
+            ckpt_path = Path(tmp) / "ckpt_v2.pt"
+            labels = np.array([1] * 25 + [0] * 100)
+            cfg = self._sample_v2_training_config(precision_policy="amp")
+            head = build_trust_head(embed_dim=16, seed=42)
+            opt = torch.optim.AdamW(head.parameters(), lr=1e-3)
+            sampler = BalancedBatchSampler(labels, batch_size=80, n_pos=20, seed=42, steps_per_epoch=2)
+            aug_rng = np.random.default_rng(77)
+
+            save_training_checkpoint(
+                ckpt_path, head, opt, None, epoch=1, tau_t=0.05, history=[], training_config=cfg, sampler=sampler, aug_rng=aug_rng
+            )
+            raw = torch.load(str(ckpt_path), map_location="cpu", weights_only=False)
+            self.assertEqual(raw["schema_version"], CHECKPOINT_SCHEMA_VERSION)
+
+            # 1. Wrong schema_version rejected
+            bad_schema = dict(raw, schema_version="legacy_v1")
+            torch.save(bad_schema, str(ckpt_path))
+            with self.assertRaises(ValueError):
+                load_training_checkpoint(ckpt_path, head, opt, None, torch.device("cpu"), sampler, aug_rng, cfg)
+
+            # 2. Missing mandatory config key rejected
+            bad_cfg_payload = dict(raw)
+            bad_cfg_dict = dict(raw["training_config"])
+            bad_cfg_dict.pop("cache_manifest_sha256")
+            bad_cfg_payload["training_config"] = bad_cfg_dict
+            torch.save(bad_cfg_payload, str(ckpt_path))
+            with self.assertRaises(ValueError):
+                load_training_checkpoint(ckpt_path, head, opt, None, torch.device("cpu"), sampler, aug_rng, cfg)
+
+            # 3. Missing RNG state rejected
+            bad_rng_payload = dict(raw, aug_rng_state=None)
+            torch.save(bad_rng_payload, str(ckpt_path))
+            with self.assertRaises(ValueError):
+                load_training_checkpoint(ckpt_path, head, opt, None, torch.device("cpu"), sampler, aug_rng, cfg)
+
+            # 4. Cache manifest hash mismatch rejected
+            torch.save(raw, str(ckpt_path))
+            wrong_cache_cfg = self._sample_v2_training_config(precision_policy="amp", cache_manifest_sha256="other_sha")
+            with self.assertRaises(ValueError):
+                load_training_checkpoint(ckpt_path, head, opt, None, torch.device("cpu"), sampler, aug_rng, wrong_cache_cfg)
+
+            # 5. Lockfile & Modal pinned package consistency
+            lock_pkgs = [
+                ln.strip() for ln in Path("requirements-lock.txt").read_text(encoding="utf-8").splitlines()
+                if ln.strip() and not ln.strip().startswith("#")
+            ]
+            self.assertEqual(lock_pkgs, list(PINNED_MODAL_PIP_PACKAGES))
+            meta = collect_runtime_environment_metadata("fp32")
+            self.assertIn("python_version", meta)
+            self.assertIn("torch_version", meta)
 
 
 if __name__ == "__main__":
