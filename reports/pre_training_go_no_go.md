@@ -1,8 +1,11 @@
 # AnchorShift Pre-Training Go / No-Go Audit
 
+> [!NOTE]
+> **Superseded by Final Readiness Audit:** See [`reports/final_pre_training_readiness_audit.md`](final_pre_training_readiness_audit.md) for the complete post-correction audit covering Critical Fixes A–I, Stage-1 CPU `uint16` caching, 1,200-image pilot design, exact `625` batches/epoch (`1,000,000` occurrences, `8.327 GB` cache), `20/20` passing CPU tests, and exact 10-step Modal execution commands.
+
 **Audit Date:** 2026-11-18  
 **Target Experiment:** Stage B4 — Source Training (CE-Only vs. TRUST, 20 Epochs) on RSNA Screening Mammography  
-**Decision:** **CONDITIONAL GO** (Local code fixes & all 13 CPU unit/parity tests PASSED; cloud Modal online-vs-cached Mammo-CLIP parity pilot remains pending user execution before authorizing full feature extraction & 20-epoch training)
+**Decision:** **CONDITIONAL GO** (Local code fixes A–I & all **20/20** CPU unit/parity tests PASSED; cloud Modal Stage-1 audit/build, 1,200-image L40S online-vs-cached Mammo-CLIP parity pilot, and 5-batch extraction benchmark remain pending user execution before authorizing full feature extraction & 20-epoch training)
 
 ---
 
@@ -34,7 +37,7 @@
 | **Dynamic `tau_t` (init `0.05`, CP95 `<= 1%` on image-level `train_calib`, `0.0` fallback)** | **EXACT MATCH** | None. |
 | **Clopper–Pearson Eq. 5 (`n_d=0 -> 1.0`, `k_d=n_d -> 1.0`, 95% train / 99% eval)** | **EXACT MATCH** | None. |
 | **Preprocessing & Augmentation (LUTs, `MONOCHROME1`, R-mirror, `9x9` close + 10% crop, 16-bit, `1520x912`, `+-10°`/`0.9-1.1`/`+-5%`/`+-0.05`/`0.9-1.1`)** | **EXACT MATCH** | Minor implementation detail: when DICOM `ImageLaterality`/`Laterality` tags are absent, right-breast mirroring falls back to half-image mean intensity heuristic (`auto_detect_right=True`). Affine augmentation uses pure PyTorch `affine_grid`/`grid_sample` for CPU/GPU determinism. |
-| **Sampling (`20 pos + 60 neg` independent minibatches, 20 epochs)** | **EXACT MATCH + DOCUMENTED STEP COUNT** | Paper does not specify exact integer minibatches per epoch; we default to `steps_per_epoch = ceil(N_neg / 60) = 620` batches/epoch on our RSNA `train` split (configurable via CLI). |
+| **Sampling (`20 pos + 60 neg` independent minibatches, 20 epochs)** | **EXACT MATCH + DOCUMENTED STEP COUNT** | Paper does not specify exact integer minibatches per epoch; we default to `steps_per_epoch = ceil(37,444 / 60) = 625` batches/epoch on our RSNA `train` split (`38,251` imgs: `807` pos, `37,444` neg -> `1,000,000` 20-epoch occurrences). |
 | **Model Selection (20 epochs, final-epoch checkpoint, no `val_calib` double-use)** | **EXACT MATCH** | None. |
 | **Dataset Split Protocol** | **INTENTIONAL ANCHORSHIFT DEVIATION** | Paper uses 5-fold 70/10/20 CV on RSNA for in-domain, and 90/10 RSNA + 20% **labeled NLBS** for external threshold search. AnchorShift uses a single patient-level **70/10/20 RSNA split** (`train` 70%, `train_calib` 10%, `val_calib` 20%) so operating thresholds are frozen using **RSNA labels only** (strict zero-NLBS-label Protocol A). |
 | **NLBS Quarantine** | **STRICTLY ENFORCED** | Zero NLBS images or cancer labels accessed anywhere in Stage B. |
@@ -72,28 +75,13 @@
 > The previously reported `$17.06` / `429.6 MB` estimate from `ap-KidtVEoMzokd7fsFzpMeFo` measured **1 fixed feature per image (no augmentation)** and is **NOT valid** for stochastic-augmentation 20-epoch TRUST training. It is retained strictly as an empirical measurement of single-pass DICOM decode (`434.40 s / 1k imgs`) and Mammo-CLIP L40S inference throughput (`26.49 s / 1k imgs` = `2.12 s / 80 imgs`).
 
 ### Exact Corrected Workload Scale (RSNA `splits_seed42.csv`)
-- `train`: `38,251` images (`37,160` negative / `1,091` positive -> `ceil(37,160 / 60) = 620` batches/epoch of 80).
-- `train_calib`: `5,473` images (deterministic, unaugmented).
-- `val_calib`: `10,982` images (deterministic, unaugmented).
-- **20-Epoch Augmented Training Occurrences:** `620 batches/epoch * 80 imgs * 20 epochs = 992,000` occurrences.
-- **Modal L40S Combined Rate (Assumed):** GPU `$1.95/hr` + `6 vCPU * $0.04716/hr` + `16 GiB RAM * $0.00799/GiB-hr` = **`$2.3608/hr`**.
+- `train`: `38,251` images (`37,444` negative / `807` positive -> `ceil(37,444 / 60) = 625` batches/epoch of 80).
+- `train_calib`: `5,473` images (`114` positive, `5,359` negative; deterministic, unaugmented).
+- `val_calib`: `10,982` images (`237` positive, `10,745` negative; deterministic, unaugmented).
+- **20-Epoch Augmented Training Occurrences:** `625 batches/epoch * 80 imgs * 20 epochs = 1,000,000` occurrences.
+- **Storage Required:** `1,000,000` train occurrences × `2048` × `4 bytes` = **`8.192 GB` (`7.629 GiB`)** FP32 + `16,455` deterministic eval features = **`134.80 MB`** -> **`8.327 GB` total** (~`8.35 GB` with metadata).
 
-### Option 1 — Full Augmentation-Aware 20-Epoch Feature Cache (`--extract-cache` + `--use-cached-features`)
-*Note: `scripts/train_trust_modal.py --extract-cache` decodes DICOMs per occurrence unless Stage-1 cropped 16-bit PNGs are cached first. Using measured `ap-KidtVEoMzokd7fsFzpMeFo` timings:*
-- **Storage Required:**
-  - `992,000` train occurrences × `2048` × `4 bytes` = **`8.126 GB` (`7.57 GiB`)** FP32 (across sharded `.pt` files) + `16,455` deterministic eval features = **`134.8 MB`** -> **`~8.26 GB` total**.
-- **Extraction Time & Cost (ESTIMATE — unmeasured on Modal with Stage-1 crop):**
-  - **If decoding raw DICOMs on the fly per occurrence (NOT recommended on L40S):** `992,000` DICOM decodes at measured `434.40 s / 1k` = `~120 hrs` (`~$283`), which would blow the `$30` credit.
-  - **If Stage-1 cropped 16-bit images (54,706 imgs, `~1-3 GB`) are pre-cached once on cheap CPU workers (`~7.22 hrs / 6-vCPU` or 10 parallel CPU workers in `~45 min` ≈ `~$2.05`), and then 992,000 Stage-2 augment + L40S encoder passes run at measured `26.49 s / 1k` (`2.12 s / 80`):**
-    - L40S Feature Extraction (`992,000` passes): **`~7.30 hrs`** -> **`~$17.23`** (GPU `$14.24`, CPU `$2.07`, RAM `$0.93`).
-  - **Cached CE (20 epochs) + Cached TRUST (20 epochs):** Measured head-only speed (`< 1 min` each) -> **`~2 min` combined** -> **`~$0.08`**.
-  - **Total Option 1 (with CPU Stage-1 pre-crop):** **`~$19.36`** (within `$30` budget, leaving `~$10.64` for NLBS + UPA).
-
-### Option 2 — Stage-1 Deterministic CPU Cache + Online Stage-2 Augmentation & Live Frozen Encoder (`--use-cached-features=False` on Stage-1 PNGs)
-- **Storage Required:** 54,706 cropped 16-bit PNGs (`~1.5–3 GB`), zero `8.1 GB` feature cache needed.
-- **Cost (ESTIMATE):** CPU Stage-1 (`~$2.05`) + Live L40S CE (`~7.30 hrs ≈ $17.23`) + Live L40S TRUST (`~7.30 hrs ≈ $17.23`) = **`~$36.51`** (EXCEEDS `$30` credit because the L40S encoder runs twice — once for CE, once for TRUST!).
-
-**Cost Conclusion:** Pre-caching Stage-1 cropped 16-bit images on CPU workers + running `--extract-cache` once (Option 1) reuses the 992,000 augmented embeddings across both CE and TRUST (and any hyperparameter ablations), cutting total RSNA cost in half (**`~$19.36`** vs **`~$36.51`**) and staying inside our **`$30`** Modal budget.
+See [`reports/final_pre_training_readiness_audit.md`](final_pre_training_readiness_audit.md) Sections 6 & 9 for updated CPU Stage-1 `uint16` pre-caching estimates and the exact 10 copy-pasteable Modal execution commands.
 
 ---
 
