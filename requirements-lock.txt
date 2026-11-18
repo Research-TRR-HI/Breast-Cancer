@@ -1,5 +1,7 @@
-# Pinned Python & package lockfile for AnchorShift TRUST reproduction
-# Python: 3.12.10 (local verified) / 3.11 (Modal Debian-slim image)
+# Pinned Direct Dependencies for AnchorShift TRUST Reproduction
+# Python: 3.12 (verified locally on 3.12.10; Modal Debian-slim containers use Python 3.12)
+# Note: Transitive CUDA/OS wheels differ between Windows local CPU/CUDA and Linux Modal images;
+# every Modal run logs exact resolved runtime versions via src/utils/env_metadata.py.
 torch==2.5.1
 torchvision==0.20.1
 numpy==2.5.3
