@@ -3,56 +3,46 @@
 ## Directory Structure & Detailed File Context
 
 ### Root (`d:\Breast Cancer Research`)
-- `.gitignore`: Ignores Python cache, `.env`/secret keys, raw medical image/archive files (`*.dcm`, `*.zip`, `*.png`, etc.), and model checkpoints while keeping `datasets/` manifest CSVs tracked.
-- `AnchorShift_Research_Context.md`: 531-line master research brief for the project and AI sessions. Covers the clinical task (case-level screening mammography selective dismissal), the 3 target-label protocols (strict source-only frozen threshold, unsupervised target adaptation, target-label calibration), TRUST (2026, arXiv:2609.00300) model/loss/dataset/external-evaluation details, prior work (UPA 2023, Garrucho 2022, MC-SDS 2025, MammoDG 2026, TENT, SAR, Conformal Risk Control), dataset audit/caveats (RSNA, NLBS, IMDB, CMMD, VinDr-Mammo, EMBED, CBIS-DDSM), Stage A–D experimental protocol, go/no-go decision table, and strict project guardrails.
+- `.gitignore`: Ignores Python cache, `.env`/secret keys, raw medical image/archive files (`*.dcm`, `*.zip`, `*.png`, etc.), model checkpoints, and local `git commit.md` while keeping `datasets/` manifest CSVs tracked.
+- `.agents/rules/git-commit-rule.md`: Project Git commit rule enforcing one file per commit and strictly alternating author/committer identities between Tahsin Raihan Robbani and Hasin Ishrak (excluding `git commit.md`).
+- `AnchorShift_Research_Context.md`: 531-line master research brief covering clinical triage task, strict source-only vs. UPA vs. target-label calibration protocols, TRUST (arXiv:2609.00300) background, dataset caveats, Stage A–D design, and guardrails.
+- `requirements-lock.txt`: Pinned Python 3.12 / package versions (`torch==2.5.1`, `numpy==2.5.3`, `pandas==2.3.3`, `scipy==1.17.1`, `pydicom==3.0.2`, `opencv-python-headless==4.11.0.86`, `pillow==12.3.0`, etc.).
 
 ### `datasets/`
-- `rsna/manifest.csv`: Deterministic 54,706-row image manifest for RSNA Screening Mammography (`patient_id`, `image_id`, `laterality`, `view`, `cancer`, `biopsy`, `invasive`, `BIRADS`, `implant`, `density`, `machine_id`, `site_id`, `age`, `difficult_negative_case`, `rel_path`).
-- `rsna/splits_seed42.csv`: Deterministic patient-level RSNA split manifest (38,251 train, 5,473 train_calib, 10,982 val_calib) with 0 patient leakage across 11,913 unique patients.
-- `nlbs/manifest.csv`: Deterministic 26,988-row image manifest for NLBS enriched with `exam_id`, `visit_idx`, `split_cluster_id`, `StudyInstanceUID`, `SeriesInstanceUID`, `Manufacturer`, `ManufacturerModelName`, `PhotometricInterpretation`, `BitsStored`, `Rows`, `Columns`, `TransferSyntaxUID`, and `rel_path`.
-- `nlbs/exam_manifest.csv`: Deterministic 6,430-row examination-level manifest for NLBS grouped by `(case_id, StudyInstanceUID)` with `split_cluster_id` (`5,942` connected clusters) to prevent cross-split leakage across the 71 shared `StudyInstanceUID`s.
+- `rsna/manifest.csv`: Deterministic 54,706-row image manifest for RSNA Screening Mammography (`11,913` patients).
+- `rsna/splits_seed42.csv`: Zero-leakage patient-level RSNA splits (`38,251` train, `5,473` train_calib, `10,982` val_calib).
+- `nlbs/manifest.csv`: Deterministic 26,988-row image manifest for NLBS enriched with scanner, photometric, and cluster metadata.
+- `nlbs/exam_manifest.csv`: 6,430-row examination-level NLBS manifest with `5,942` Union-Find `split_cluster_id` components.
 
 ### `src/`
-- `models/efficientnet_custom.py` & `models/efficient_net_custom_utils.py`: Canonical Mammo-CLIP EfficientNet-B5 implementation (`batmanlab/Mammo-CLIP` / `lukemelas`) matching all 852 checkpoint tensors of `b5-model-best-epoch-7.tar`.
-- `models/trust_model.py`: Modular PyTorch implementations of `MammoCLIPEncoder` (frozen Mammo-CLIP `efficientnet-b5` with `strict=True` weight loading), `TRUSTClassifier` (LayerNorm + Dropout 0.3 + Linear(2048, 1) + Sigmoid), and `aggregate_case_scores` (max pooling per exam).
-- `models/losses.py`: `FocalLoss`, `DynamicDismissalLoss` (penalizing positive scores near/below dynamic tau_t), and unified `TRUSTLoss` supporting both CE-only baseline and TRUST modes.
-- `models/mammo_clip_loader.py`: Utilities to extract `image_encoder.` state dict from `b5-model-best-epoch-7.tar` and verify `strict=True` compatibility (852/852 keys) with `efficientnet_custom.EfficientNet`.
-- `data/preprocessing.py`: `preprocess_dicom` pipeline handling DICOM decoding, MONOCHROME1 polarity inversion, min-max normalization, Mammo-CLIP mean/std standardization (`0.3089279 / 0.25053555`), 1520x912 bilinear interpolation, and 3-channel expansion.
-- `data/splits.py`: Deterministic patient-level stratified split generator for RSNA.
-- `data/rsna_dataset.py`: `RSNADataset` and `BalancedBatchSampler` (20 positive, 60 negative per batch of 80).
-- `training/calibration.py`: `compute_target_recall_threshold` (quantile-based tau_t), `clopper_pearson_upper_bound`, and `evaluate_dismissal_at_threshold`.
+- `models/efficientnet_custom.py` & `models/efficient_net_custom_utils.py`: Canonical Mammo-CLIP EfficientNet-B5 implementation matching all 852 tensors of `b5-model-best-epoch-7.tar`.
+- `models/trust_model.py`: `MammoCLIPEncoder`, `TRUSTClassifier`, `aggregate_case_scores` (with strict equal-length validation), and `aggregate_case_labels`.
+- `models/losses.py`: Exact TRUST Eq. 6–8, 12–14 losses: `FocalLoss` (`gamma=2.0`, unweighted `alpha=None`), `DynamicDismissalLoss` (`margin=0.10`), and `TRUSTLoss` (`lambda_focal=1.0`, `lambda_dismiss=0.05`, supporting `ce`, `ce_focal`, `fixed_tau`, `trust`).
+- `models/mammo_clip_loader.py`: Pinned `shawn24/Mammo-CLIP` revision `2f356926a00fc3f0d9fdad1193c1464fd9adf564`, expected SHA-256 `0baccb0c...6fd02c`, strict `852/852` loader & checksum verifier.
+- `data/preprocessing.py`: Full TRUST Sec. 3.2 pipeline: DICOM decode + Modality/VOI LUTs, `MONOCHROME1` inversion, right-breast horizontal mirroring, border-median breast segmentation + hole filling + `9x9` morphological closing + `10%` bbox crop + 16-bit quantization, `1520x912` bilinear resize, `[0,1]` re-norm, seeded stochastic training augmentation, 3ch Mammo-CLIP standardization, and config hashing.
+- `data/splits.py`: Stratified patient-level split generator for RSNA.
+- `data/rsna_dataset.py`: `RSNADataset`, unified `BalancedBatchSampler` (defaulting to `paper_independent` 20 pos + 60 neg with `get_state`/`set_state`), and `build_epoch_draw_schedule`.
+- `data/feature_cache.py`: Sharded augmentation-aware FP32 occurrence cache (`(epoch, batch_idx, slot_idx)`), atomic shard writes, SHA-256 checksums, hash guards, duplicate/missing draw checks, and interrupted extraction recovery.
+- `training/calibration.py`: `clopper_pearson_upper_bound` (exact Eq. 5 with `n=0 -> 1.0`, `k=n -> 1.0`, input validation), `compute_dynamic_training_threshold` (CP95 `<= 1%` on image-level `train_calib`, `0.0` fallback), `compute_target_recall_threshold` (tie-safe discrete order statistic), and `evaluate_dismissal_at_threshold` (CP99 & `N/A` reporting).
+- `training/checkpointing.py`: Complete atomic save/restore of head, optimizer, scaler, epoch, `tau_t`, history, Python/NumPy/Torch CPU/CUDA RNGs, sampler RNG, augmentation RNG, and training config; raises on missing `--resume` checkpoint.
+- `training/parity_pilot.py`: Controlled Online-vs-Cached equivalence pilot verifying all 10 numerical & clinical agreement metrics.
 
 ### `reports/`
-- `trust_reproduction_plan.md`: Master Stage B reproduction report detailing TRUST Methods 3.1–3.11, Mammo-CLIP licensing & architecture, loss formulations, RSNA split design, NLBS 151 vs 149 exam analysis, GPU recommendations, and copy-pasteable execution commands.
-- `dataset_audit.md`: Stage A & A3 complete dataset audit report covering RSNA & NLBS counts, FRDR SHA-256 verification, DICOM header/pixel validation, scanner/repeat-exam findings, and TRUST readiness.
-- `audit_results.json`: Machine-readable Stage A audit output from `scripts/audit_datasets_modal.py --mode audit`.
-- `stage_a3_nlbs_results.json`: Machine-readable Stage A3 NLBS extraction, checksum verification (`8/8` matched), and exam-grouping summary from `scripts/stage_a3_nlbs_extract_modal.py`.
-- `discovery_summary.json`: Initial Stage A volume tree and CSV schema preview from `scripts/audit_datasets_modal.py --mode discover`.
+- `trust_paper_implementation_traceability.md`: Complete traceability matrix mapping `arXiv:2609.00300v1` equations, parameters, preprocessing, sampling, and thresholds to codebase implementation.
+- `pre_training_go_no_go.md`: Pre-training Go/No-Go audit (`CONDITIONAL GO`), corrected resource/cost calculations, test results, and exact manual cloud commands.
+- `trust_reproduction_plan.md`: Updated v2.0 Stage B reproduction & validation plan aligned with `arXiv:2609.00300v1`.
+- `dataset_audit.md`, `audit_results.json`, `stage_a3_nlbs_results.json`, `discovery_summary.json`: Stage A & A3 forensic audit reports and JSON outputs.
 
 ### `scripts/`
-- `download_mammoclip_modal.py`: CPU-only (`cpu=1.0, memory=2048`, `ephemeral_disk=32768`) Modal script to download `b5-model-best-epoch-7.tar` (1.65 GB) from Hugging Face into Modal Volume `rsna-mammography-vol` at `/models/mammo_clip/`.
-- `smoke_test_stage_b_modal.py`: Cost-optimized GPU smoke test on T4 (`gpu="T4"`, ~$0.59/hr, ~1 min runtime) using 10 real RSNA DICOMs to test preprocessing, forward/backward passes, loss calculation, and VRAM consumption.
-- `train_trust_modal.py`: Full Modal training pipeline on L4 (`gpu="L4"`, 20 epochs) supporting `--baseline trust` and `--baseline ce` with gradient accumulation, dynamic `tau_t` recalculation, and operating-threshold evaluation.
-- `stage_a3_nlbs_extract_modal.py`: CPU-only Modal script to verify FRDR SHA-256 checksums, extract NLBS `.7z` archives, and build `exam_manifest.csv`.
-- `audit_datasets_modal.py`: CPU-only Modal script for Stage A discovery and full dataset audit.
-- `download_nlbs_modal.py`: Modal downloader for NLBS from FRDR.
-- `download_rsna_modal.py`: Modal downloader for RSNA from Kaggle.
+- `download_mammoclip_modal.py`: CPU-only Modal downloader pinned to HuggingFace commit `2f356926a00fc3f0d9fdad1193c1464fd9adf564` with SHA-256 verification.
+- `smoke_test_stage_b_modal.py`: Tesla T4 strict `852/852` smoke test using updated LUT/crop preprocessing and corrected TRUST parameters.
+- `pilot_parity_modal.py`: 1,000-image L40S Online-vs-Cached Mammo-CLIP equivalence pilot (`fp32` + `amp`).
+- `train_trust_modal.py`: Corrected Modal training & `--extract-cache` pipeline (final 20th-epoch selection, CP95 `tau_t`, full RNG resume, dynamic `.with_options(gpu=...)`).
+- `benchmark_l40s_comparison_modal.py`: Historical 1,000-image L40S deterministic inference/encoding vs. live throughput benchmark (`ap-KidtVEoMzokd7fsFzpMeFo`).
+- `stage_a3_nlbs_extract_modal.py`, `audit_datasets_modal.py`, `download_nlbs_modal.py`, `download_rsna_modal.py`: Stage A/A3 CPU-only Modal scripts.
 
 ### `research_logs/`
-- `README.md`: Master directory overview, role and relationship to `memory/`, mandatory research logging rules, and chronological index table of all research logs.
-- `TEMPLATE.md`: Standardized 9-section template for AnchorShift research logs (Objective, Datasets/Volumes, Forensic Evidence, Mathematical Formulations, Implementation Details, QA/Tests, Limitations, Reproducibility Commands, Git Tracking).
-- `2026-11-18_stage_b_gpu_smoke_test_and_mammoclip_verification.md`: Deep-dive research log documenting the live Tesla T4 GPU smoke test (Run 1 `weights_only` unpickler diagnosis and Run 2 certified pass: `checkpoint_loaded: True`, 0.78 GB / 14.58 GB peak VRAM, 8.75s DICOM ingestion, frozen encoder verified).
-- `2026-11-17_trust_reproduction_and_rsna_splits.md`: Deep-dive research log documenting Stage B TRUST reproduction (arXiv:2609.00300), Mammo-CLIP B5 loader, zero-leakage patient-level RSNA split (8,339 train, 1,192 train-calib, 2,382 val-calib), BalancedBatchSampler, and 5/5 unit test verification.
-- `2026-11-17_nlbs_exam_manifest_and_leakage_clustering.md`: Deep-dive research log documenting Stage A3 NLBS extraction (26,988 DICOMs), 8/8 FRDR SHA-256 verification, clinical resolution of 149 positive patients vs 151 positive exams (`p_4334` & `p_4461`), discovery of 71 shared `StudyInstanceUID`s, and Union-Find graph clustering (`5,942` `split_cluster_id`s).
-- `2026-11-17_rsna_nlbs_dataset_audit.md`: Deep-dive research log documenting Stage A forensic audit of RSNA (54,706 DICOMs, 4.08% patient positive) and NLBS (26,988 DICOMs across 3 archives), discovery of 40/200 `MONOCHROME1` inverted polarities in RSNA, and discovery of Siemens scanner in NLBS.
+- `README.md`, `TEMPLATE.md`, `2026-11-17_*.md`, `2026-11-18_stage_b_gpu_smoke_test_and_mammoclip_verification.md`, `2026-11-18_pre_training_blocker_audit_and_l40s_prep.md`, `2026-11-18_l40s_sweep_and_caching_benchmark.md`, and `2026-11-18_pre_training_correction_and_trust_audit.md`.
 
 ### `tests/`
-- `test_stage_b_smoke.py`: Standalone local unit test suite (no cloud or GPU needed) verifying model forward pass, frozen encoder isolation, BCE/Focal/Dismissal losses, dynamic threshold calculation, Clopper-Pearson bound, case max aggregation, and patient split integrity (5/5 PASS).
-
-### `memory/`
-- `personality.md`: Assistant persona and communication rules.
-- `personal_info.md`: User profile (Hasin Ishrak), skills, projects, and background.
-- `purpose.md`: AnchorShift mission, protocol discipline, and guardrails.
-- `state.md`: Active Stage A–D checklist, blockers, and session progress.
-- `history.md`: Chronological conversation log (most recent first).
-- `index.md`: Detailed map of all files and directories in the workspace.
+- `test_stage_b_smoke.py`: 13-test local CPU suite covering Categories A–G (Model, Losses, Calibration, Preprocessing, Dataset/Sampler, Caching, Online-vs-Cached Parity & Checkpoint Resume).
