@@ -38,6 +38,7 @@ memory/personal_info.md
 *.onnx
 logs/
 wandb/
+stage1_manifest.json
 
 # OS / IDE
 .DS_Store
