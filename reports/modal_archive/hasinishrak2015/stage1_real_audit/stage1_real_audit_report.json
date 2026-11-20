@@ -1,0 +1,509 @@
+{
+  "stage1_config_hash": "d4f4ec48b700f91dfc90e5036c64899c9033d6784998ab22f4ea688f5df3402b",
+  "environment": {
+    "python_version": "3.12.10",
+    "platform": "Linux-4.19.0-gvisor-x86_64-with-glibc2.36",
+    "torch_version": "2.5.1+cu124",
+    "torchvision_version": "0.20.1+cu124",
+    "cuda_version": null,
+    "cudnn_version": null,
+    "gpu_name": "CPU",
+    "numpy_version": "2.5.3",
+    "scipy_version": "1.17.1",
+    "pandas_version": "2.3.3",
+    "pydicom_version": "3.0.2",
+    "opencv_version": "4.11.0",
+    "pillow_version": "12.3.0",
+    "omegaconf_version": "2.3.0",
+    "precision_policy": "cpu_stage1_uint16",
+    "pinned_modal_python": "3.12",
+    "pinned_direct_packages": [
+      "torch==2.5.1",
+      "torchvision==0.20.1",
+      "numpy==2.5.3",
+      "pandas==2.3.3",
+      "scipy==1.17.1",
+      "pydicom==3.0.2",
+      "opencv-python-headless==4.11.0.86",
+      "pillow==12.3.0",
+      "omegaconf==2.3.0",
+      "pylibjpeg==2.0.0",
+      "pylibjpeg-libjpeg==2.5.0",
+      "pylibjpeg-openjpeg==2.6.0",
+      "python-gdcm==3.0.24.1"
+    ]
+  },
+  "total_audited": 16,
+  "success_count": 16,
+  "fallback_count": 0,
+  "photometrics": {
+    "MONOCHROME1": 2,
+    "MONOCHROME2": 14
+  },
+  "records": [
+    {
+      "patient_id": "6880",
+      "image_id": "1924969787",
+      "laterality": "L",
+      "dcm_laterality": "L",
+      "view": "CC",
+      "site_id": 2,
+      "machine_id": 21,
+      "photometric": "MONOCHROME2",
+      "orig_shape": [
+        2776,
+        2082
+      ],
+      "crop_shape": [
+        2601,
+        2022
+      ],
+      "crop_bbox": [
+        0,
+        2601,
+        0,
+        2022
+      ],
+      "border_median": 0.0,
+      "segmentation_status": "success",
+      "used_fallback_uncropped": false,
+      "mirrored": false,
+      "preview_png": "L_CC_6880_1924969787.png"
+    },
+    {
+      "patient_id": "24706",
+      "image_id": "1395779659",
+      "laterality": "L",
+      "dcm_laterality": "L",
+      "view": "CC",
+      "site_id": 2,
+      "machine_id": 48,
+      "photometric": "MONOCHROME2",
+      "orig_shape": [
+        4096,
+        3328
+      ],
+      "crop_shape": [
+        4096,
+        2544
+      ],
+      "crop_bbox": [
+        0,
+        4096,
+        0,
+        2544
+      ],
+      "border_median": 0.0,
+      "segmentation_status": "success",
+      "used_fallback_uncropped": false,
+      "mirrored": false,
+      "preview_png": "L_CC_24706_1395779659.png"
+    },
+    {
+      "patient_id": "38500",
+      "image_id": "1821062272",
+      "laterality": "L",
+      "dcm_laterality": "L",
+      "view": "CC",
+      "site_id": 1,
+      "machine_id": 216,
+      "photometric": "MONOCHROME2",
+      "orig_shape": [
+        2294,
+        1914
+      ],
+      "crop_shape": [
+        1973,
+        836
+      ],
+      "crop_bbox": [
+        0,
+        1973,
+        0,
+        836
+      ],
+      "border_median": 2e-06,
+      "segmentation_status": "success",
+      "used_fallback_uncropped": false,
+      "mirrored": false,
+      "preview_png": "L_CC_38500_1821062272.png"
+    },
+    {
+      "patient_id": "7759",
+      "image_id": "504863415",
+      "laterality": "L",
+      "dcm_laterality": "L",
+      "view": "CC",
+      "site_id": 2,
+      "machine_id": 29,
+      "photometric": "MONOCHROME1",
+      "orig_shape": [
+        5355,
+        4915
+      ],
+      "crop_shape": [
+        5355,
+        2036
+      ],
+      "crop_bbox": [
+        0,
+        5355,
+        0,
+        2036
+      ],
+      "border_median": 0.0,
+      "segmentation_status": "success",
+      "used_fallback_uncropped": false,
+      "mirrored": false,
+      "preview_png": "L_CC_7759_504863415.png"
+    },
+    {
+      "patient_id": "62059",
+      "image_id": "1413062159",
+      "laterality": "L",
+      "dcm_laterality": "L",
+      "view": "MLO",
+      "site_id": 1,
+      "machine_id": 49,
+      "photometric": "MONOCHROME2",
+      "orig_shape": [
+        4096,
+        3328
+      ],
+      "crop_shape": [
+        4096,
+        2009
+      ],
+      "crop_bbox": [
+        0,
+        4096,
+        1319,
+        3328
+      ],
+      "border_median": 0.0,
+      "segmentation_status": "success",
+      "used_fallback_uncropped": false,
+      "mirrored": false,
+      "preview_png": "L_MLO_62059_1413062159.png"
+    },
+    {
+      "patient_id": "11394",
+      "image_id": "698279463",
+      "laterality": "L",
+      "dcm_laterality": "L",
+      "view": "MLO",
+      "site_id": 2,
+      "machine_id": 29,
+      "photometric": "MONOCHROME1",
+      "orig_shape": [
+        5355,
+        4915
+      ],
+      "crop_shape": [
+        5355,
+        2178
+      ],
+      "crop_bbox": [
+        0,
+        5355,
+        0,
+        2178
+      ],
+      "border_median": 0.0,
+      "segmentation_status": "success",
+      "used_fallback_uncropped": false,
+      "mirrored": false,
+      "preview_png": "L_MLO_11394_698279463.png"
+    },
+    {
+      "patient_id": "19715",
+      "image_id": "2133749712",
+      "laterality": "L",
+      "dcm_laterality": "L",
+      "view": "MLO",
+      "site_id": 2,
+      "machine_id": 48,
+      "photometric": "MONOCHROME2",
+      "orig_shape": [
+        4096,
+        3328
+      ],
+      "crop_shape": [
+        4096,
+        1874
+      ],
+      "crop_bbox": [
+        0,
+        4096,
+        0,
+        1874
+      ],
+      "border_median": 0.0,
+      "segmentation_status": "success",
+      "used_fallback_uncropped": false,
+      "mirrored": false,
+      "preview_png": "L_MLO_19715_2133749712.png"
+    },
+    {
+      "patient_id": "44836",
+      "image_id": "677343035",
+      "laterality": "L",
+      "dcm_laterality": "L",
+      "view": "MLO",
+      "site_id": 2,
+      "machine_id": 48,
+      "photometric": "MONOCHROME2",
+      "orig_shape": [
+        4096,
+        3328
+      ],
+      "crop_shape": [
+        4025,
+        2911
+      ],
+      "crop_bbox": [
+        0,
+        4025,
+        0,
+        2911
+      ],
+      "border_median": 0.0,
+      "segmentation_status": "success",
+      "used_fallback_uncropped": false,
+      "mirrored": false,
+      "preview_png": "L_MLO_44836_677343035.png"
+    },
+    {
+      "patient_id": "29207",
+      "image_id": "1966479153",
+      "laterality": "R",
+      "dcm_laterality": "R",
+      "view": "CC",
+      "site_id": 1,
+      "machine_id": 49,
+      "photometric": "MONOCHROME2",
+      "orig_shape": [
+        4096,
+        3328
+      ],
+      "crop_shape": [
+        4096,
+        3012
+      ],
+      "crop_bbox": [
+        0,
+        4096,
+        316,
+        3328
+      ],
+      "border_median": 0.0,
+      "segmentation_status": "success",
+      "used_fallback_uncropped": false,
+      "mirrored": true,
+      "preview_png": "R_CC_29207_1966479153.png"
+    },
+    {
+      "patient_id": "24369",
+      "image_id": "1111486571",
+      "laterality": "R",
+      "dcm_laterality": "R",
+      "view": "CC",
+      "site_id": 1,
+      "machine_id": 49,
+      "photometric": "MONOCHROME2",
+      "orig_shape": [
+        4096,
+        3328
+      ],
+      "crop_shape": [
+        4096,
+        2476
+      ],
+      "crop_bbox": [
+        0,
+        4096,
+        0,
+        2476
+      ],
+      "border_median": 0.0,
+      "segmentation_status": "success",
+      "used_fallback_uncropped": false,
+      "mirrored": true,
+      "preview_png": "R_CC_24369_1111486571.png"
+    },
+    {
+      "patient_id": "9070",
+      "image_id": "201036992",
+      "laterality": "R",
+      "dcm_laterality": "R",
+      "view": "CC",
+      "site_id": 2,
+      "machine_id": 21,
+      "photometric": "MONOCHROME2",
+      "orig_shape": [
+        2776,
+        2082
+      ],
+      "crop_shape": [
+        2776,
+        2019
+      ],
+      "crop_bbox": [
+        0,
+        2776,
+        0,
+        2019
+      ],
+      "border_median": 0.0,
+      "segmentation_status": "success",
+      "used_fallback_uncropped": false,
+      "mirrored": true,
+      "preview_png": "R_CC_9070_201036992.png"
+    },
+    {
+      "patient_id": "43238",
+      "image_id": "948213600",
+      "laterality": "R",
+      "dcm_laterality": "R",
+      "view": "CC",
+      "site_id": 2,
+      "machine_id": 21,
+      "photometric": "MONOCHROME2",
+      "orig_shape": [
+        2776,
+        2082
+      ],
+      "crop_shape": [
+        2761,
+        1752
+      ],
+      "crop_bbox": [
+        0,
+        2761,
+        0,
+        1752
+      ],
+      "border_median": 0.0,
+      "segmentation_status": "success",
+      "used_fallback_uncropped": false,
+      "mirrored": true,
+      "preview_png": "R_CC_43238_948213600.png"
+    },
+    {
+      "patient_id": "45827",
+      "image_id": "1385369408",
+      "laterality": "R",
+      "dcm_laterality": "R",
+      "view": "MLO",
+      "site_id": 1,
+      "machine_id": 49,
+      "photometric": "MONOCHROME2",
+      "orig_shape": [
+        4096,
+        3328
+      ],
+      "crop_shape": [
+        4096,
+        3232
+      ],
+      "crop_bbox": [
+        0,
+        4096,
+        0,
+        3232
+      ],
+      "border_median": 0.0,
+      "segmentation_status": "success",
+      "used_fallback_uncropped": false,
+      "mirrored": true,
+      "preview_png": "R_MLO_45827_1385369408.png"
+    },
+    {
+      "patient_id": "24972",
+      "image_id": "945084785",
+      "laterality": "R",
+      "dcm_laterality": "R",
+      "view": "MLO",
+      "site_id": 1,
+      "machine_id": 170,
+      "photometric": "MONOCHROME2",
+      "orig_shape": [
+        3328,
+        2560
+      ],
+      "crop_shape": [
+        3328,
+        2200
+      ],
+      "crop_bbox": [
+        0,
+        3328,
+        0,
+        2200
+      ],
+      "border_median": 0.0,
+      "segmentation_status": "success",
+      "used_fallback_uncropped": false,
+      "mirrored": true,
+      "preview_png": "R_MLO_24972_945084785.png"
+    },
+    {
+      "patient_id": "6893",
+      "image_id": "17715258",
+      "laterality": "R",
+      "dcm_laterality": "R",
+      "view": "MLO",
+      "site_id": 1,
+      "machine_id": 93,
+      "photometric": "MONOCHROME2",
+      "orig_shape": [
+        3062,
+        2394
+      ],
+      "crop_shape": [
+        3062,
+        2043
+      ],
+      "crop_bbox": [
+        0,
+        3062,
+        0,
+        2043
+      ],
+      "border_median": 0.0,
+      "segmentation_status": "success",
+      "used_fallback_uncropped": false,
+      "mirrored": true,
+      "preview_png": "R_MLO_6893_17715258.png"
+    },
+    {
+      "patient_id": "33694",
+      "image_id": "1420941034",
+      "laterality": "R",
+      "dcm_laterality": "R",
+      "view": "MLO",
+      "site_id": 2,
+      "machine_id": 48,
+      "photometric": "MONOCHROME2",
+      "orig_shape": [
+        4096,
+        3328
+      ],
+      "crop_shape": [
+        4096,
+        2609
+      ],
+      "crop_bbox": [
+        0,
+        4096,
+        0,
+        2609
+      ],
+      "border_median": 0.0,
+      "segmentation_status": "success",
+      "used_fallback_uncropped": false,
+      "mirrored": true,
+      "preview_png": "R_MLO_33694_1420941034.png"
+    }
+  ]
+}
