@@ -1,0 +1,154 @@
+{
+  "hardware": {
+    "gpu_name": "NVIDIA L40S",
+    "total_vram_gb": 44.44,
+    "cpu_cores": 6.0,
+    "ram_gib": 16.0,
+    "hourly_rates_usd": {
+      "gpu": 1.95,
+      "cpu_per_core": 0.04716,
+      "ram_per_gib": 0.00799,
+      "combined_total": 2.3608
+    }
+  },
+  "full_dataset_counts": {
+    "total_images": 54706,
+    "train_images": 38251,
+    "train_pos": 807,
+    "train_neg": 37444,
+    "train_calib_images": 5473,
+    "train_calib_pos": 114,
+    "val_calib_images": 10982,
+    "batches_per_epoch_full_neg_pass": 625
+  },
+  "component_timing_1000_images": {
+    "dicom_decode_sec": 434.401,
+    "preprocessing_sec": 13.881,
+    "encoder_extract_sec": 26.495,
+    "disk_write_fp32_sec": 1.046,
+    "disk_read_fp32_sec": 0.004,
+    "per_image_ms": {
+      "decode": 434.401,
+      "preprocess": 13.881,
+      "encode": 26.495
+    },
+    "photometrics_1000": {
+      "MONOCHROME1": 172,
+      "MONOCHROME2": 828
+    }
+  },
+  "storage_requirements": {
+    "bench_1000_fp32_mb": 7.85,
+    "bench_1000_fp16_mb": 3.95,
+    "projected_54706_fp32_mb": 429.58,
+    "projected_54706_fp16_mb": 215.88
+  },
+  "numerical_equivalence": {
+    "sample_count": 80,
+    "monochrome1_in_sample": 12,
+    "monochrome2_in_sample": 68,
+    "fp32_max_abs_feature_diff": 0.0,
+    "fp32_max_abs_logit_diff": 0.0,
+    "fp32_max_abs_prob_diff": 0.0,
+    "fp16_max_abs_feature_diff": 0.0,
+    "fp16_max_abs_logit_diff": 0.0,
+    "fp16_max_abs_prob_diff": 0.0,
+    "fp32_allclose_1e5": true,
+    "fp32_allclose_1e3": true
+  },
+  "approach_a_measured_1000": {
+    "sec_per_batch_80": 21.169,
+    "train_imgs_per_sec": 3.78,
+    "eval_imgs_per_sec": 3.52,
+    "peak_vram_gb": 26.14,
+    "gpu_util_pct": 100.0
+  },
+  "approach_b_measured_1000": {
+    "extract_peak_vram_gb": 24.9,
+    "extract_gpu_util_pct": 100.0,
+    "ce_head": {
+      "mode": "ce",
+      "bench_20ep_total_sec": 0.8322,
+      "sec_per_batch_80": 0.0012,
+      "imgs_per_sec": 64937.1996,
+      "eval_sec_per_epoch": 0.0003,
+      "eval_imgs_per_sec": 589876.9738,
+      "peak_vram_gb": 1.3679,
+      "gpu_util_pct": 100.0
+    },
+    "trust_head": {
+      "mode": "trust",
+      "bench_20ep_total_sec": 1.0888,
+      "sec_per_batch_80": 0.0023,
+      "imgs_per_sec": 34345.954,
+      "eval_sec_per_epoch": 0.0008,
+      "eval_imgs_per_sec": 256160.664,
+      "peak_vram_gb": 1.3679,
+      "gpu_util_pct": 9.8
+    }
+  },
+  "full_dataset_projection_ce_plus_trust_20ep_each": {
+    "approach_a": {
+      "ce_20ep": {
+        "hours": 90.8307,
+        "minutes": 5449.84,
+        "gpu_usd": 177.1199,
+        "cpu_usd": 25.7015,
+        "ram_usd": 11.6118,
+        "total_usd": 214.4332
+      },
+      "trust_20ep": {
+        "hours": 91.0106,
+        "minutes": 5460.64,
+        "gpu_usd": 177.4707,
+        "cpu_usd": 25.7524,
+        "ram_usd": 11.6348,
+        "total_usd": 214.8578
+      },
+      "total": {
+        "hours": 181.8413,
+        "minutes": 10910.48,
+        "gpu_usd": 354.5906,
+        "cpu_usd": 51.4538,
+        "ram_usd": 23.2466,
+        "total_usd": 429.291
+      }
+    },
+    "approach_b": {
+      "one_time_extraction_54706": {
+        "hours": 7.2153,
+        "minutes": 432.92,
+        "gpu_usd": 14.0698,
+        "cpu_usd": 2.0416,
+        "ram_usd": 0.9224,
+        "total_usd": 17.0338
+      },
+      "cached_ce_20ep": {
+        "hours": 0.0044,
+        "minutes": 0.27,
+        "gpu_usd": 0.0087,
+        "cpu_usd": 0.0013,
+        "ram_usd": 0.0006,
+        "total_usd": 0.0105
+      },
+      "cached_trust_20ep": {
+        "hours": 0.0084,
+        "minutes": 0.5,
+        "gpu_usd": 0.0164,
+        "cpu_usd": 0.0024,
+        "ram_usd": 0.0011,
+        "total_usd": 0.0198
+      },
+      "total": {
+        "hours": 7.2281,
+        "minutes": 433.69,
+        "gpu_usd": 14.0948,
+        "cpu_usd": 2.0453,
+        "ram_usd": 0.924,
+        "total_usd": 17.0641
+      }
+    },
+    "speedup_factor_total": 25.16,
+    "savings_usd": 412.23
+  }
+}
