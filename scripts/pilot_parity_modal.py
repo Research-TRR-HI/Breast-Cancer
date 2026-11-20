@@ -101,9 +101,17 @@ def _load_pilot_stage1_crops(
         RSNA_VOL.commit()
         loader = Stage1CroppedLoader(pilot_stage1_root, m, max_cached_shards=16)
 
-    train_crops = [loader.load_uint16(str(x)) for x in train_df["image_id"].tolist()]
-    tc_crops = [loader.load_uint16(str(x)) for x in tc_df["image_id"].tolist()]
-    vc_crops = [loader.load_uint16(str(x)) for x in vc_df["image_id"].tolist()]
+    from concurrent.futures import ThreadPoolExecutor
+
+    if getattr(loader, "id_to_png", None):
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            train_crops = list(pool.map(loader.load_uint16, [str(x) for x in train_df["image_id"].tolist()]))
+            tc_crops = list(pool.map(loader.load_uint16, [str(x) for x in tc_df["image_id"].tolist()]))
+            vc_crops = list(pool.map(loader.load_uint16, [str(x) for x in vc_df["image_id"].tolist()]))
+    else:
+        train_crops = [loader.load_uint16(str(x)) for x in train_df["image_id"].tolist()]
+        tc_crops = [loader.load_uint16(str(x)) for x in tc_df["image_id"].tolist()]
+        vc_crops = [loader.load_uint16(str(x)) for x in vc_df["image_id"].tolist()]
     return train_crops, tc_crops, vc_crops, m.get("summary", {}), s1_hash
 
 
