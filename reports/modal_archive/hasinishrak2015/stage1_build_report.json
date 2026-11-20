@@ -1,0 +1,53 @@
+{
+  "status": "COMPLETE_AND_VERIFIED",
+  "cache_root": "/data/cache/stage1_rsna_uint16",
+  "pilot_only": false,
+  "elapsed_sec": 9621.24,
+  "imgs_per_sec": 5.686,
+  "projected_full_54706_min": 160.35,
+  "total_storage_mb": 1072619.55,
+  "summary": {
+    "all_foreground_count": 0,
+    "degenerate_small_count": 0,
+    "empty_mask_count": 1,
+    "fallback_count": 1,
+    "invalid_image_count": 0,
+    "missing_laterality_count": 0,
+    "successful_segmentation_count": 54705,
+    "total_images": 54706
+  },
+  "stage1_config_hash": "d4f4ec48b700f91dfc90e5036c64899c9033d6784998ab22f4ea688f5df3402b",
+  "environment": {
+    "python_version": "3.12.10",
+    "platform": "Linux-4.19.0-gvisor-x86_64-with-glibc2.36",
+    "torch_version": "2.5.1+cu124",
+    "torchvision_version": "0.20.1+cu124",
+    "cuda_version": null,
+    "cudnn_version": null,
+    "gpu_name": "CPU",
+    "numpy_version": "2.5.3",
+    "scipy_version": "1.17.1",
+    "pandas_version": "2.3.3",
+    "pydicom_version": "3.0.2",
+    "opencv_version": "4.11.0",
+    "pillow_version": "12.3.0",
+    "omegaconf_version": "2.3.0",
+    "precision_policy": "cpu_stage1_uint16",
+    "pinned_modal_python": "3.12",
+    "pinned_direct_packages": [
+      "torch==2.5.1",
+      "torchvision==0.20.1",
+      "numpy==2.5.3",
+      "pandas==2.3.3",
+      "scipy==1.17.1",
+      "pydicom==3.0.2",
+      "opencv-python-headless==4.11.0.86",
+      "pillow==12.3.0",
+      "omegaconf==2.3.0",
+      "pylibjpeg==2.0.0",
+      "pylibjpeg-libjpeg==2.5.0",
+      "pylibjpeg-openjpeg==2.6.0",
+      "python-gdcm==3.0.24.1"
+    ]
+  }
+}
