@@ -125,6 +125,78 @@ def _load_verified_stage1_loader(
     return Stage1CroppedLoader(stage1_root, s1_manifest, max_cached_shards=16), s1_manifest
 
 
+def _stage_pngs_to_local_nvme(stage1_loader, target_ids: Optional[List[str]] = None, num_workers: int = 16) -> None:
+    """Copy Stage-1 PNGs once from Modal FUSE volume onto fast local container NVMe (/tmp)."""
+    import shutil
+    if not getattr(stage1_loader, "id_to_png", None):
+        return
+    src_root = stage1_loader.cache_root
+    dst_root = Path("/tmp/stage1_local")
+    ids = list(dict.fromkeys(target_ids)) if target_ids is not None else list(stage1_loader.id_to_png.keys())
+    todo = []
+    for img_id in ids:
+        rel = stage1_loader.id_to_png[str(img_id)]
+        src = src_root / rel
+        dst = dst_root / rel
+        if not dst.exists():
+            todo.append((src, dst))
+    if todo:
+        (dst_root / Path(todo[0][1]).parent.relative_to(dst_root)).mkdir(parents=True, exist_ok=True)
+        t0 = time.perf_counter()
+        print(f"[nvme] Staging {len(todo)} PNGs to local NVMe ({dst_root}) across {num_workers} threads...", flush=True)
+        def _cp(pair):
+            shutil.copyfile(pair[0], pair[1])
+        with ThreadPoolExecutor(max_workers=num_workers) as pool:
+            list(pool.map(_cp, todo))
+        print(f"[nvme] Staged {len(todo)} PNGs in {time.perf_counter() - t0:.1f}s", flush=True)
+    stage1_loader.cache_root = dst_root
+
+
+def _prepare_stage2_batch_fast(
+    image_ids: List[str],
+    aug_params_list: Optional[List[Any]],
+    stage1_loader,
+    device,
+    num_workers: int = 8,
+):
+    """Load uint16 PNGs from local NVMe across threads and run Stage-2 norm/aug/standardize on GPU."""
+    import numpy as np
+    import torch
+    import torch.nn.functional as F
+    from src.data.preprocessing import MAMMO_CLIP_MEAN, MAMMO_CLIP_STD, apply_trust_augmentation
+
+    augs = aug_params_list if aug_params_list is not None else [None] * len(image_ids)
+    with ThreadPoolExecutor(max_workers=max(int(num_workers), 8)) as pool:
+        crops = list(pool.map(stage1_loader.load_uint16, image_ids))
+
+    # Transfer compact uint16/float tensor directly to GPU when all crops are pre-resized (1520, 912)
+    if all(c.shape == (1520, 912) for c in crops):
+        arr_np = np.stack(crops, axis=0)
+        # Convert uint16 -> int32 on CPU only if needed, or float32 / 65535 on GPU
+        t_gpu = torch.from_numpy(arr_np.astype(np.int32)).to(device=device, dtype=torch.float32, non_blocking=True) / 65535.0
+        t_gpu = t_gpu.unsqueeze(1)
+        out_chunks = []
+        for idx in range(t_gpu.shape[0]):
+            img = t_gpu[idx]
+            mn = img.min()
+            mx = img.max()
+            img = (img - mn) / (mx - mn) if mx > mn else torch.zeros_like(img)
+            if augs[idx] is not None:
+                img = apply_trust_augmentation(img, augs[idx])
+            out_chunks.append(((img.repeat(3, 1, 1).clamp(0.0, 1.0) - MAMMO_CLIP_MEAN) / MAMMO_CLIP_STD))
+        return torch.stack(out_chunks, dim=0)
+
+    return _prepare_stage2_batch(
+        image_ids=image_ids,
+        rel_paths=[""] * len(image_ids),
+        lateralities=[""] * len(image_ids),
+        aug_params_list=aug_params_list,
+        rsna_raw=Path("."),
+        stage1_loader=stage1_loader,
+        num_workers=max(int(num_workers), 8),
+    ).to(device)
+
+
 def _prepare_stage2_batch(
     image_ids: List[str],
     rel_paths: List[str],
@@ -141,8 +213,24 @@ def _prepare_stage2_batch(
     augs = aug_params_list if aug_params_list is not None else [None] * len(image_ids)
 
     if stage1_loader is not None:
-        # Read uint16 crops from shard LRU sequentially (shard LRU already caches shards in RAM),
-        # then run Stage-2 resize/aug across worker threads or inline cleanly.
+        if getattr(stage1_loader, "id_to_png", None):
+            def _s2_png(item):
+                img_id, aug = item
+                crop = stage1_loader.load_uint16(img_id)
+                return prepare_tensor_from_cropped(
+                    crop,
+                    target_size=(1520, 912),
+                    augment_params=aug,
+                    standardize=True,
+                )
+
+            items = list(zip(image_ids, augs))
+            if num_workers <= 1 or len(items) <= 1:
+                return torch.stack([_s2_png(it) for it in items])
+            with ThreadPoolExecutor(max_workers=min(num_workers, len(items))) as pool:
+                return torch.stack(list(pool.map(_s2_png, items)))
+
+        # Legacy shard fallback: read sequentially (LRU caches shards), then Stage-2 in threads.
         crops = [stage1_loader.load_uint16(img_id) for img_id in image_ids]
 
         def _s2(item):
@@ -205,6 +293,7 @@ def _encode_batch_features(encoder, bx, device, micro_batch_size: int, use_amp: 
     gpu="L40S",
     cpu=6.0,
     memory=16384,
+    ephemeral_disk=524288,
     timeout=1800,
 )
 def benchmark_extract_batches_fn(
@@ -269,22 +358,37 @@ def benchmark_extract_batches_fn(
     encoder, _, _ = _build_frozen_encoder(mammo_clip_tar, device)
 
     run_n = min(max(int(num_batches), 2), len(ep1_schedule))
+    if stage1_loader is not None and getattr(stage1_loader, "id_to_png", None):
+        bench_ids = [train_img_ids[i] for b in range(run_n) for i in ep1_schedule[b].indices]
+        _stage_pngs_to_local_nvme(stage1_loader, target_ids=bench_ids, num_workers=16)
+
     timed_batches = []
     with tempfile.TemporaryDirectory() as tmp_dir:
         tmp_path = Path(tmp_dir)
         for b_idx in range(run_n):
             rec = ep1_schedule[b_idx]
             t0 = time.perf_counter()
-            bx = _prepare_stage2_batch(
-                image_ids=[train_img_ids[i] for i in rec.indices],
-                rel_paths=[train_paths[i] for i in rec.indices],
-                lateralities=[train_lats[i] for i in rec.indices],
-                aug_params_list=rec.aug_params,
-                rsna_raw=rsna_raw,
-                stage1_loader=stage1_loader,
-                strict_segmentation=strict_segmentation,
-                num_workers=num_workers,
-            )
+            if stage1_loader is not None and getattr(stage1_loader, "id_to_png", None):
+                bx = _prepare_stage2_batch_fast(
+                    image_ids=[train_img_ids[i] for i in rec.indices],
+                    aug_params_list=rec.aug_params,
+                    stage1_loader=stage1_loader,
+                    device=device,
+                    num_workers=max(num_workers, 8),
+                )
+            else:
+                bx = _prepare_stage2_batch(
+                    image_ids=[train_img_ids[i] for i in rec.indices],
+                    rel_paths=[train_paths[i] for i in rec.indices],
+                    lateralities=[train_lats[i] for i in rec.indices],
+                    aug_params_list=rec.aug_params,
+                    rsna_raw=rsna_raw,
+                    stage1_loader=stage1_loader,
+                    strict_segmentation=strict_segmentation,
+                    num_workers=num_workers,
+                )
+            if device.type == "cuda":
+                torch.cuda.synchronize()
             t1 = time.perf_counter()
             feats = _encode_batch_features(encoder, bx, device, micro_batch_size, use_amp)
             if device.type == "cuda":
@@ -359,6 +463,7 @@ def benchmark_extract_batches_fn(
     gpu="L40S",
     cpu=6.0,
     memory=16384,
+    ephemeral_disk=524288,
     timeout=86400,
 )
 def extract_augmentation_cache(
@@ -417,6 +522,8 @@ def extract_augmentation_cache(
                 stage1_hash=s1_hash,
                 strict_segmentation=strict_segmentation,
             )
+            if getattr(stage1_loader, "id_to_png", None):
+                _stage_pngs_to_local_nvme(stage1_loader, target_ids=None, num_workers=16)
 
         train_df = df[df["split"] == "train"].reset_index(drop=True)
         tc_df = df[df["split"] == "train_calib"].reset_index(drop=True)
@@ -449,16 +556,25 @@ def extract_augmentation_cache(
         schedules = {ep: build_epoch_draw_schedule(sampler, ep, aug_rng) for ep in range(1, epochs + 1)}
 
         def _extract_batch(rec):
-            bx = _prepare_stage2_batch(
-                image_ids=[train_img_ids[i] for i in rec.indices],
-                rel_paths=[train_paths[i] for i in rec.indices],
-                lateralities=[train_lats[i] for i in rec.indices],
-                aug_params_list=rec.aug_params,
-                rsna_raw=rsna_raw,
-                stage1_loader=stage1_loader,
-                strict_segmentation=strict_segmentation,
-                num_workers=num_workers,
-            )
+            if stage1_loader is not None and getattr(stage1_loader, "id_to_png", None):
+                bx = _prepare_stage2_batch_fast(
+                    image_ids=[train_img_ids[i] for i in rec.indices],
+                    aug_params_list=rec.aug_params,
+                    stage1_loader=stage1_loader,
+                    device=device,
+                    num_workers=max(num_workers, 8),
+                )
+            else:
+                bx = _prepare_stage2_batch(
+                    image_ids=[train_img_ids[i] for i in rec.indices],
+                    rel_paths=[train_paths[i] for i in rec.indices],
+                    lateralities=[train_lats[i] for i in rec.indices],
+                    aug_params_list=rec.aug_params,
+                    rsna_raw=rsna_raw,
+                    stage1_loader=stage1_loader,
+                    strict_segmentation=strict_segmentation,
+                    num_workers=num_workers,
+                )
             feats = _encode_batch_features(encoder, bx, device, micro_batch_size, use_amp)
             return (
                 feats,
@@ -473,16 +589,25 @@ def extract_augmentation_cache(
             lats = sdf["laterality"].astype(str).tolist()
             chunks = []
             for s in range(0, len(img_ids), micro_batch_size):
-                bx = _prepare_stage2_batch(
-                    image_ids=img_ids[s : s + micro_batch_size],
-                    rel_paths=rels[s : s + micro_batch_size],
-                    lateralities=lats[s : s + micro_batch_size],
-                    aug_params_list=None,
-                    rsna_raw=rsna_raw,
-                    stage1_loader=stage1_loader,
-                    strict_segmentation=strict_segmentation,
-                    num_workers=num_workers,
-                )
+                if stage1_loader is not None and getattr(stage1_loader, "id_to_png", None):
+                    bx = _prepare_stage2_batch_fast(
+                        image_ids=img_ids[s : s + micro_batch_size],
+                        aug_params_list=None,
+                        stage1_loader=stage1_loader,
+                        device=device,
+                        num_workers=max(num_workers, 8),
+                    )
+                else:
+                    bx = _prepare_stage2_batch(
+                        image_ids=img_ids[s : s + micro_batch_size],
+                        rel_paths=rels[s : s + micro_batch_size],
+                        lateralities=lats[s : s + micro_batch_size],
+                        aug_params_list=None,
+                        rsna_raw=rsna_raw,
+                        stage1_loader=stage1_loader,
+                        strict_segmentation=strict_segmentation,
+                        num_workers=num_workers,
+                    )
                 chunks.append(_encode_batch_features(encoder, bx, device, micro_batch_size, use_amp))
             return (
                 torch.cat(chunks, dim=0),
