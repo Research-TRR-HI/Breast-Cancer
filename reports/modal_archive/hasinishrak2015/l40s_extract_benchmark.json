@@ -1,0 +1,83 @@
+{
+  "require_stage1_cache": true,
+  "precision": "amp",
+  "micro_batch_size": 20,
+  "warmup_excluded_batches": 4,
+  "mean_sec_per_batch_80": 2.2775,
+  "mean_stage2_prep_sec_per_batch": 0.3168,
+  "mean_encode_sec_per_batch": 1.9585,
+  "measured_imgs_per_sec": 35.13,
+  "steps_per_epoch": 625,
+  "total_train_batches_20ep": 12500,
+  "total_train_occurrences_20ep": 1000000,
+  "projected_full_extract_hours": 8.038,
+  "projected_full_extract_usd_l40s_est": 15.67,
+  "projected_cache_storage_gib": 7.869,
+  "environment_metadata": {
+    "python_version": "3.12.10",
+    "platform": "Linux-4.19.0-gvisor-x86_64-with-glibc2.36",
+    "torch_version": "2.5.1+cu124",
+    "torchvision_version": "0.20.1+cu124",
+    "cuda_version": "12.4",
+    "cudnn_version": 90100,
+    "gpu_name": "NVIDIA L40S",
+    "numpy_version": "2.5.3",
+    "scipy_version": "1.17.1",
+    "pandas_version": "2.3.3",
+    "pydicom_version": "3.0.2",
+    "opencv_version": "4.11.0",
+    "pillow_version": "12.3.0",
+    "omegaconf_version": "2.3.0",
+    "precision_policy": "amp",
+    "pinned_modal_python": "3.12",
+    "pinned_direct_packages": [
+      "torch==2.5.1",
+      "torchvision==0.20.1",
+      "numpy==2.5.3",
+      "pandas==2.3.3",
+      "scipy==1.17.1",
+      "pydicom==3.0.2",
+      "opencv-python-headless==4.11.0.86",
+      "pillow==12.3.0",
+      "omegaconf==2.3.0",
+      "pylibjpeg==2.0.0",
+      "pylibjpeg-libjpeg==2.5.0",
+      "pylibjpeg-openjpeg==2.6.0",
+      "python-gdcm==3.0.24.1"
+    ]
+  },
+  "per_batch_timings": [
+    {
+      "batch_idx": 1,
+      "stage2_prep_sec": 0.317,
+      "encode_sec": 1.959,
+      "shard_write_sec": 0.003,
+      "total_sec": 2.278,
+      "shard_bytes": 665172
+    },
+    {
+      "batch_idx": 2,
+      "stage2_prep_sec": 0.313,
+      "encode_sec": 1.957,
+      "shard_write_sec": 0.002,
+      "total_sec": 2.272,
+      "shard_bytes": 665172
+    },
+    {
+      "batch_idx": 3,
+      "stage2_prep_sec": 0.315,
+      "encode_sec": 1.959,
+      "shard_write_sec": 0.003,
+      "total_sec": 2.276,
+      "shard_bytes": 665172
+    },
+    {
+      "batch_idx": 4,
+      "stage2_prep_sec": 0.322,
+      "encode_sec": 1.959,
+      "shard_write_sec": 0.003,
+      "total_sec": 2.284,
+      "shard_bytes": 665172
+    }
+  ]
+}
