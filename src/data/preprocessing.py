@@ -515,12 +515,15 @@ def prepare_tensor_from_cropped(
         arr_f32 = arr.astype(np.float32)
 
     tensor = torch.from_numpy(arr_f32).unsqueeze(0).unsqueeze(0)
-    resized = F.interpolate(
-        tensor,
-        size=target_size,
-        mode="bilinear",
-        align_corners=False,
-    ).squeeze(0)
+    if tuple(arr_f32.shape) != tuple(target_size):
+        resized = F.interpolate(
+            tensor,
+            size=target_size,
+            mode="bilinear",
+            align_corners=False,
+        ).squeeze(0)
+    else:
+        resized = tensor.squeeze(0)
 
     min_v = float(resized.min().item())
     max_v = float(resized.max().item())
