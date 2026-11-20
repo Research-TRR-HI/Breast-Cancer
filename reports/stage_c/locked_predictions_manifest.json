@@ -1,0 +1,102 @@
+{
+  "schema_version": "anchorshift_stage_c_locked_predictions_v1",
+  "locked_at_utc": "2026-11-20T13:22:23.562404+00:00",
+  "label_quarantine_verified": true,
+  "forbidden_columns_checked": [
+    "Cancer",
+    "cancer",
+    "exam_cancer",
+    "n_cancer_images",
+    "Hard to State Negative",
+    "hard_to_state_negative",
+    "cohort_group"
+  ],
+  "inference_manifest_path": "datasets\\nlbs\\inference_manifest_stage_c.csv",
+  "inference_manifest_sha256": "c3d6a3b390003139c75564c1ffb22a6af8f1a9c8cd57dc4c1d96b8ce3269e95f",
+  "locked_predictions_csv": "reports\\stage_c\\locked_nlbs_predictions.csv",
+  "locked_predictions_sha256": "526434d058510208ee825b3db36380d0faec7760c17dd2c867dc6288eeb10cc2",
+  "locked_image_diagnostics_csv_gz": "reports\\stage_c\\locked_nlbs_image_diagnostics.csv.gz",
+  "locked_image_diagnostics_sha256": "1817a8ab8e5ae31cbe357a2713ee859edd6e4d998127efc72babea0a361558b9",
+  "frozen_thresholds": {
+    "ce": {
+      "target_95": 0.12445068359375,
+      "target_98": 0.09619140625
+    },
+    "trust": {
+      "target_95": 0.1954345703125,
+      "target_98": 0.1795654296875
+    }
+  },
+  "frozen_thresholds_sha256": "734e9abb7cd1346e4c3e7be265794f1700af383f8f0eb6c2ca46e0d9bc791723",
+  "checkpoint_metadata": {
+    "backbone_sha256": "0baccb0cc19cd6093ff8252f7c2b7a6efbc32973498640abcb311210c46fd02c",
+    "preprocess_config_hash": "454474d007676616fa43e367c6ca0cad722bd527f6deb294414b5a0b11b7c01f",
+    "stage1_config_hash": "d4f4ec48b700f91dfc90e5036c64899c9033d6784998ab22f4ea688f5df3402b",
+    "precision": "amp",
+    "ce_checkpoint_sha256": "adf1443455ee1b507485ee4b7f64932d5cf6f59bb6afcf11b9f415c634372d22",
+    "ce_epoch": 20,
+    "ce_cache_manifest_sha256": "6c34a8c0add35e7514b45f0e001fc1189f46ebe3b482bfff302db13e16d8fdbd",
+    "trust_checkpoint_sha256": "63388d790ce9cf8a8287adc7724358ced392a69b332ce1a5e46972750faa51cb",
+    "trust_epoch": 20,
+    "trust_tau_t_final": 0.256103515625,
+    "trust_cache_manifest_sha256": "6c34a8c0add35e7514b45f0e001fc1189f46ebe3b482bfff302db13e16d8fdbd"
+  },
+  "environment_metadata": {
+    "python_version": "3.12.10",
+    "platform": "Linux-4.19.0-gvisor-x86_64-with-glibc2.36",
+    "torch_version": "2.5.1+cu124",
+    "torchvision_version": "0.20.1+cu124",
+    "cuda_version": "12.4",
+    "cudnn_version": 90100,
+    "gpu_name": "NVIDIA L40S",
+    "numpy_version": "2.5.3",
+    "scipy_version": "1.17.1",
+    "pandas_version": "2.3.3",
+    "pydicom_version": "3.0.2",
+    "opencv_version": "4.11.0",
+    "pillow_version": "12.3.0",
+    "omegaconf_version": "2.3.0",
+    "precision_policy": "amp",
+    "pinned_modal_python": "3.12",
+    "pinned_direct_packages": [
+      "torch==2.5.1",
+      "torchvision==0.20.1",
+      "numpy==2.5.3",
+      "pandas==2.3.3",
+      "scipy==1.17.1",
+      "pydicom==3.0.2",
+      "opencv-python-headless==4.11.0.86",
+      "pillow==12.3.0",
+      "omegaconf==2.3.0",
+      "pylibjpeg==2.0.0",
+      "pylibjpeg-libjpeg==2.5.0",
+      "pylibjpeg-openjpeg==2.6.0",
+      "python-gdcm==3.0.24.1"
+    ]
+  },
+  "counts": {
+    "total_manifest_images": 26988,
+    "succeeded_images": 26988,
+    "failed_images": 0,
+    "fallback_uncropped_images": 0,
+    "total_unique_study_exams": 6359,
+    "unique_split_clusters": 5942,
+    "all_scores_finite": true,
+    "decode_status_counts": {
+      "ok": 26988
+    },
+    "segmentation_status_counts": {
+      "success": 26988
+    }
+  },
+  "pre_label_unblinded_dismissal_summary": {
+    "ce_95_dismissed_count": 3173,
+    "ce_95_dismissal_rate": 0.49897782670231167,
+    "ce_98_dismissed_count": 1939,
+    "ce_98_dismissal_rate": 0.3049221575719453,
+    "trust_95_dismissed_count": 3143,
+    "trust_95_dismissal_rate": 0.4942601037899041,
+    "trust_98_dismissed_count": 2529,
+    "trust_98_dismissal_rate": 0.3977040415159616
+  }
+}
