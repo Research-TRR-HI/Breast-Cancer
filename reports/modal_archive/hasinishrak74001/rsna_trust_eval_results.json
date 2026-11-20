@@ -1,0 +1,463 @@
+{
+  "target_95": {
+    "threshold": 0.1954345703125,
+    "total_cases": 2382,
+    "total_cancers": 97,
+    "n_dismissed": 493,
+    "n_retained": 1889,
+    "dismissal_rate": 0.20696893366918556,
+    "detected_cancers": 93,
+    "missed_cancers": 4,
+    "triage_recall": 0.9587628865979382,
+    "cancer_prev_dismissed": 0.008113590263691683,
+    "clopper_pearson_99_ub": 0.023357844750405928,
+    "meets_target_recall": true,
+    "reported_dismissal_rate": 0.20696893366918556
+  },
+  "target_98": {
+    "threshold": 0.1795654296875,
+    "total_cases": 2382,
+    "total_cancers": 97,
+    "n_dismissed": 409,
+    "n_retained": 1973,
+    "dismissal_rate": 0.17170445004198154,
+    "detected_cancers": 96,
+    "missed_cancers": 1,
+    "triage_recall": 0.9896907216494846,
+    "cancer_prev_dismissed": 0.0024449877750611247,
+    "clopper_pearson_99_ub": 0.016119266400011222,
+    "meets_target_recall": true,
+    "reported_dismissal_rate": 0.17170445004198154
+  },
+  "checkpoint_path": "/data/models/checkpoints/trust_rsna_seed42_final_epoch20.pt",
+  "training_config": {
+    "baseline": "trust",
+    "epochs": 20,
+    "batch_size": 80,
+    "n_pos": 20,
+    "steps_per_epoch": 625,
+    "epoch_policy": "paper_independent",
+    "lr": 3e-05,
+    "weight_decay": 0.0001,
+    "margin": 0.1,
+    "lambda_focal": 1.0,
+    "lambda_dismiss": 0.05,
+    "initial_tau": 0.05,
+    "grad_clip": 5.0,
+    "micro_batch_size": 20,
+    "precision_policy": "amp",
+    "seed": 42,
+    "preprocess_config_hash": "454474d007676616fa43e367c6ca0cad722bd527f6deb294414b5a0b11b7c01f",
+    "stage1_config_hash": "d4f4ec48b700f91dfc90e5036c64899c9033d6784998ab22f4ea688f5df3402b",
+    "model_checkpoint_sha256": "0baccb0cc19cd6093ff8252f7c2b7a6efbc32973498640abcb311210c46fd02c",
+    "split_manifest_sha256": "902c2add501a36eba0b320adc68fb4e758f34509956fa19bbc98ef23d8868a5b",
+    "use_cached_features": true,
+    "cache_manifest_sha256": "6c34a8c0add35e7514b45f0e001fc1189f46ebe3b482bfff302db13e16d8fdbd"
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.72754,
+      "tau_t": 0.05,
+      "tau_diagnostics": {
+        "tau_t": 0.05,
+        "is_epoch1_or_non_trust": true
+      },
+      "time_sec": 7.47
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.67509,
+      "tau_t": 0.2605,
+      "tau_diagnostics": {
+        "tau_t": 0.260498046875,
+        "n_calib": 5473,
+        "n_pos_calib": 114,
+        "n_neg_calib": 5359,
+        "min_zero_miss_dismissed_required": 299,
+        "zero_miss_feasible": true,
+        "n_dismissed": 2631,
+        "k_missed": 17,
+        "cp_upper_bound": 0.009676178800846261,
+        "is_nonzero_threshold": true,
+        "used_zero_fallback": false
+      },
+      "time_sec": 6.74
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.66289,
+      "tau_t": 0.28101,
+      "tau_diagnostics": {
+        "tau_t": 0.281005859375,
+        "n_calib": 5473,
+        "n_pos_calib": 114,
+        "n_neg_calib": 5359,
+        "min_zero_miss_dismissed_required": 299,
+        "zero_miss_feasible": true,
+        "n_dismissed": 3254,
+        "k_missed": 23,
+        "cp_upper_bound": 0.009999188302256965,
+        "is_nonzero_threshold": true,
+        "used_zero_fallback": false
+      },
+      "time_sec": 6.77
+    },
+    {
+      "epoch": 4,
+      "train_loss": 0.65086,
+      "tau_t": 0.27124,
+      "tau_diagnostics": {
+        "tau_t": 0.271240234375,
+        "n_calib": 5473,
+        "n_pos_calib": 114,
+        "n_neg_calib": 5359,
+        "min_zero_miss_dismissed_required": 299,
+        "zero_miss_feasible": true,
+        "n_dismissed": 3308,
+        "k_missed": 23,
+        "cp_upper_bound": 0.009836198073155708,
+        "is_nonzero_threshold": true,
+        "used_zero_fallback": false
+      },
+      "time_sec": 7.25
+    },
+    {
+      "epoch": 5,
+      "train_loss": 0.64263,
+      "tau_t": 0.28271,
+      "tau_diagnostics": {
+        "tau_t": 0.28271484375,
+        "n_calib": 5473,
+        "n_pos_calib": 114,
+        "n_neg_calib": 5359,
+        "min_zero_miss_dismissed_required": 299,
+        "zero_miss_feasible": true,
+        "n_dismissed": 3517,
+        "k_missed": 25,
+        "cp_upper_bound": 0.009913796480595928,
+        "is_nonzero_threshold": true,
+        "used_zero_fallback": false
+      },
+      "time_sec": 7.05
+    },
+    {
+      "epoch": 6,
+      "train_loss": 0.63398,
+      "tau_t": 0.26123,
+      "tau_diagnostics": {
+        "tau_t": 0.26123046875,
+        "n_calib": 5473,
+        "n_pos_calib": 114,
+        "n_neg_calib": 5359,
+        "min_zero_miss_dismissed_required": 299,
+        "zero_miss_feasible": true,
+        "n_dismissed": 2988,
+        "k_missed": 20,
+        "cp_upper_bound": 0.009711487696291075,
+        "is_nonzero_threshold": true,
+        "used_zero_fallback": false
+      },
+      "time_sec": 6.78
+    },
+    {
+      "epoch": 7,
+      "train_loss": 0.63217,
+      "tau_t": 0.28394,
+      "tau_diagnostics": {
+        "tau_t": 0.283935546875,
+        "n_calib": 5473,
+        "n_pos_calib": 114,
+        "n_neg_calib": 5359,
+        "min_zero_miss_dismissed_required": 299,
+        "zero_miss_feasible": true,
+        "n_dismissed": 3459,
+        "k_missed": 24,
+        "cp_upper_bound": 0.00974408490758212,
+        "is_nonzero_threshold": true,
+        "used_zero_fallback": false
+      },
+      "time_sec": 6.72
+    },
+    {
+      "epoch": 8,
+      "train_loss": 0.62298,
+      "tau_t": 0.26831,
+      "tau_diagnostics": {
+        "tau_t": 0.268310546875,
+        "n_calib": 5473,
+        "n_pos_calib": 114,
+        "n_neg_calib": 5359,
+        "min_zero_miss_dismissed_required": 299,
+        "zero_miss_feasible": true,
+        "n_dismissed": 3377,
+        "k_missed": 24,
+        "cp_upper_bound": 0.009980347272284883,
+        "is_nonzero_threshold": true,
+        "used_zero_fallback": false
+      },
+      "time_sec": 6.73
+    },
+    {
+      "epoch": 9,
+      "train_loss": 0.61715,
+      "tau_t": 0.27319,
+      "tau_diagnostics": {
+        "tau_t": 0.273193359375,
+        "n_calib": 5473,
+        "n_pos_calib": 114,
+        "n_neg_calib": 5359,
+        "min_zero_miss_dismissed_required": 299,
+        "zero_miss_feasible": true,
+        "n_dismissed": 3422,
+        "k_missed": 24,
+        "cp_upper_bound": 0.009849291210854373,
+        "is_nonzero_threshold": true,
+        "used_zero_fallback": false
+      },
+      "time_sec": 6.95
+    },
+    {
+      "epoch": 10,
+      "train_loss": 0.61497,
+      "tau_t": 0.27319,
+      "tau_diagnostics": {
+        "tau_t": 0.273193359375,
+        "n_calib": 5473,
+        "n_pos_calib": 114,
+        "n_neg_calib": 5359,
+        "min_zero_miss_dismissed_required": 299,
+        "zero_miss_feasible": true,
+        "n_dismissed": 3497,
+        "k_missed": 25,
+        "cp_upper_bound": 0.009970414727351481,
+        "is_nonzero_threshold": true,
+        "used_zero_fallback": false
+      },
+      "time_sec": 6.63
+    },
+    {
+      "epoch": 11,
+      "train_loss": 0.61426,
+      "tau_t": 0.27393,
+      "tau_diagnostics": {
+        "tau_t": 0.27392578125,
+        "n_calib": 5473,
+        "n_pos_calib": 114,
+        "n_neg_calib": 5359,
+        "min_zero_miss_dismissed_required": 299,
+        "zero_miss_feasible": true,
+        "n_dismissed": 3456,
+        "k_missed": 24,
+        "cp_upper_bound": 0.009752531347182241,
+        "is_nonzero_threshold": true,
+        "used_zero_fallback": false
+      },
+      "time_sec": 6.82
+    },
+    {
+      "epoch": 12,
+      "train_loss": 0.60926,
+      "tau_t": 0.27539,
+      "tau_diagnostics": {
+        "tau_t": 0.275390625,
+        "n_calib": 5473,
+        "n_pos_calib": 114,
+        "n_neg_calib": 5359,
+        "min_zero_miss_dismissed_required": 299,
+        "zero_miss_feasible": true,
+        "n_dismissed": 3357,
+        "k_missed": 23,
+        "cp_upper_bound": 0.009692830867757756,
+        "is_nonzero_threshold": true,
+        "used_zero_fallback": false
+      },
+      "time_sec": 6.93
+    },
+    {
+      "epoch": 13,
+      "train_loss": 0.60808,
+      "tau_t": 0.28198,
+      "tau_diagnostics": {
+        "tau_t": 0.281982421875,
+        "n_calib": 5473,
+        "n_pos_calib": 114,
+        "n_neg_calib": 5359,
+        "min_zero_miss_dismissed_required": 299,
+        "zero_miss_feasible": true,
+        "n_dismissed": 3553,
+        "k_missed": 25,
+        "cp_upper_bound": 0.00981348766551355,
+        "is_nonzero_threshold": true,
+        "used_zero_fallback": false
+      },
+      "time_sec": 6.94
+    },
+    {
+      "epoch": 14,
+      "train_loss": 0.60157,
+      "tau_t": 0.27368,
+      "tau_diagnostics": {
+        "tau_t": 0.273681640625,
+        "n_calib": 5473,
+        "n_pos_calib": 114,
+        "n_neg_calib": 5359,
+        "min_zero_miss_dismissed_required": 299,
+        "zero_miss_feasible": true,
+        "n_dismissed": 3534,
+        "k_missed": 25,
+        "cp_upper_bound": 0.009866174121152859,
+        "is_nonzero_threshold": true,
+        "used_zero_fallback": false
+      },
+      "time_sec": 6.74
+    },
+    {
+      "epoch": 15,
+      "train_loss": 0.60506,
+      "tau_t": 0.27319,
+      "tau_diagnostics": {
+        "tau_t": 0.273193359375,
+        "n_calib": 5473,
+        "n_pos_calib": 114,
+        "n_neg_calib": 5359,
+        "min_zero_miss_dismissed_required": 299,
+        "zero_miss_feasible": true,
+        "n_dismissed": 3519,
+        "k_missed": 25,
+        "cp_upper_bound": 0.009908170002258595,
+        "is_nonzero_threshold": true,
+        "used_zero_fallback": false
+      },
+      "time_sec": 6.67
+    },
+    {
+      "epoch": 16,
+      "train_loss": 0.60159,
+      "tau_t": 0.26733,
+      "tau_diagnostics": {
+        "tau_t": 0.267333984375,
+        "n_calib": 5473,
+        "n_pos_calib": 114,
+        "n_neg_calib": 5359,
+        "min_zero_miss_dismissed_required": 299,
+        "zero_miss_feasible": true,
+        "n_dismissed": 3421,
+        "k_missed": 24,
+        "cp_upper_bound": 0.009852166163464996,
+        "is_nonzero_threshold": true,
+        "used_zero_fallback": false
+      },
+      "time_sec": 6.68
+    },
+    {
+      "epoch": 17,
+      "train_loss": 0.60339,
+      "tau_t": 0.27441,
+      "tau_diagnostics": {
+        "tau_t": 0.2744140625,
+        "n_calib": 5473,
+        "n_pos_calib": 114,
+        "n_neg_calib": 5359,
+        "min_zero_miss_dismissed_required": 299,
+        "zero_miss_feasible": true,
+        "n_dismissed": 3498,
+        "k_missed": 25,
+        "cp_upper_bound": 0.009967568460321501,
+        "is_nonzero_threshold": true,
+        "used_zero_fallback": false
+      },
+      "time_sec": 6.73
+    },
+    {
+      "epoch": 18,
+      "train_loss": 0.59871,
+      "tau_t": 0.26294,
+      "tau_diagnostics": {
+        "tau_t": 0.262939453125,
+        "n_calib": 5473,
+        "n_pos_calib": 114,
+        "n_neg_calib": 5359,
+        "min_zero_miss_dismissed_required": 299,
+        "zero_miss_feasible": true,
+        "n_dismissed": 3303,
+        "k_missed": 23,
+        "cp_upper_bound": 0.009851066202328698,
+        "is_nonzero_threshold": true,
+        "used_zero_fallback": false
+      },
+      "time_sec": 6.69
+    },
+    {
+      "epoch": 19,
+      "train_loss": 0.59996,
+      "tau_t": 0.26367,
+      "tau_diagnostics": {
+        "tau_t": 0.263671875,
+        "n_calib": 5473,
+        "n_pos_calib": 114,
+        "n_neg_calib": 5359,
+        "min_zero_miss_dismissed_required": 299,
+        "zero_miss_feasible": true,
+        "n_dismissed": 3409,
+        "k_missed": 24,
+        "cp_upper_bound": 0.00988679696701823,
+        "is_nonzero_threshold": true,
+        "used_zero_fallback": false
+      },
+      "time_sec": 6.72
+    },
+    {
+      "epoch": 20,
+      "train_loss": 0.59672,
+      "tau_t": 0.2561,
+      "tau_diagnostics": {
+        "tau_t": 0.256103515625,
+        "n_calib": 5473,
+        "n_pos_calib": 114,
+        "n_neg_calib": 5359,
+        "min_zero_miss_dismissed_required": 299,
+        "zero_miss_feasible": true,
+        "n_dismissed": 3380,
+        "k_missed": 24,
+        "cp_upper_bound": 0.009971501791776473,
+        "is_nonzero_threshold": true,
+        "used_zero_fallback": false
+      },
+      "time_sec": 6.72
+    }
+  ],
+  "environment_metadata": {
+    "python_version": "3.12.10",
+    "platform": "Linux-4.19.0-gvisor-x86_64-with-glibc2.36",
+    "torch_version": "2.5.1+cu124",
+    "torchvision_version": "0.20.1+cu124",
+    "cuda_version": "12.4",
+    "cudnn_version": 90100,
+    "gpu_name": "NVIDIA L40S",
+    "numpy_version": "2.5.3",
+    "scipy_version": "1.17.1",
+    "pandas_version": "2.3.3",
+    "pydicom_version": "3.0.2",
+    "opencv_version": "4.11.0",
+    "pillow_version": "12.3.0",
+    "omegaconf_version": "2.3.0",
+    "precision_policy": "amp",
+    "pinned_modal_python": "3.12",
+    "pinned_direct_packages": [
+      "torch==2.5.1",
+      "torchvision==0.20.1",
+      "numpy==2.5.3",
+      "pandas==2.3.3",
+      "scipy==1.17.1",
+      "pydicom==3.0.2",
+      "opencv-python-headless==4.11.0.86",
+      "pillow==12.3.0",
+      "omegaconf==2.3.0",
+      "pylibjpeg==2.0.0",
+      "pylibjpeg-libjpeg==2.5.0",
+      "pylibjpeg-openjpeg==2.6.0",
+      "python-gdcm==3.0.24.1"
+    ]
+  }
+}
