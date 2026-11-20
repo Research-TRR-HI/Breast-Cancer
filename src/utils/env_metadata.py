@@ -18,9 +18,9 @@ PINNED_MODAL_PIP_PACKAGES: Tuple[str, ...] = (
     "pillow==12.3.0",
     "omegaconf==2.3.0",
     "pylibjpeg==2.0.0",
-    "pylibjpeg-libjpeg==2.1.0",
-    "pylibjpeg-openjpeg==2.1.0",
-    "python-gdcm==3.0.24",
+    "pylibjpeg-libjpeg==2.5.0",
+    "pylibjpeg-openjpeg==2.6.0",
+    "python-gdcm==3.0.24.1",
 )
 
 
