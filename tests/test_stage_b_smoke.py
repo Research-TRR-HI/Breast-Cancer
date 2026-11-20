@@ -913,6 +913,26 @@ class TestAnchorShiftPipeline(unittest.TestCase):
             self.assertFalse((s1_root / "stale.pt.tmp").exists())
             verify_stage1_cache(s1_root, df, expected_stage1_hash=s1_hash, verify_pixel_hashes=True)
 
+            # Lossless 16-bit PNG individual mode matches shard arrays bitwise
+            import cv2
+            import json
+            png_root = Path(tmp) / "stage1_png"
+            (png_root / "png").mkdir(parents=True, exist_ok=True)
+            png_entries = []
+            for entry in rebuilt["images"]:
+                rel_p = f"png/{entry['image_id']}.png"
+                arr_u16 = loader.load_uint16(entry["image_id"])
+                self.assertTrue(cv2.imwrite(str(png_root / rel_p), arr_u16))
+                ne = dict(entry)
+                ne["png_rel_path"] = rel_p
+                png_entries.append(ne)
+            png_manifest = dict(rebuilt, storage_format="png16_individual", shards=[], images=png_entries)
+            (png_root / "stage1_manifest.json").write_text(json.dumps(png_manifest), encoding="utf-8")
+            verify_stage1_cache(png_root, df, expected_stage1_hash=s1_hash, verify_pixel_hashes=True)
+            png_loader = Stage1CroppedLoader(png_root, png_manifest)
+            for _, row in df.iterrows():
+                self.assertTrue(np.array_equal(loader.load_uint16(row["image_id"]), png_loader.load_uint16(row["image_id"])))
+
             # Corrupt a pixel directly inside shard -> verify_pixel_hashes catches mismatch
             sp = s1_root / rebuilt["shards"][0]["file"]
             sd = torch.load(str(sp), map_location="cpu", weights_only=False)
