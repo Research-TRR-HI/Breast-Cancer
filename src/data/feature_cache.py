@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import time
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 import torch
 
@@ -440,6 +441,11 @@ def extract_or_resume_cache(
                 valid_shards_by_key[(int(smeta["epoch"]), int(smeta["shard_idx"]))] = smeta
 
     train_shards: List[Dict[str, Any]] = []
+    total_batches_all = sum(len(schedules_by_epoch[e]) for e in schedules_by_epoch)
+    done_batches_all = 0
+    newly_done_batches = 0
+    t_extract_start = time.perf_counter()
+
     for epoch in sorted(schedules_by_epoch.keys()):
         epoch_recs = schedules_by_epoch[epoch]
         for shard_idx, b_start in enumerate(range(0, len(epoch_recs), batches_per_shard)):
@@ -447,6 +453,7 @@ def extract_or_resume_cache(
             key = (int(epoch), int(shard_idx))
             if key in valid_shards_by_key:
                 train_shards.append(valid_shards_by_key[key])
+                done_batches_all += (b_end - b_start)
                 continue
 
             shard_feats, shard_labels, shard_indices, shard_img_ids, shard_augs = [], [], [], [], []
@@ -489,8 +496,22 @@ def extract_or_resume_cache(
                 environment_metadata=environment_metadata,
             )
             write_cache_manifest(cache_root, manifest)
+            nb_done = b_end - b_start
+            done_batches_all += nb_done
+            newly_done_batches += nb_done
             if on_progress:
-                on_progress(f"Saved epoch {epoch} shard {shard_idx} ({b_end}/{len(epoch_recs)} batches)")
+                elapsed_s = max(time.perf_counter() - t_extract_start, 1e-6)
+                done_imgs = done_batches_all * batch_size
+                total_imgs = total_batches_all * batch_size
+                rate = (newly_done_batches * batch_size) / elapsed_s
+                eta_hr = ((total_imgs - done_imgs) / max(rate, 1e-6)) / 3600.0 if rate > 0 else 0.0
+                pct = (100.0 * done_batches_all) / max(total_batches_all, 1)
+                filled = int(round(20 * done_batches_all / max(total_batches_all, 1)))
+                bar = "█" * filled + "░" * (20 - filled)
+                on_progress(
+                    f"🔥 [{bar}] {done_imgs:,}/{total_imgs:,} ({pct:5.1f}%) | ⚡ {rate:4.1f} img/s | "
+                    f"⏳ ETA {eta_hr:4.2f}h | Ep {epoch:02d}/{epochs} (batch {b_end}/{len(epoch_recs)})"
+                )
 
     final_manifest = build_cache_manifest(
         model_checkpoint_sha256=model_checkpoint_sha256,
