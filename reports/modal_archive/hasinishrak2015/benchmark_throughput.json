@@ -1,0 +1,16 @@
+{
+  "gpu_name": "NVIDIA L40S",
+  "total_vram_gb": 44.42,
+  "peak_vram_gb": 24.9,
+  "epoch_policy": "full_neg_pass",
+  "batches_per_epoch": 625,
+  "benchmark_batches": 3,
+  "sec_per_batch_80": 25.62,
+  "train_imgs_per_sec": 3.12,
+  "eval_imgs_per_sec": 2.96,
+  "projected_epoch_min": 329.27,
+  "projected_20_epochs_hr": 109.76,
+  "assumed_hourly_rate_usd": 1.95,
+  "projected_20_epochs_cost_usd_per_run": 214.03,
+  "projected_ce_plus_trust_cost_usd": 428.05
+}
