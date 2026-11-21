@@ -1,32 +1,66 @@
-# state.md — Current Workspace State
+# state.md — Unified Two-Paper Workspace State
 
-## Active Goals & Todo
+**Last Updated:** 2026-11-21  
+**Verified Repo Head (Prior):** `ee94c63bdea7b871768d3fb1d8d1508d7436b6fa` (`main`)  
+**Current Decision Across Both Papers:** `MODIFY / INVESTIGATE` (Novelty and Q1 readiness NOT confirmed for either paper yet)
+
+---
+
+## 1. Shared Completed Foundation (Stages A -> B -> C — Preserved Immutable)
 - [x] Smoke-test RSNA Kaggle -> Modal Volume (`rsna-mammography-vol`) download via `scripts/download_rsna_modal.py`.
 - [x] Stage A1 (Download): Downloaded RSNA (`rsna-mammography-vol:/rsna/raw`) and NLBS (`nlbs-mammography-vol:/nlbs/raw`) on Modal (`hasinishrak2015`).
 - [x] Stage A2 (Complete Dataset Audit): Audited both volumes via `scripts/audit_datasets_modal.py` (`cpu=1.0, memory=2048`), generated `datasets/rsna/manifest.csv` (54,706 rows) & `datasets/nlbs/manifest.csv` (26,988 rows), and documented findings in `reports/dataset_audit.md`.
 - [x] Stage A3 (NLBS Extraction & Exam Manifest): Verified 8/8 FRDR SHA-256 checksums, extracted all 3 `.7z` archives to `/nlbs_vol/nlbs/extracted/` (raw untouched), verified 26,988/26,988 DICOMs, built `datasets/nlbs/exam_manifest.csv` (`6,430` `(case_id, StudyInstanceUID)` exams, `6,359` unique `StudyInstanceUID`s, `5,942` connected `split_cluster_id`s).
-- [x] Stage B1 (Code & Implementation): Implemented modular TRUST & CE-only architecture (`src/models/`), preprocessing (`src/data/`), patient-level RSNA splits (`datasets/rsna/splits_seed42.csv`), Mammo-CLIP loader, calibration utilities, local unit test suite (100% PASS), and Modal GPU smoke/training scripts.
-- [x] Research Logs Architecture: Initialized `research_logs/` mirroring `D:\Research BanglaBBQ\research_logs` (`README.md`, `TEMPLATE.md`, and 3 retroactive deep-dive research logs for Stage A, Stage A3, and Stage B).
-- [x] Stage B2 (User Execution - Mammo-CLIP Download): Checkpoint `b5-model-best-epoch-7.tar` (1.65 GB) downloaded and verified in `rsna-mammography-vol:/models/mammo_clip/`.
-- [x] Stage B3 (User Execution - GPU Smoke Test `strict=True`): PASSED on Tesla T4 (`ap-YZU56SuJcHFBV9LR17YcnY`): `852/852` matched keys (`missing=0, unexpected=0`), `checkpoint_loaded_strict: True`, `encoder_frozen_verified: True`, 0.85 GB peak VRAM, `Total=0.7483` (`BCE=0.6601`, `Focal=0.0406`, `Dismissal=0.0476`).
-- [x] Stage B3.5 (User Execution - Pre-Training Blocker Verification & L40S Benchmarks): Strict smoke test PASSED on T4 (`ap-49qo1JiWn1u7NGCioPcRkT`, `852/852`). L40S sweep PASSED (`ap-mY4VfFocqIRVEnGIeV2CtD`: `highest=128`, `fastest=96`, `optimal=80` at `24.90 GB` / `37.55 img/s`). Historical 1-feature-per-image L40S inference/encoding benchmark completed (`ap-KidtVEoMzokd7fsFzpMeFo`).
-- [x] Stage B3.6 (Complete Pre-Training Correction & Local Validation): Audited directly against `arXiv:2609.00300v1` (`reports/trust_paper_implementation_traceability.md`), implemented TRUST losses, CP95 `tau_t`, Sec. 3.2 preprocessing, `paper_independent` sampling, and 13/13 CPU tests (`reports/pre_training_go_no_go.md`).
-- [x] Stage B3.7 (FINAL Pre-Training Readiness Remediation — Critical Fixes A–I): Implemented RNG-isolated `build_trust_head` (Fix A), strict `v2` 22-key `anchorshift_trust_ckpt_v2` checkpointing (Fix B), unified production `src/training/engine.py` shared with parity pilot (Fix C), redesigned 1,200-image parity pilot (`500 train / 500 train_calib [480 neg >= 299] / 200 val_calib`) + nonzero `tau_t` diagnostics (Fix D), exact `TRUSTLoss.forward_microbatch` positive weighting + `micro_batch_size=80` (Fix E), CPU Stage-1 `uint16` crop cache `src/data/stage1_cache.py` + `scripts/cache_stage1_rsna_modal.py` + `--benchmark-extract-batches` (Fix F), strict LUT/laterality/`strict_segmentation` + `use_largest_cc=False` + `--audit-real` (Fix G), `v2` feature cache `anchorshift_aug_cache_v2` with fixed `os.fsync` & `--verify-cache` (Fix H), pinned Python 3.12 + 13 `==` dependencies across `requirements-lock.txt` & Stage B Modal scripts + runtime metadata logging (Fix I). Recalculated exact `splits_seed42.csv` scale (`37,444` neg -> `ceil(37,444/60)=625` batches/ep = `1,000,000` occurrences -> `8.327 GB` FP32 cache). **20/20 local CPU tests PASSED** (`python tests/test_stage_b_smoke.py` & `unittest discover`). Documented in `reports/final_pre_training_readiness_audit.md` (**CONDITIONAL GO**).
-- [x] Stage B3.8 (Cloud Gates 1–4 + Cloud Transfer): PASSED `--audit-real` (`ap-GXKosoQHFpQosDzDNfuvP8`, 16/16 DICOMs, `fallback_count=0`), built & resized Stage-1 cache to `54,706` lossless `uint16` `1520x912` PNGs (`65.9 GiB`), PASSED 1,200-image L40S AMP parity pilot (`ap-DUiCE1N2knIHA84aij0mWG`, `max_prob_diff=2.35e-04`), PASSED 5-batch L40S extraction benchmark (`ap-TTf1PLmeaAxpfnm5tlf5DZ`, `2.2775s/batch`, `35.13 img/s`, projected `8.038h`), and transferred `rsna-mammography-vol` (`splits_seed42.csv`, Mammo-CLIP B5, `65.90 GiB` Stage-1 PNGs) to profile `hasinishrak74001`.
-- [x] Stage B4 (Step 5 VERIFIED + Step 6 CE + Step 7 TRUST COMPLETE on `hasinishrak74001`): `extract_augmentation_cache` (`fc-01M7TQHVX5BKVY29SPJDSJGACA`, `1M` occurrences, `640` shards, SHA-256 `6c34a8c0...`) verified PASS; `ce` (`fc-01M7VTBZZXY4949AC979WFVZ3F`: `target_95=22.50%`, `target_98=14.48%` dismissal) and `trust` (`fc-01M7VTC0JD27AKR088MB32AM9R`: `target_95=20.70%`, `target_98=17.17%` dismissal, final `tau_t=0.25610`) completed 20 epochs cleanly (`reports/stage_b/rsna_{ce,trust}_eval_results.json`).
-- [x] Stage C (Strict Zero-Label Test on NLBS COMPLETE): Executed frozen L40S inference (`ap-rxM08NSdg43qLOjpUZ4jkR`, `hasinishrak2015`) across all `26,988/26,988` NLBS images (`0` decode failures, `0` uncropped fallbacks) using label-free `datasets/nlbs/inference_manifest_stage_c.csv`, locked `6,359` unique `StudyInstanceUID` predictions (`sha256: 526434d0...`) before joining `exam_manifest.csv`, and computed cluster-bootstrap 95% CIs (`5,942` clusters, `B=2,000`). **Finding:** BOTH models failed frozen RSNA sensitivity targets on NLBS (`CE@98%: 90.07%` / `15` missed / `30.49%` dismissed; `TRUST@98%: 84.77%` / `23` missed / `39.77%` dismissed; `CE@95%: 80.13%` / `30` missed / `49.90%` dismissed; `TRUST@95%: 80.79%` / `29` missed / `49.43%` dismissed; AUROC `0.7101` vs `0.7052`), saved in `reports/stage_c/nlbs_zero_label_results.{json,md}`.
-- [ ] Stage D (Adaptation Comparison): Run UPA (2023) using unlabeled NLBS adaptation subset (patient-separated from evaluation) and compare against frozen-threshold results + TRUST target-calibrated reference.
-- [ ] Decide PROCEED / MODIFY / ABANDON based on the go/no-go table.
+- [x] Stage B1 (Code & Implementation): Implemented modular TRUST & CE-only architecture (`src/models/`), preprocessing (`src/data/`), patient-level RSNA splits (`datasets/rsna/splits_seed42.csv`), Mammo-CLIP loader (`852/852` pinned keys), calibration utilities, local unit test suite, and Modal scripts.
+- [x] Research Logs Architecture: Initialized `research_logs/` (`README.md`, `TEMPLATE.md`, and dated research logs for Stages A, A3, B1–B4, and C).
+- [x] Stage B2 (Mammo-CLIP Download): Checkpoint `b5-model-best-epoch-7.tar` (1.65 GB, SHA-256 `0baccb0c...6fd02c`) verified on `rsna-mammography-vol:/models/mammo_clip/`.
+- [x] Stage B3–B3.7 (GPU Smoke Tests, Paper Traceability & Fixes A–I): Verified strict T4 smoke test (`852/852`), L40S sweep (`optimal=80`), aligned code verbatim to `arXiv:2609.00300v1` (`reports/trust_paper_implementation_traceability.md`), implemented Fixes A–I, passed **20/20** CPU tests (`reports/final_pre_training_readiness_audit.md`).
+- [x] Stage B3.8 (Cloud Gates 1–4 + `hasinishrak74001` Migration): PASSED `--audit-real` (`16/16` DICOMs, `fallback_count=0`), built Stage-1 `1520x912` lossless `uint16` PNGs (`65.9 GiB`, `54,706` imgs), PASSED 1,200-img L40S AMP parity pilot (`max_prob_diff=2.35e-04`), PASSED 5-batch extraction benchmark (`35.13 img/s`), migrated Stage-1 volume to `hasinishrak74001`.
+- [x] Stage B4 (RSNA 1M Cache & 20-Epoch CE / TRUST Training on `hasinishrak74001`): Extracted & verified `1,000,000`-occurrence aug-aware feature cache (`640` shards, SHA-256 `6c34a8c0...`). Completed 20 epochs of `ce` (`rsna_ce_eval_results.json`: RSNA `val_calib` `95%=22.50%`, `98%=14.48%` dismissal) and `trust` (`rsna_trust_eval_results.json`: `95%=20.70%`, `98%=17.17%` dismissal, final `tau_t=0.25610`). Checkpoints archived locally in `models/checkpoints/stage_b_rsna/`.
+- [x] Stage C (Strict Zero-Target-Label NLBS Baseline on `hasinishrak2015`, `ap-rxM08NSdg43qLOjpUZ4jkR`): Decoded & cropped all `26,988/26,988` NLBS images into label-free `1520x912` `uint16` PNG cache (`0` failures, `0` fallbacks), hash-locked `6,359` `StudyInstanceUID` exam scores (`sha256: 526434d0...`) prior to outcome join, and computed `B=2,000` cluster-bootstrap CIs (`5,942` clusters, `151` cancer exams):
+  - **CE-only (`98%` RSNA thr `0.096191`):** NLBS sensitivity **`90.07%`** (`136/151`, `15` missed), dismissal **`30.49%`**, AUROC `0.7101` -> **FAILS 98% target**.
+  - **TRUST (`98%` RSNA thr `0.179565`):** NLBS sensitivity **`84.77%`** (`128/151`, `23` missed), dismissal **`39.77%`**, AUROC `0.7052` -> **FAILS 98% target** (`-5.30%` vs CE, 95% CI `[-9.15%, -1.92%]`).
+  - **95% thresholds:** CE `80.13%` sens (`30` missed, `49.90%` dis); TRUST `80.79%` sens (`29` missed, `49.43%` dis) -> **BOTH FAIL**.
+  - Immutable reports saved in `reports/stage_c/nlbs_zero_label_results.{json,md}` and `research_logs/2026-11-20_stage_c_nlbs_zero_label_evaluation.md`.
 
-## Last Session (Convo ac9601be-6e61-4ccd-aa35-83938eac42d6)
-- Stage B Preparation Complete:
-  - Investigated TRUST (2026, arXiv:2609.00300) Methods 3.1–3.11; confirmed no official TRUST code/weights exist; verified foundation checkpoint is `shawn24/Mammo-CLIP/Pre-trained-checkpoints/b5-model-best-epoch-7.tar` (CC BY-NC-SA 4.0, 1.65 GB).
-  - Built modular PyTorch codebase (`src/models/`, `src/data/`, `src/training/`).
-  - Generated deterministic RSNA patient-level splits (`datasets/rsna/splits_seed42.csv`): 8,339 train (4.08% cancer), 1,192 train_calib (4.11%), 2,382 val_calib (4.07%) with 0 patient leakage.
-  - Investigated NLBS 149 positive cases vs 151 exams (`p_4334` and `p_4461` each have 2 distinct positive exams); confirmed `split_cluster_id` (`5,942` clusters) solves the 71 shared `StudyInstanceUID`s.
-  - Created local unit test suite `tests/test_stage_b_smoke.py` (5/5 tests PASS).
-  - Created Modal GPU smoke test (`scripts/smoke_test_stage_b_modal.py`) and training script (`scripts/train_trust_modal.py`).
-  - Documented full reproduction details in `reports/trust_reproduction_plan.md`.
+---
 
-## Current Blockers & Notes
-- **STAGE C COMPLETE — CONTRADICTS FROZEN-THRESHOLD TRANSFER, READY FOR STAGE D (UPA):** Frozen RSNA thresholds catastrophically over-dismissed unseen Canadian NLBS exams (`30.5%–49.9%` dismissed vs `14.5%–22.5%` on RSNA), collapsing sensitivity to `80.13%–90.07%` (failing both `95%` and `98%` recall targets). Note TRUST's higher source cutoff (`0.179565` vs CE `0.096191`) missed `+8` MORE cancers than CE at `98%` target (`23` vs `15`, `-5.30%` cluster CI `[-9.15%, -1.92%]`). Next: run **Stage D (UPA unlabeled target adaptation)** on unlabeled NLBS images (cluster-separated `split_cluster_id` split) + compare against TRUST 20%-target-calibrated reference (`Protocol 3`).
+## 2. PAPER 1 — Multi-Model External Validation Benchmark (`Paper1_External_Validation_Research_Context.md`)
+- **Scientific Role:** Evaluation & failure-mechanism benchmark across **6 prespecified models** (`ce_b5`, `trust_b5`, `gmic_pretrained`, `nyu_fourview_pretrained`, `dinov2_rsna`, `resnet50_rsna`) under source-frozen RSNA `98%`/`95%` thresholds on NLBS (NO new algorithm; `MODIFY / INVESTIGATE`).
+- **Budget & Compute Guardrail:** Max **$30 USD** total *additional* Modal spend on `NVIDIA L40S`. Mandatory account/credit verification + native preprocessing parity + 200–500-img cost projection gate before every full run.
+- **Model Status Matrix:**
+  - [x] `ce_b5` & `trust_b5`: Historic Stage B/C baseline complete (immutable; note RSNA `val_calib` double-use caveat).
+  - [ ] `gmic_pretrained` (Shen et al. 2021, `AGPL-3.0`): Pretrained lesion-aware ResNet-18 (`2944x1920` native cropped 16-bit PNGs) — NOT STARTED.
+  - [ ] `nyu_fourview_pretrained` (Wu et al. 2019/2020, `AGPL-3.0`): Pretrained image-only 4-view CNN (`2677x1942` CC / `2974x1748` MLO) — NOT STARTED.
+  - [ ] `dinov2_rsna` (`Apache-2.0` ViT-S/14 frozen probe + RSNA head) — NOT STARTED.
+  - [ ] `resnet50_rsna` (ImageNet ResNet-50 RSNA fine-tune, cost-gated feasibility) — NOT STARTED.
+- **Mandatory Pending Blockers (NO Paid Multi-Model GPU Runs Until Resolved):**
+  - [ ] **Blocker 1 — Reconcile NLBS Cohort Unit:** Reconcile `5,997` exams / `5,935` unique / `149` cancer cases in published NLBS descriptor vs `6,430` pairs / `6,359` unique `StudyInstanceUID` / `151` pos / `5,942` clusters (`reports/paper1/nlbs_cohort_reconciliation.md`), plus define label-blind 4-view eligibility rule for NYU common cohort.
+  - [ ] **Blocker 2 — Separate RSNA Source Calibration vs. Independent Source Test:** Correct prior `val_calib` double-use by designing patient-disjoint `model_train / trust_internal_train_calib / source_op_calib / source_heldout_test` (or justified exploratory bridge respecting `486` positive RSNA patients).
+  - [ ] **Blocker 3 — Literature & Provenance Audit:** Adversarial comparison vs *MEDINFO 2025/2026 Meta-Repository* & *Sensors (June 2026)* plus pretrained RSNA/NLBS training-overlap/license verification.
+  - [ ] **Scaffold Creation (CPU):** Add `studies/paper1/` & `reports/paper1/` when beginning Paper 1 implementation.
+
+---
+
+## 3. PAPER 2 — AnchorShift (`AnchorShift_Research_Context.md`)
+- **Scientific Role:** Test whether unlabeled-target adaptation (`UPA`, Roschewitz et al. 2023) fixes frozen-threshold sensitivity failure on NLBS, compare against TRUST's `20%` target-labeled calibration (`Protocol 3` upper reference), and develop a novel AnchorShift method **ONLY if** a genuine unresolved failure remains (`MODIFY / INVESTIGATE`).
+- **Pending Tasks:**
+  - [ ] **Stage D1 — UPA (2023) Unlabeled Adaptation Baseline (`Protocol 2`):** Split NLBS cleanly by `split_cluster_id` into unlabeled adaptation vs held-out evaluation; fit UPA CDF score alignment against RSNA calibration scores (no NLBS cancer outcomes used) for CE and TRUST.
+  - [ ] **Stage D2 — Target-Label 20/80 Calibration Reference (`Protocol 3`):** Compute oracle target-calibrated thresholds on matched NLBS split using our exact Stage-B checkpoints (isolating zero-label threshold drift vs backbone `AUROC ~0.71`).
+  - [ ] **Stage E — Method Decision Gate:** Decide `PROCEED` (new AnchorShift algorithm justified) / `MODIFY` / `MERGE into unified paper with Paper 1` / `ABANDON` based on observed UPA + Paper 1 evidence.
+
+---
+
+## 4. Infrastructure, Budget & Active Modal Volume Notes
+- **Modal Volumes:**
+  - `hasinishrak2015`: `nlbs-mammography-vol` (`26,988` raw `.dcm`s in `/nlbs/extracted/`), `rsna-mammography-vol` (`54,706` RSNA Stage-1 `1520x912` PNGs + `b5-model-best-epoch-7.tar` + Stage-B Epoch-20 checkpoints + newly built **`26,988` NLBS `1520x912` `uint16` PNGs** at `/cache/stage1_nlbs_uint16/png_1520x912/`).
+  - `hasinishrak74001`: `rsna-mammography-vol` (`65.9 GiB` RSNA `1520x912` PNGs + `640`-shard `1M`-occurrence cache + Stage-B Epoch-20 checkpoints/results).
+- **Mandatory Before Any Next Paid Run:** Check real remaining balance/credits on active Modal profile (`hasinishrak2015` vs `hasinishrak74001`), verify `.pt`/volume locations, and enforce the **$30 additional Modal cap**.
+
+---
+
+## 5. Preserved Historical Notes (`Convo ac9601be-6e61-4ccd-aa35-83938eac42d6`, 2026-11-17)
+- Verified Mammo-CLIP checkpoint `shawn24/Mammo-CLIP/Pre-trained-checkpoints/b5-model-best-epoch-7.tar` (CC BY-NC-SA 4.0, 1.65 GB).
+- Deterministic RSNA `splits_seed42.csv`: `8,339` train (4.08% cancer), `1,192` train_calib (4.11%), `2,382` val_calib (4.07%) with `0` patient leakage.
+- Resolved NLBS `149` positive cases vs `151` exams (`p_4334` and `p_4461` repeat visits) and `71` shared `StudyInstanceUID`s via `split_cluster_id` (`5,942` clusters).
+- Full reproduction details recorded in `reports/trust_reproduction_plan.md`.
