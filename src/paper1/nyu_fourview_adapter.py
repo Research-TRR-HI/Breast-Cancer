@@ -126,11 +126,29 @@ def extract_nyu_cropped_view(
         best_center = (int(oc["best_center_y"]), int(oc["best_center_x"]))
         img_f32 = cropped_flip_u16.astype(np.float32)
     except Exception as exc:
+        # Preserve 1:1 physical pixel scale (NEVER cv2.resize across raw -> model dimensions).
+        # Compute native-scale foreground center of mass + NYU optimal-density window on uncropped view.
         fallback_used = True
-        flipped = n_load.flip_image(arr_u16.astype(np.float32), view_slot, "NO")
-        img_f32 = cv2.resize(flipped, (target_size[1], target_size[0]), interpolation=cv2.INTER_CUBIC).astype(np.float32)
-        best_center = (target_size[0] // 2, target_size[1] // 2)
+        cropped_flip_u16 = n_load.flip_image(arr_u16, view_slot, "NO")
+        nz_y, nz_x = np.nonzero(cropped_flip_u16 > 0)
+        if len(nz_y) > 0:
+            com_pt = np.array([int(np.mean(nz_y)), int(np.mean(nz_x))], dtype=np.int64)
+        else:
+            com_pt = np.array(cropped_flip_u16.shape, dtype=np.int64) // 2
+        try:
+            oc = n_coc.get_image_optimal_window_info(
+                cropped_flip_u16,
+                com=com_pt,
+                window_dim=np.array(target_size),
+                tl_br_constraint=None,
+            )
+            best_center = (int(oc["best_center_y"]), int(oc["best_center_x"]))
+        except Exception:
+            best_center = (int(com_pt[0]), int(com_pt[1]))
+        img_f32 = cropped_flip_u16.astype(np.float32)
         dcm_meta["crop_error"] = str(exc)
+        dcm_meta["fallback_strategy"] = "native_scale_optimal_window_no_resize"
+        dcm_meta["raw_shape"] = [int(arr_u16.shape[0]), int(arr_u16.shape[1])]
 
     return {
         "image_f32": img_f32,
