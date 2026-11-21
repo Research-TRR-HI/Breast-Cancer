@@ -33,12 +33,18 @@ memory/personal_info.md
 # Model checkpoints & logs
 *.pt
 *.pth
+*.p
 *.ckpt
 *.safetensors
 *.onnx
+*.h5
+*.hdf5
 logs/
 wandb/
 stage1_manifest.json
+
+# Cloned third-party reference repos & sample binaries
+external/
 
 # OS / IDE
 .DS_Store
