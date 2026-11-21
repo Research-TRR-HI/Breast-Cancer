@@ -1,0 +1,95 @@
+study_id: paper1_external_validation_6model
+protocol_version: v1.0
+frozen_date: 2026-11-21
+
+models:
+  - model_id: ce_b5
+    display_name: "CE-only (Mammo-CLIP B5)"
+    stratum: A_rsna_supervised
+    official_repo: "https://github.com/RSNA-or-shawn24/Mammo-CLIP (pinned HF shawn24/Mammo-CLIP)"
+    repo_revision: "2f356926a00fc3f0d9fdad1193c1464fd9adf564"
+    backbone_checkpoint: "b5-model-best-epoch-7.tar"
+    backbone_sha256: "0baccb0cc19cd6093ff8252f7c2b7a6efbc32973498640abcb311210c46fd02c"
+    trained_checkpoint: "models/checkpoints/stage_b_rsna/ce_rsna_seed42_final_epoch20.pt"
+    trained_sha256: "adf1443455ee1b507485ee4b7f64932d5cf6f59bb6afcf11b9f415c634372d22"
+    license: "CC BY-NC-SA 4.0 (Mammo-CLIP)"
+    pretraining_data: "UPMC screening mammogram-report pairs (13,829 patients / 25,355 images)"
+    input_spec: "1520x912 uint16 cropped mammogram, right-mirrored, Mammo-CLIP mean/std"
+    exam_aggregation: "max(image malignancy score)"
+    rsna_training_required: false
+    status: verified_reusable
+
+  - model_id: trust_b5
+    display_name: "TRUST independent (Mammo-CLIP B5)"
+    stratum: A_rsna_supervised
+    official_repo: "https://github.com/shawn24/Mammo-CLIP (HF revision pinned)"
+    repo_revision: "2f356926a00fc3f0d9fdad1193c1464fd9adf564"
+    backbone_checkpoint: "b5-model-best-epoch-7.tar"
+    backbone_sha256: "0baccb0cc19cd6093ff8252f7c2b7a6efbc32973498640abcb311210c46fd02c"
+    trained_checkpoint: "models/checkpoints/stage_b_rsna/trust_rsna_seed42_final_epoch20.pt"
+    trained_sha256: "63388d790ce9cf8a8287adc7724358ced392a69b332ce1a5e46972750faa51cb"
+    license: "CC BY-NC-SA 4.0 (Mammo-CLIP)"
+    pretraining_data: "UPMC screening mammogram-report pairs (13,829 patients / 25,355 images)"
+    input_spec: "1520x912 uint16 cropped mammogram, right-mirrored, Mammo-CLIP mean/std"
+    exam_aggregation: "max(image malignancy score)"
+    rsna_training_required: false
+    status: verified_reusable
+
+  - model_id: gmic_pretrained
+    display_name: "GMIC (Pretrained ResNet-18, Model 1)"
+    stratum: B_pretrained_direct
+    official_repo: "https://github.com/nyukat/GMIC"
+    repo_revision: "594029efe6184bcca3a151fa1dd46c5fd620cb25"
+    checkpoint_file: "models/sample_model_1.p"
+    checkpoint_sha256: "3b792e6de22fdccd34a43b4c1cc87a94f5f4fa8aed42722dce4e4badac347991"
+    license: "AGPL-3.0"
+    pretraining_data: "NYU Breast Cancer Screening Dataset (229,426 exams, 2010-2017)"
+    input_spec: "Native GMIC crop + optimal_centers, 2944x1920 16-bit grayscale, per-image z-score"
+    output_field: "malignant_pred"
+    exam_aggregation: "max(malignant_pred across images)"
+    rsna_training_required: false
+    status: parity_verifying
+
+  - model_id: nyu_fourview_pretrained
+    display_name: "NYU Four-View CNN (Image-Only)"
+    stratum: B_pretrained_direct
+    official_repo: "https://github.com/nyukat/breast_cancer_classifier"
+    repo_revision: "6176ebea6950b0a953339593d2da417ab846dae0"
+    checkpoint_file: "models/sample_image_model.p"
+    checkpoint_sha256: "9a1d97f93493ea2007c00e6c1805dfa634cbc321ecdeba2c2adecd351e86b014"
+    license: "AGPL-3.0"
+    pretraining_data: "NYU Breast Cancer Screening Dataset (229,426 exams, 2010-2017)"
+    input_spec: "Native NYU crop + optimal_centers, CC 2677x1942 / MLO 2974x1748 16-bit grayscale, 10x TTA avg (seed=0)"
+    output_fields: ["left_malignant", "right_malignant"]
+    exam_aggregation: "max(left_malignant, right_malignant)"
+    rsna_training_required: false
+    status: parity_verifying
+
+  - model_id: dinov2_rsna
+    display_name: "DINOv2 ViT-S/14 + RSNA head"
+    stratum: A_rsna_supervised
+    official_repo: "https://github.com/facebookresearch/dinov2"
+    repo_revision: "7764ea0f912e53c92e82eb78a2a1631e92725fc8"
+    backbone_checkpoint: "https://dl.fbaipublicfiles.com/dinov2/dinov2_vits14/dinov2_vits14_pretrain.pth"
+    backbone_sha256: "b938bf1bc15cd2ec0feacfe3a1bb553fe8ea9ca46a7e1d8d00217f29aef60cd9"
+    license: "Apache-2.0"
+    pretraining_data: "LVD-142M curated natural images (self-supervised, no mammography cancer labels)"
+    input_spec: "Reuse Stage-1 1520x912 uint16 crop -> pad-to-square + bilinear 518x518 -> 3ch RGB -> ImageNet norm -> 384-d CLS"
+    head_architecture: "LayerNorm(384) -> Dropout(0.3) -> Linear(384, 1) (plus linear/MLP selection on train_calib only)"
+    exam_aggregation: "max(image malignancy score)"
+    rsna_training_required: true
+    status: weight_verified_pipeline_pending
+
+  - model_id: resnet50_rsna
+    display_name: "ResNet-50 (ImageNet-1K V2 + RSNA fine-tune)"
+    stratum: A_rsna_supervised
+    official_repo: "https://github.com/pytorch/vision"
+    torchvision_weights: "ResNet50_Weights.IMAGENET1K_V2"
+    checkpoint_file: "resnet50-11ad3fa6.pth"
+    backbone_sha256: "11ad3fa62ca79e40addfd354a8ec4b7c75143b3038b8d2a807fbc68deab379ca"
+    license: "BSD-3-Clause"
+    pretraining_data: "ImageNet-1K natural images (no mammography cancer labels)"
+    input_spec: "Reuse Stage-1 1520x912 uint16 crop -> aspect-preserving 768x512 (or 1024x614 benchmarked) -> TRUST augs -> ImageNet norm"
+    exam_aggregation: "max(image malignancy score)"
+    rsna_training_required: true
+    status: weight_verified_pipeline_pending
