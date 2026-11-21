@@ -1,0 +1,239 @@
+{
+  "n_studies": 6184,
+  "n_clusters": 5868,
+  "n_positive_studies": 151,
+  "source_locked_predictions_sha256": "526434d058510208ee825b3db36380d0faec7760c17dd2c867dc6288eeb10cc2",
+  "ce_b5": {
+    "auroc": 0.7088787606354894,
+    "auprc": 0.054805390907582796,
+    "target_98": {
+      "threshold": 0.09619140625,
+      "total_cases": 6184,
+      "total_cancers": 151,
+      "n_dismissed": 1878,
+      "n_retained": 4306,
+      "dismissal_rate": 0.3036869340232859,
+      "detected_cancers": 136,
+      "missed_cancers": 15,
+      "triage_recall": 0.9006622516556292,
+      "cancer_prev_dismissed": 0.007987220447284345,
+      "clopper_pearson_99_ub": 0.0141955764529723,
+      "meets_target_recall": false,
+      "reported_dismissal_rate": null
+    },
+    "target_95": {
+      "threshold": 0.12445068359375,
+      "total_cases": 6184,
+      "total_cancers": 151,
+      "n_dismissed": 3071,
+      "n_retained": 3113,
+      "dismissal_rate": 0.4966041397153946,
+      "detected_cancers": 121,
+      "missed_cancers": 30,
+      "triage_recall": 0.8013245033112583,
+      "cancer_prev_dismissed": 0.00976880494952784,
+      "clopper_pearson_99_ub": 0.014746613300360258,
+      "meets_target_recall": false,
+      "reported_dismissal_rate": null
+    }
+  },
+  "trust_b5": {
+    "auroc": 0.7039955740118092,
+    "auprc": 0.053873806182616224,
+    "target_98": {
+      "threshold": 0.1795654296875,
+      "total_cases": 6184,
+      "total_cancers": 151,
+      "n_dismissed": 2447,
+      "n_retained": 3737,
+      "dismissal_rate": 0.3956985769728331,
+      "detected_cancers": 128,
+      "missed_cancers": 23,
+      "triage_recall": 0.847682119205298,
+      "cancer_prev_dismissed": 0.00939926440539436,
+      "clopper_pearson_99_ub": 0.01501311267519355,
+      "meets_target_recall": false,
+      "reported_dismissal_rate": null
+    },
+    "target_95": {
+      "threshold": 0.1954345703125,
+      "total_cases": 6184,
+      "total_cancers": 151,
+      "n_dismissed": 3040,
+      "n_retained": 3144,
+      "dismissal_rate": 0.49159120310478654,
+      "detected_cancers": 122,
+      "missed_cancers": 29,
+      "triage_recall": 0.8079470198675497,
+      "cancer_prev_dismissed": 0.009539473684210526,
+      "clopper_pearson_99_ub": 0.014499750492246092,
+      "meets_target_recall": false,
+      "reported_dismissal_rate": null
+    }
+  },
+  "cluster_bootstrap_95ci": {
+    "method": "cluster_bootstrap",
+    "cluster_unit": "split_cluster_id",
+    "n_clusters": 5868,
+    "n_bootstrap": 2000,
+    "seed": 42,
+    "metrics": {
+      "ce_auroc": {
+        "mean": 0.7090266115971929,
+        "std": 0.019949709275363672,
+        "ci95_low": 0.6668276819261758,
+        "ci95_high": 0.7462929361342014
+      },
+      "ce_auprc": {
+        "mean": 0.05731633946393734,
+        "std": 0.008942352494979709,
+        "ci95_low": 0.04175935620535949,
+        "ci95_high": 0.07637937847474524
+      },
+      "trust_auroc": {
+        "mean": 0.7042113526613764,
+        "std": 0.02019479253633791,
+        "ci95_low": 0.6617420341780482,
+        "ci95_high": 0.7422891038300664
+      },
+      "trust_auprc": {
+        "mean": 0.05631650386129259,
+        "std": 0.00877012262492109,
+        "ci95_low": 0.04089641094625443,
+        "ci95_high": 0.07468455431381114
+      },
+      "delta_auroc_trust_minus_ce": {
+        "mean": -0.004815258935816529,
+        "std": 0.0021891801399870803,
+        "ci95_low": -0.009003035611739717,
+        "ci95_high": -0.0004804220841593474
+      },
+      "delta_auprc_trust_minus_ce": {
+        "mean": -0.0009998356026447632,
+        "std": 0.0008756479976277088,
+        "ci95_low": -0.0029135187093918113,
+        "ci95_high": 0.0006639523604781462
+      },
+      "ce_target_95_sensitivity": {
+        "mean": 0.8019655542112937,
+        "std": 0.032805266770372245,
+        "ci95_low": 0.7343609487410072,
+        "ci95_high": 0.8630210899773332
+      },
+      "ce_target_95_dismissal_rate": {
+        "mean": 0.49652761344067403,
+        "std": 0.006546724075084793,
+        "ci95_low": 0.48366836008194414,
+        "ci95_high": 0.5090300024237894
+      },
+      "ce_target_95_cancer_prev_dismissed": {
+        "mean": 0.009739576764775394,
+        "std": 0.001760288330333881,
+        "ci95_low": 0.006516780710329097,
+        "ci95_high": 0.013289171201916654
+      },
+      "ce_target_95_missed_per_1000_screened": {
+        "mean": 4.835806361045642,
+        "std": 0.8748867817437617,
+        "ci95_low": 3.2330417374741125,
+        "ci95_high": 6.615117193939777
+      },
+      "ce_target_98_sensitivity": {
+        "mean": 0.9012606992569487,
+        "std": 0.024002059379459664,
+        "ci95_low": 0.85,
+        "ci95_high": 0.9432724003596044
+      },
+      "ce_target_98_dismissal_rate": {
+        "mean": 0.30357122667928055,
+        "std": 0.006113122694315745,
+        "ci95_low": 0.2914572864321608,
+        "ci95_high": 0.3153902123548243
+      },
+      "ce_target_98_cancer_prev_dismissed": {
+        "mean": 0.007946050916694564,
+        "std": 0.002024878196176509,
+        "ci95_low": 0.00431930569343473,
+        "ci95_high": 0.012150830837519134
+      },
+      "ce_target_98_missed_per_1000_screened": {
+        "mean": 2.411891215574084,
+        "std": 0.6151505692888768,
+        "ci95_low": 1.2951166042748783,
+        "ci95_high": 3.71510027677922
+      },
+      "trust_target_95_sensitivity": {
+        "mean": 0.8084029273949395,
+        "std": 0.03245150243380923,
+        "ci95_low": 0.7402532467532468,
+        "ci95_high": 0.8662526539278131
+      },
+      "trust_target_95_dismissal_rate": {
+        "mean": 0.49157733536837817,
+        "std": 0.006558944485467165,
+        "ci95_low": 0.47847904371527755,
+        "ci95_high": 0.5043098305395811
+      },
+      "trust_target_95_cancer_prev_dismissed": {
+        "mean": 0.009516903404065217,
+        "std": 0.00174358716204655,
+        "ci95_low": 0.00634163045447726,
+        "ci95_high": 0.01303377390128129
+      },
+      "trust_target_95_missed_per_1000_screened": {
+        "mean": 4.678200875146213,
+        "std": 0.8585149022948317,
+        "ci95_low": 3.083401968053533,
+        "ci95_high": 6.450650544606598
+      },
+      "trust_target_98_sensitivity": {
+        "mean": 0.8484274917663024,
+        "std": 0.029345820548835094,
+        "ci95_low": 0.7872306108442004,
+        "ci95_high": 0.9022988505747126
+      },
+      "trust_target_98_dismissal_rate": {
+        "mean": 0.3956703186785838,
+        "std": 0.006478100562057427,
+        "ci95_low": 0.38313534528235016,
+        "ci95_high": 0.40830906013067614
+      },
+      "trust_target_98_cancer_prev_dismissed": {
+        "mean": 0.009351963059158728,
+        "std": 0.0019136875021058906,
+        "ci95_low": 0.005775458522769012,
+        "ci95_high": 0.013355981606296825
+      },
+      "trust_target_98_missed_per_1000_screened": {
+        "mean": 3.700218379951162,
+        "std": 0.7592521411596755,
+        "ci95_low": 2.26792266963812,
+        "ci95_high": 5.323611237883652
+      },
+      "delta_sensitivity_target_95_trust_minus_ce": {
+        "mean": 0.006437373183645642,
+        "std": 0.011436439027291,
+        "ci95_low": -0.01418693009118532,
+        "ci95_high": 0.029239766081871288
+      },
+      "delta_dismissal_target_95_trust_minus_ce": {
+        "mean": -0.004950278072295926,
+        "std": 0.0022302038765721044,
+        "ci95_low": -0.009502565103720717,
+        "ci95_high": -0.000806542747700627
+      },
+      "delta_sensitivity_target_98_trust_minus_ce": {
+        "mean": -0.05283320749064633,
+        "std": 0.018597277068861724,
+        "ci95_low": -0.09154929577464788,
+        "ci95_high": -0.01898734177215189
+      },
+      "delta_dismissal_target_98_trust_minus_ce": {
+        "mean": 0.09209909199930334,
+        "std": 0.0036746222592637205,
+        "ci95_low": 0.0850646003481055,
+        "ci95_high": 0.0991452184808225
+      }
+    }
+  }
+}
