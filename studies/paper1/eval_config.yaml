@@ -1,0 +1,40 @@
+study: paper1
+protocol_version: v1.0
+seed: 42
+
+operating_targets:
+  primary_recall: 0.98
+  secondary_recall: 0.95
+  dismissal_rule: "score < tau"
+  retention_rule: "score >= tau"
+
+rsna_splits:
+  base_splits_csv: "datasets/rsna/splits_seed42.csv"
+  val_calib_2fold_csv: "datasets/paper1/rsna_val_calib_2fold_seed42.csv"
+  val_calib_4view_csv: "datasets/paper1/rsna_val_calib_4view_selection.csv"
+  train_split_name: "train"
+  model_selection_split_name: "train_calib"
+  source_eval_protocol: "2fold_oof_within_val_calib"
+  nlbs_threshold_calib_split: "val_calib"
+  nlbs_threshold_sensitivity_split: "fold_a"
+
+nlbs_cohorts:
+  primary_common_4view_manifest: "datasets/paper1/nlbs_4view_common_cohort_label_free.csv"
+  eligibility_manifest: "datasets/paper1/nlbs_4view_study_eligibility.csv"
+  full_label_free_manifest: "datasets/nlbs/inference_manifest_stage_c.csv"
+  outcome_manifest_eval_only: "datasets/nlbs/exam_manifest.csv"
+  cluster_column: "split_cluster_id"
+  study_column: "StudyInstanceUID"
+
+uncertainty:
+  bootstrap_replicates: 2000
+  bootstrap_seed: 42
+  cluster_unit_nlbs: "split_cluster_id"
+  cluster_unit_rsna: "patient_id"
+  clopper_pearson_confidence: 0.99
+
+immutable_baselines:
+  stage_b_ce_json: "reports/stage_b/rsna_ce_eval_results.json"
+  stage_b_trust_json: "reports/stage_b/rsna_trust_eval_results.json"
+  stage_c_locked_predictions: "reports/stage_c/locked_nlbs_predictions.csv"
+  stage_c_results_json: "reports/stage_c/nlbs_zero_label_results.json"
