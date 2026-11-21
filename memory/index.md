@@ -11,7 +11,7 @@ This repository (`https://github.com/Research-TRR-HI/Breast-Cancer`) houses **tw
 ## Directory Structure & Detailed File Context
 
 ### Root (`d:\Breast Cancer Research`)
-- `.gitignore`: Ignores Python cache, `.env`/secret keys, `memory/personal_info.md`, raw medical images/archives (`*.dcm`, `*.zip`, `*.png`, etc.), `*.pt`/`*.ckpt` model weights, `logs/`, duplicate `48MB` `stage1_manifest.json` files, and local `git commit.md`, while keeping `datasets/` & small report manifests tracked.
+- `.gitignore`: Ignores Python cache, `.env`/secret keys, `memory/personal_info.md`, raw medical images/archives (`*.dcm`, `*.zip`, `*.png`, etc.), `*.pt`/`*.ckpt`/`*.p`/`*.h5`/`*.hdf5` model weights, `external/` cloned repos, `logs/`, duplicate `48MB` `stage1_manifest.json` files, and local `git commit.md`, while keeping `datasets/` & small report manifests tracked.
 - `.agents/rules/git-commit-rule.md`: Strict Git commit rule (`1 file = 1 commit`, never commit `git commit.md`, alternate consistent author/committer identity per task between `Tahsin Raihan Robbani` and `Hasin Ishrak`).
 - `requirements-lock.txt`: Exact `==` pinned Python `3.12` direct dependencies matching `src/utils/env_metadata.py` (`torch==2.5.1`, `torchvision==0.20.1`, `numpy==2.5.3`, `pandas==2.3.3`, `scipy==1.17.1`, `pydicom==3.0.2`, `opencv-python-headless==4.11.0.86`, `pillow==12.3.0`, `omegaconf==2.3.0`, `pylibjpeg==2.0.0`, `pylibjpeg-libjpeg==2.5.0`, `pylibjpeg-openjpeg==2.6.0`, `python-gdcm==3.0.24.1`).
 
@@ -29,7 +29,10 @@ This repository (`https://github.com/Research-TRR-HI/Breast-Cancer`) houses **tw
 - `nlbs/exam_manifest.csv`: `6,430`-row `(case_id, StudyInstanceUID)` manifest resolving to `6,359` unique `StudyInstanceUID` studies (`151` positive exams) and `5,942` connected `split_cluster_id` components (`149` positive clusters; see Paper 1 Blocker 1 for reconciliation with published `5,997 / 5,935 / 149` counts).
 - `nlbs/inference_manifest_stage_c.csv`: Strictly label-free Stage C inference manifest (`26,988` images, sorted by `StudyInstanceUID`, explicitly excluding `Cancer`, `exam_cancer`, `n_cancer_images`, `Hard to State Negative`, `cohort_group`, `sha256: c3d6a3b3...`).
 
+- `datasets/paper1/`: Paper 1 Gate 0.2 frozen manifests (`rsna_val_calib_2fold_seed42.csv`, `rsna_val_calib_4view_selection.csv`, `nlbs_4view_study_eligibility.csv`, `nlbs_4view_common_cohort_label_free.csv`).
+
 ### `src/` *(Shared Verified Pipeline Modules)*
+- `paper1/`: Paper 1 model adapters & preprocessors (`gmic_adapter.py`, `nyu_fourview_adapter.py`, `dinov2_model.py`, `resnet50_model.py`).
 - `models/efficientnet_custom.py` & `models/efficient_net_custom_utils.py`: Canonical Mammo-CLIP EfficientNet-B5 backbone matching `852/852` tensors of `b5-model-best-epoch-7.tar`.
 - `models/trust_model.py`: `MammoCLIPEncoder`, `TRUSTClassifier`, `aggregate_case_scores` (max aggregation + strict checks), and `aggregate_case_labels`.
 - `models/losses.py`: Exact TRUST losses (`FocalLoss` `gamma=2.0`, `alpha=None`; `DynamicDismissalLoss` `m=0.10`, `lambda_dismiss=0.05`; `TRUSTLoss.forward_microbatch`).
@@ -43,6 +46,7 @@ This repository (`https://github.com/Research-TRR-HI/Breast-Cancer`) houses **tw
 - `utils/env_metadata.py`: Pinned Python `3.12` / 13-package metadata constants & runtime collector.
 
 ### `scripts/`
+- **Paper 1 Gate 0.2 & Four-Model Pipelines:** `prepare_paper1_gate02.py`, `paper1_modal_smoke_and_bench.py`, `run_paper1_gmic_modal.py`, `run_paper1_nyu_modal.py`, `run_paper1_dinov2_modal.py`, `run_paper1_resnet50_modal.py`, `train_paper1_dinov2_head.py`.
 - **Shared / Stage A–C Executed:** `download_{rsna,nlbs,mammoclip}_modal.py`, `audit_datasets_modal.py`, `stage_a3_nlbs_extract_modal.py`, `smoke_test_stage_b_modal.py`, `benchmark_l40s_comparison_modal.py`, `cache_stage1_rsna_modal.py`, `pilot_parity_modal.py`, `train_trust_modal.py`, `run_stage_b_pipeline.py`, `build_nlbs_inference_manifest.py`, `eval_nlbs_stage_c_modal.py` (2-phase CPU Stage-1 -> NVMe L40S inference), `evaluate_locked_nlbs_stage_c.py`.
 
 ### `reports/` & `research_logs/` *(Shared Evidence & Immutable Historical Results)*
@@ -51,13 +55,17 @@ This repository (`https://github.com/Research-TRR-HI/Breast-Cancer`) houses **tw
   - `reports/stage_c/locked_nlbs_predictions.csv`, `locked_nlbs_image_diagnostics.csv.gz`, `locked_predictions_manifest.json`, `nlbs_zero_label_results.{json,md}`: Immutable 20 Nov 2026 frozen-threshold NLBS zero-label test results (`6,359` studies, `26,988/26,988` decoded cleanly).
   - `reports/modal_archive/{hasinishrak2015,hasinishrak74001}/`: Archived benchmark JSONs, `16`-DICOM real audit PNGs, manifests, and canonical `splits_seed42.csv`. *(Trained `.pt` checkpoints, `eval_*_fp32.pt` feature tensors, and `logs/modal/` logs are archived locally in gitignored `models/` & `logs/`.)*
 - **Design & Audit Docs:** `reports/dataset_audit.md`, `reports/trust_paper_implementation_traceability.md`, `reports/trust_reproduction_plan.md`, `reports/pre_training_go_no_go.md`, `reports/final_pre_training_readiness_audit.md`.
-- **Research Logs (`research_logs/`):** Indexed chronological logs (`README.md`, `TEMPLATE.md`, 11 dated logs covering Stages A, A3, B1–B4, C, and Paper 1 Stage 0 — preserve immutable, tag future logs by `[Paper 1]` / `[Paper 2]` / `[Shared]`).
-- **Paper 1 Reports (`reports/paper1/`):**
+- **Research Logs (`research_logs/`):** Indexed chronological logs (`README.md`, `TEMPLATE.md`, 12 dated logs covering Stages A, A3, B1–B4, C, and Paper 1 Stages 0 & 1 — preserve immutable, tag future logs by `[Paper 1]` / `[Paper 2]` / `[Shared]`).
+- **Paper 1 Protocol & Reports (`studies/paper1/`, `reports/paper1/`):**
+  - `studies/paper1/`: Frozen Paper 1 study docs (`README.md`, `protocol_v1.md`, `model_manifest.yaml`, `eval_config.yaml`, `analysis_plan.md`).
   - `reports/paper1/stage0_readiness_audit.md`: Paper 1 Stage 0 CPU-only readiness audit (**CONDITIONAL GO**) covering NLBS `5,997 / 5,935 / 6,430 / 6,359 / 5,942` & `6,184` 4-view reconciliation, zero-retrain `val_calib` 2-fold source-test redesign, CE/TRUST `$0` reuse verification, pretrained overlap/license matrix, 4-model implementation specs, and `$17.50–$28.00` Modal budget strategy.
+  - `reports/paper1/ce_trust_{rsna_source_eval,nlbs_common_4view}.{json,md}`: Gate 0.2 CPU CE/TRUST 2-fold OOF RSNA source metrics & common 4-view NLBS (`N=6,184`) evaluations.
+  - `reports/paper1/l40s_smoke_and_benchmark.json`: Live `hasinishrak2015` NVIDIA L40S smoke & throughput benchmark across `gmic_pretrained`, `nyu_fourview_pretrained`, `dinov2_rsna`, and `resnet50_rsna`.
+  - `reports/paper1/stage1_model_readiness.md`: Paper 1 Stage 1 Readiness Audit (**GO**) consolidating Gate 0.2 manifests, model provenance/SHA-256 hashes, `sample_data` parity, L40S benchmarks, and full execution CLI commands.
 - **Planned Paper-Specific Folders *(NOT YET CREATED — add when corresponding tracks execute)*:**
-  - `studies/paper1/` (Paper 1 protocol, `model_manifest.yaml`, `eval_config.yaml`, `analysis_plan.md`).
   - `studies/anchorshift/`, `reports/anchorshift/` (Paper 2 Stage D UPA, Protocol 3 oracle reference, any candidate adaptation experiments).
 
 ### `tests/`
 - `tests/test_stage_b_smoke.py`: 20-test local CPU suite across Categories A–H (`20/20` PASS).
 - `tests/test_stage_c_quarantine_and_eval.py`: 3-test suite verifying forbidden-column quarantine, tamper-abort SHA-256 verification, and cluster CI evaluation (`3/3` PASS).
+- `tests/test_paper1_models_and_gate02.py`: 6-test suite verifying Gate 0.2 splits/quarantine, `GMIC` & `NYU Four-View` official `sample_data` parity, `DINOv2` frozen forward + CPU head training/locking smoke test, and `ResNet-50` forward/backward pass (`6/6` PASS).
