@@ -1,8 +1,8 @@
 # state.md — Unified Two-Paper Workspace State
 
 **Last Updated:** 2026-11-21  
-**Verified Repo Head (Prior):** `9a99dc1` (`main`)  
-**Current Decision Across Both Papers:** Paper 1 Stage 1 Model Readiness = **GO** (Gate 0.2 + 4-model parity + live `hasinishrak2015` L40S smoke benchmarks verified; awaiting full-run launch approval); Paper 2 AnchorShift Stage D pending (`MODIFY / INVESTIGATE`)
+**Verified Repo Head (Prior):** `de14b44` (`main`)  
+**Current Decision Across Both Papers:** Paper 1 Stage 1 Final Corrections = **GO** (AMP unscale+resume, DINOv2 NVMe `74.2 img/s`, non-warping NYU fallback, 6-model paired eval verified; `32/32` CPU tests + `~$13.15` total projection on `hasinishrak2015`); Paper 2 AnchorShift Stage D pending (`MODIFY / INVESTIGATE`)
 
 ---
 
@@ -37,8 +37,9 @@
 - **Mandatory Gates & Remaining Work (`reports/paper1/stage1_model_readiness.md` — GO):**
   - [x] **Stage 0 Audit — Reconciliation, Splits, Provenance & Budget:** Complete (`reports/paper1/stage0_readiness_audit.md`).
   - [x] **Gate 0.2 — Study Protocol, Frozen Splits & CPU Baseline Source Eval:** Created `studies/paper1/*`, `datasets/paper1/*` (`rsna_val_calib_2fold_seed42.csv`, `rsna_val_calib_4view_selection.csv`, `nlbs_4view_study_eligibility.csv`, `nlbs_4view_common_cohort_label_free.csv`), and `reports/paper1/ce_trust_{rsna_source_eval,nlbs_common_4view}.{json,md}`.
-  - [x] **Gate 0.3 — Four-Model Official Verification & L40S Smoke Benchmarks:** All 4 checkpoints verified & uploaded to `hasinishrak2015` `rsna-mammography-vol:/models/paper1/`; `29/29` CPU tests PASS; live L40S benchmark `ap-VqaH4fOfCP46dJKO9V9Gei` PASSED (`reports/paper1/l40s_smoke_and_benchmark.json`).
-  - [ ] **Stage 2 — Execute Full Four-Model Paper 1 Runs (Paused Pending Approval):** Run `GMIC`, `NYU Four-View`, `DINOv2`, and `ResNet-50` across RSNA & NLBS on `hasinishrak2015` (`~$14.70–$25.11` total; confirm `hasinishrak2015` credit balance first & optionally add `/tmp` NVMe staging to `run_paper1_dinov2_modal.py`).
+  - [x] **Gate 0.3 — Four-Model Official Verification & L40S Smoke Benchmarks:** All 4 checkpoints verified & uploaded to `hasinishrak2015` `rsna-mammography-vol:/models/paper1/`; live L40S benchmarks (`ap-acCim6bfGllCdJjTKtPDv6`, `ap-vMdXP2h5eFu2wqzAOGyAYs`) & `32/32` CPU tests PASSED.
+  - [x] **Stage 1.5 — Final Critical Corrections (`reports/paper1/stage1_final_corrections.md` — GO):** Fixed ResNet-50 `scaler.unscale_` + full RNG/sampler resume (`test_7`); added DINOv2 NVMe staging + resumable 4k chunks (`74.2 img/s`, `~$0.72` full); diagnosed NYU `2/32` fallbacks (`patient_id=71 MONOCHROME1`), removed `cv2.resize` distortion, added fallback sensitivity audit (`test_9`); built & tested complete 6-model paired eval & statistical decomposition suite (`src/paper1/six_model_eval.py`, `scripts/evaluate_paper1_six_models.py`, `test_8`).
+  - [ ] **Stage 2 — Execute Full Four-Model Paper 1 Runs (Paused Pending Approval):** Run `GMIC -> NYU -> DINOv2 -> ResNet-50 -> evaluate_paper1_six_models.py` on `hasinishrak2015` (**`~$13.15` USD total**).
   - [ ] **Blocker 3 (Manuscript Gate) — Adversarial Literature Matrix:** Formal *MEDINFO 2025/2026 Meta-Repository* & *Sensors (June 2026)* comparison before manuscript drafting.
 
 ---
