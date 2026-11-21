@@ -51,9 +51,11 @@ This repository (`https://github.com/Research-TRR-HI/Breast-Cancer`) houses **tw
   - `reports/stage_c/locked_nlbs_predictions.csv`, `locked_nlbs_image_diagnostics.csv.gz`, `locked_predictions_manifest.json`, `nlbs_zero_label_results.{json,md}`: Immutable 20 Nov 2026 frozen-threshold NLBS zero-label test results (`6,359` studies, `26,988/26,988` decoded cleanly).
   - `reports/modal_archive/{hasinishrak2015,hasinishrak74001}/`: Archived benchmark JSONs, `16`-DICOM real audit PNGs, manifests, and canonical `splits_seed42.csv`. *(Trained `.pt` checkpoints, `eval_*_fp32.pt` feature tensors, and `logs/modal/` logs are archived locally in gitignored `models/` & `logs/`.)*
 - **Design & Audit Docs:** `reports/dataset_audit.md`, `reports/trust_paper_implementation_traceability.md`, `reports/trust_reproduction_plan.md`, `reports/pre_training_go_no_go.md`, `reports/final_pre_training_readiness_audit.md`.
-- **Research Logs (`research_logs/`):** Indexed chronological logs (`README.md`, `TEMPLATE.md`, 10 dated logs covering Stages A, A3, B1–B4, and C — preserve immutable, tag future logs by `[Paper 1]` / `[Paper 2]` / `[Shared]`).
+- **Research Logs (`research_logs/`):** Indexed chronological logs (`README.md`, `TEMPLATE.md`, 11 dated logs covering Stages A, A3, B1–B4, C, and Paper 1 Stage 0 — preserve immutable, tag future logs by `[Paper 1]` / `[Paper 2]` / `[Shared]`).
+- **Paper 1 Reports (`reports/paper1/`):**
+  - `reports/paper1/stage0_readiness_audit.md`: Paper 1 Stage 0 CPU-only readiness audit (**CONDITIONAL GO**) covering NLBS `5,997 / 5,935 / 6,430 / 6,359 / 5,942` & `6,184` 4-view reconciliation, zero-retrain `val_calib` 2-fold source-test redesign, CE/TRUST `$0` reuse verification, pretrained overlap/license matrix, 4-model implementation specs, and `$17.50–$28.00` Modal budget strategy.
 - **Planned Paper-Specific Folders *(NOT YET CREATED — add when corresponding tracks execute)*:**
-  - `studies/paper1/`, `reports/paper1/` (Paper 1 cohort reconciliation, license/provenance audit, source split audit, 6-model results).
+  - `studies/paper1/` (Paper 1 protocol, `model_manifest.yaml`, `eval_config.yaml`, `analysis_plan.md`).
   - `studies/anchorshift/`, `reports/anchorshift/` (Paper 2 Stage D UPA, Protocol 3 oracle reference, any candidate adaptation experiments).
 
 ### `tests/`
