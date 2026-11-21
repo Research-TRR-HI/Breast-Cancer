@@ -1,0 +1,23 @@
+{
+  "dataset": "rsna",
+  "is_benchmark": true,
+  "n_images": 512,
+  "shape": [
+    512,
+    384
+  ],
+  "nvme_stage": {
+    "total_ids": 512,
+    "newly_staged": 512,
+    "stage_sec": 2.895
+  },
+  "io_prep_sec": 2.118,
+  "gpu_infer_sec": 1.11,
+  "extract_after_stage_sec": 4.006,
+  "end_to_end_sec": 6.901,
+  "end_to_end_imgs_per_sec": 74.2,
+  "peak_vram_gb": 2.396,
+  "out_pt": "/rsna_vol/cache/paper1_dinov2_vits14_bench/rsna_embeddings_fp32.pt",
+  "sha256": "0a69093bbfa69e81b49903909d4ad3afd98eb58698298c1efa936c9755bc1fc2",
+  "download_cmd": "modal --profile hasinishrak2015 volume get rsna-mammography-vol /cache/paper1_dinov2_vits14_bench/rsna_embeddings_fp32.pt reports/paper1/dinov2_cache/"
+}
