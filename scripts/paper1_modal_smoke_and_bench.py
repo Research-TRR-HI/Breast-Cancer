@@ -101,6 +101,7 @@ def run_all_benchmarks_l40s(
         score_nyu_fourview_exam,
     )
     from src.paper1.resnet50_model import (
+        amp_train_step,
         build_resnet50_classifier,
         prepare_resnet50_tensor_from_uint16,
     )
@@ -341,32 +342,25 @@ def run_all_benchmarks_l40s(
     res_stack = torch.stack(res_tensors, dim=0)
     t_r_io = time.perf_counter() - t_r0
 
-    # Warmup 1 step
+    # Warmup 1 step via canonical amp_train_step (scaler.unscale_ + grad clip)
     res_model.train()
     bx0 = res_stack[:resnet_batch_size].to(device)
     by0 = torch.zeros((len(bx0), 1), device=device)
-    with torch.amp.autocast("cuda", enabled=True):
-        l0 = res_crit(res_model(bx0), by0)
-    res_scaler.scale(l0).backward()
-    res_scaler.step(res_opt)
-    res_scaler.update()
-    res_opt.zero_grad()
+    _ = amp_train_step(res_model, bx0, by0, res_crit, res_opt, res_scaler, max_grad_norm=5.0, amp_enabled=True)
     torch.cuda.synchronize()
 
     t_r1 = time.perf_counter()
     losses = []
+    grad_norms = []
     for b in range(n_resnet_batches):
         bx = res_stack[b * resnet_batch_size : (b + 1) * resnet_batch_size].to(device, non_blocking=True)
         by = torch.zeros((len(bx), 1), device=device)
         by[:16] = 1.0
-        res_opt.zero_grad()
-        with torch.amp.autocast("cuda", enabled=True):
-            logits = res_model(bx)
-            loss = res_crit(logits, by)
-        res_scaler.scale(loss).backward()
-        res_scaler.step(res_opt)
-        res_scaler.update()
-        losses.append(float(loss.item()))
+        l_val, gn_val = amp_train_step(
+            res_model, bx, by, res_crit, res_opt, res_scaler, max_grad_norm=5.0, amp_enabled=True
+        )
+        losses.append(l_val)
+        grad_norms.append(gn_val)
     torch.cuda.synchronize()
     t_r_train = time.perf_counter() - t_r1
     res_vram_gb = float(torch.cuda.max_memory_allocated() / 1e9)
@@ -385,7 +379,10 @@ def run_all_benchmarks_l40s(
         "n_batches": n_resnet_batches,
         "n_tested_images": n_res_imgs,
         "all_losses_finite": bool(np.all(np.isfinite(losses))),
+        "all_unscaled_grad_norms_finite": bool(np.all(np.isfinite(grad_norms))),
         "sample_losses": [round(x, 4) for x in losses],
+        "sample_unscaled_grad_norms": [round(x, 4) for x in grad_norms],
+        "scaler_scale_after_steps": float(res_scaler.get_scale()),
         "io_prep_sec": round(t_r_io, 3),
         "gpu_train_sec": round(t_r_train, 3),
         "gpu_train_imgs_per_sec": round(gpu_train_rate, 2),
