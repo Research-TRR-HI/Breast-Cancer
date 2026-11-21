@@ -16,7 +16,11 @@
 2. **Paired Cluster Contrasts:** Resample identical `split_cluster_id` units across models (`B = 2,000`) to estimate paired `delta_sensitivity`, `delta_dismissal`, and `delta_auroc` with 95% CIs.
 3. **Missed-Cancer Overlap:** Compute pairwise Jaccard overlap and an UpSet matrix across the `151` cancer-positive examinations dismissed at `tau_98` and `tau_95`.
 
-## 3. Stratum & Falsification Guardrails
+## 3. Crop-Fallback Handling & Prespecified Sensitivity Policy
+- **GMIC & NYU Native Cropping Fallbacks:** If `nyukat`'s `crop_img_from_largest_connected(..., iterations=100)` raises an empty-mask `ValueError` (e.g., thin compressed `MONOCHROME1` breasts on wide plates), adapters MUST preserve `1:1` native physical scale using an uncropped optimal-density window (NO `cv2.resize` spatial distortion) and log `crop_fallback=True`, `crop_error`, `photometric`, and `raw_shape` per view.
+- **External Evaluation Handling:** Primary paired comparison evaluates all `6,184` common 4-view NLBS studies. Prior to outcome unblinding, all `has_crop_fallback` exams are flagged, and `src/paper1/six_model_eval.py` reports **both** full-cohort metrics and a `fallback_excluded` sensitivity check (`clean_auroc`, `clean_target_98`, and exact cancer-positive fallback counts).
+
+## 4. Stratum & Falsification Guardrails
 - Always separate **Stratum A (RSNA-supervised: `ce_b5`, `trust_b5`, `dinov2_rsna`, `resnet50_rsna`)** and **Stratum B (Pretrained-direct: `gmic_pretrained`, `nyu_fourview_pretrained`)** in main results tables.
 - Do not pool across strata to claim architectural superiority without acknowledging differing training data, labels, and supervision histories.
 - Publish null/successful-transfer results equally if any model preserves 95%/98% sensitivity on NLBS.
