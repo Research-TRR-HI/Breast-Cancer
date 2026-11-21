@@ -1,8 +1,8 @@
 # state.md — Unified Two-Paper Workspace State
 
 **Last Updated:** 2026-11-21  
-**Verified Repo Head (Prior):** `ee94c63bdea7b871768d3fb1d8d1508d7436b6fa` (`main`)  
-**Current Decision Across Both Papers:** `MODIFY / INVESTIGATE` (Novelty and Q1 readiness NOT confirmed for either paper yet)
+**Verified Repo Head (Prior):** `ba3205b` (`main`)  
+**Current Decision Across Both Papers:** `MODIFY / INVESTIGATE` (Paper 1 Stage 0 Audit: **CONDITIONAL GO** pending pre-flight gates 0.1–0.3; Novelty and Q1 readiness NOT confirmed for either paper yet)
 
 ---
 
@@ -34,11 +34,14 @@
   - [ ] `nyu_fourview_pretrained` (Wu et al. 2019/2020, `AGPL-3.0`): Pretrained image-only 4-view CNN (`2677x1942` CC / `2974x1748` MLO) — NOT STARTED.
   - [ ] `dinov2_rsna` (`Apache-2.0` ViT-S/14 frozen probe + RSNA head) — NOT STARTED.
   - [ ] `resnet50_rsna` (ImageNet ResNet-50 RSNA fine-tune, cost-gated feasibility) — NOT STARTED.
-- **Mandatory Pending Blockers (NO Paid Multi-Model GPU Runs Until Resolved):**
-  - [ ] **Blocker 1 — Reconcile NLBS Cohort Unit:** Reconcile `5,997` exams / `5,935` unique / `149` cancer cases in published NLBS descriptor vs `6,430` pairs / `6,359` unique `StudyInstanceUID` / `151` pos / `5,942` clusters (`reports/paper1/nlbs_cohort_reconciliation.md`), plus define label-blind 4-view eligibility rule for NYU common cohort.
-  - [ ] **Blocker 2 — Separate RSNA Source Calibration vs. Independent Source Test:** Correct prior `val_calib` double-use by designing patient-disjoint `model_train / trust_internal_train_calib / source_op_calib / source_heldout_test` (or justified exploratory bridge respecting `486` positive RSNA patients).
-  - [ ] **Blocker 3 — Literature & Provenance Audit:** Adversarial comparison vs *MEDINFO 2025/2026 Meta-Repository* & *Sensors (June 2026)* plus pretrained RSNA/NLBS training-overlap/license verification.
-  - [ ] **Scaffold Creation (CPU):** Add `studies/paper1/` & `reports/paper1/` when beginning Paper 1 implementation.
+- **Mandatory Pending Blockers & Stage 0 Status (`reports/paper1/stage0_readiness_audit.md` — CONDITIONAL GO, Zero Paid GPU Runs Yet):**
+  - [x] **Stage 0 Audit — Reconcile NLBS Cohort Unit:** Reconciled `5,997` folders / `5,935` descriptor unique / `6,430` pairs / `6,359` unique `StudyInstanceUID` / `5,942` `split_cluster_id` / `149` pos clusters vs `151` pos exams (`p_4334`, `p_4461`); verified **`6,184 / 6,359` (`97.25%`)** 4-view studies (**`151 / 151` cancers**) and `935` multi-view ties (`reports/paper1/stage0_readiness_audit.md`).
+  - [x] **Stage 0 Audit — RSNA Calibration vs. Independent Source Test Design:** Resolved `val_calib` double-use via zero-retrain patient-disjoint 50/50 split (`source_op_calib` `1,191` pts / `49` pos vs `source_heldout_test` `1,191` pts / `48` pos) + 2-fold OOF (`97` pos), reusing `eval_val_calib_fp32.pt` & `locked_nlbs_predictions.csv` at `$0` GPU cost (`<= 3.55e-5` CPU FP32 vs L40S AMP parity).
+  - [x] **Stage 0 Audit — Provenance, Overlap, Caches & Budget Plan:** Audited `Mammo-CLIP` (`UPMC`, `CC BY-NC-SA 4.0`), `GMIC` & `NYU` (`NYU 2010–2017`, `AGPL-3.0`), `DINOv2` (`LVD-142M`, `Apache-2.0`), `ResNet-50` (`ImageNet-1K`, `BSD-3-Clause`). Cut GMIC/NYU inference scope by `53%` (RSNA `val_calib` + NLBS only) and planned `1520x912` Stage-1 PNG reuse for DINOv2/ResNet-50 (`~$17.50–$28.00` projected within `$30` cap).
+  - [ ] **Gate 0.1 — Modal Credit Balance Check:** Verify exact USD credit balance on `hasinishrak2015` (and `hasinishrak74001`) before any GPU launch.
+  - [ ] **Gate 0.2 — CPU Scaffold & Frozen Split CSVs:** Create `studies/paper1/` (`README.md`, `protocol_v1.md`, `model_manifest.yaml`, `eval_config.yaml`, `analysis_plan.md`), freeze deterministic RSNA `val_calib` 2-fold CSV + NLBS 4-view tie-break manifest, and compute CPU CE/TRUST 2-fold source metrics.
+  - [ ] **Gate 0.3 — Per-Model Parity & Throughput Pilots:** Pass `sample_data` parity + 200-unit L40S cost projection for GMIC/NYU and 1-epoch L40S cost + `train_calib` AUROC gate for ResNet-50 prior to full runs.
+  - [ ] **Blocker 3 (Manuscript Gate) — Adversarial Literature Matrix:** Formal *MEDINFO 2025/2026 Meta-Repository* & *Sensors (June 2026)* comparison before manuscript drafting.
 
 ---
 
