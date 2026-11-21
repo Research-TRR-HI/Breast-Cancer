@@ -1,0 +1,80 @@
+{
+  "gpu_name": "NVIDIA L40S",
+  "hourly_rate_usd": 2.3608,
+  "gmic_pretrained": {
+    "n_tested_images": 20,
+    "crop_fallbacks": 0,
+    "all_scores_finite": true,
+    "sample_scores_head": [
+      0.21266,
+      0.10298,
+      0.25874,
+      0.60927
+    ],
+    "prep_sec": 24.079,
+    "gpu_infer_sec": 0.285,
+    "gpu_imgs_per_sec": 70.25,
+    "prep_imgs_per_sec_single_thread": 0.83,
+    "peak_vram_gb": 0.292,
+    "full_target_images": 37970,
+    "projected_l40s_gpu_hours": 0.15,
+    "projected_cpu_core_hours": 12.7,
+    "projected_total_usd_with_cpu_staging": 1.12
+  },
+  "nyu_fourview_pretrained": {
+    "n_tested_exams": 8,
+    "tta_epochs": 10,
+    "crop_fallbacks": 2,
+    "all_scores_finite": true,
+    "sample_exam_scores": [
+      0.42713,
+      0.10142,
+      0.06492,
+      0.05123
+    ],
+    "prep_sec": 32.703,
+    "gpu_infer_sec": 12.968,
+    "gpu_exams_per_sec": 0.617,
+    "peak_vram_gb": 2.41,
+    "full_target_exams": 8566,
+    "projected_l40s_gpu_hours": 3.857,
+    "projected_cpu_core_hours": 9.73,
+    "projected_total_usd_with_cpu_staging": 9.69
+  },
+  "dinov2_rsna": {
+    "n_tested_images": 200,
+    "embed_dim": 384,
+    "all_probs_finite": true,
+    "io_prep_sec": 38.764,
+    "gpu_extract_sec": 0.385,
+    "end_to_end_imgs_per_sec": 5.11,
+    "gpu_only_imgs_per_sec": 519.88,
+    "peak_vram_gb": 1.606,
+    "full_target_images": 81694,
+    "projected_l40s_hours": 4.442,
+    "projected_usd_excl_nvme_stage": 10.99
+  },
+  "resnet50_rsna": {
+    "input_resolution": [
+      854,
+      512
+    ],
+    "batch_size": 64,
+    "n_batches": 4,
+    "n_tested_images": 256,
+    "all_losses_finite": true,
+    "sample_losses": [
+      0.6937,
+      0.6936,
+      0.6499,
+      0.6231
+    ],
+    "io_prep_sec": 52.428,
+    "gpu_train_sec": 2.224,
+    "gpu_train_imgs_per_sec": 115.1,
+    "cold_io_plus_gpu_imgs_per_sec": 4.68,
+    "peak_vram_gb": 26.277,
+    "projected_10ep_hours_nvme": 0.979,
+    "projected_10ep_usd_nvme": 3.31
+  }
+}
