@@ -175,11 +175,43 @@ def preprocess_uint16_for_nyukat(
         proc = proc.copy()
         g_load.standard_normalize_single_image(proc)
     except Exception as exc:
+        # Preserve 1:1 physical pixel scale (no cv2.resize); extract/pad target window at native COM
         fallback_used = True
-        flipped = g_load.flip_image(arr_u16.astype(np.float32), view_slot, "NO")
-        proc = cv2.resize(flipped, (target_size[1], target_size[0]), interpolation=cv2.INTER_CUBIC).astype(np.float32)
+        cropped_flip_u16 = g_load.flip_image(arr_u16, view_slot, "NO")
+        nz_y, nz_x = np.nonzero(cropped_flip_u16 > 0)
+        if len(nz_y) > 0:
+            com_pt = np.array([int(np.mean(nz_y)), int(np.mean(nz_x))], dtype=np.int64)
+        else:
+            com_pt = np.array(cropped_flip_u16.shape, dtype=np.int64) // 2
+        try:
+            oc = g_coc.get_image_optimal_window_info(
+                cropped_flip_u16,
+                com=com_pt,
+                window_dim=np.array(target_size),
+                tl_br_constraint=None,
+            )
+            best_center = (int(oc["best_center_y"]), int(oc["best_center_x"]))
+        except Exception:
+            best_center = (int(com_pt[0]), int(com_pt[1]))
+        aug_mod = g_load.augmentations
+        proc, _ = aug_mod.random_augmentation_best_center(
+            image=cropped_flip_u16.astype(np.float32),
+            input_size=target_size,
+            random_number_generator=np.random.RandomState(0) if rng is None else rng,
+            max_crop_noise=(0, 0),
+            max_crop_size_noise=0,
+            auxiliary_image=None,
+            best_center=best_center,
+            view=view_slot,
+        )
+        proc = proc.copy()
         g_load.standard_normalize_single_image(proc)
-        return proc, {"crop_fallback": True, "crop_error": str(exc), "best_center": None}
+        return proc, {
+            "crop_fallback": True,
+            "crop_error": str(exc),
+            "fallback_strategy": "native_scale_optimal_window_no_resize",
+            "best_center": [int(best_center[0]), int(best_center[1])],
+        }
 
     return proc, {"crop_fallback": fallback_used, "crop_error": "", "best_center": [int(best_center[0]), int(best_center[1])]}
 
