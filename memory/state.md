@@ -1,8 +1,8 @@
 # state.md — Unified Two-Paper Workspace State
 
 **Last Updated:** 2026-11-21  
-**Verified Repo Head (Prior):** `ba3205b` (`main`)  
-**Current Decision Across Both Papers:** `MODIFY / INVESTIGATE` (Paper 1 Stage 0 Audit: **CONDITIONAL GO** pending pre-flight gates 0.1–0.3; Novelty and Q1 readiness NOT confirmed for either paper yet)
+**Verified Repo Head (Prior):** `9a99dc1` (`main`)  
+**Current Decision Across Both Papers:** Paper 1 Stage 1 Model Readiness = **GO** (Gate 0.2 + 4-model parity + live `hasinishrak2015` L40S smoke benchmarks verified; awaiting full-run launch approval); Paper 2 AnchorShift Stage D pending (`MODIFY / INVESTIGATE`)
 
 ---
 
@@ -29,18 +29,16 @@
 - **Scientific Role:** Evaluation & failure-mechanism benchmark across **6 prespecified models** (`ce_b5`, `trust_b5`, `gmic_pretrained`, `nyu_fourview_pretrained`, `dinov2_rsna`, `resnet50_rsna`) under source-frozen RSNA `98%`/`95%` thresholds on NLBS (NO new algorithm; `MODIFY / INVESTIGATE`).
 - **Budget & Compute Guardrail:** Max **$30 USD** total *additional* Modal spend on `NVIDIA L40S`. Mandatory account/credit verification + native preprocessing parity + 200–500-img cost projection gate before every full run.
 - **Model Status Matrix:**
-  - [x] `ce_b5` & `trust_b5`: Historic Stage B/C baseline complete (immutable; note RSNA `val_calib` double-use caveat).
-  - [ ] `gmic_pretrained` (Shen et al. 2021, `AGPL-3.0`): Pretrained lesion-aware ResNet-18 (`2944x1920` native cropped 16-bit PNGs) — NOT STARTED.
-  - [ ] `nyu_fourview_pretrained` (Wu et al. 2019/2020, `AGPL-3.0`): Pretrained image-only 4-view CNN (`2677x1942` CC / `2974x1748` MLO) — NOT STARTED.
-  - [ ] `dinov2_rsna` (`Apache-2.0` ViT-S/14 frozen probe + RSNA head) — NOT STARTED.
-  - [ ] `resnet50_rsna` (ImageNet ResNet-50 RSNA fine-tune, cost-gated feasibility) — NOT STARTED.
-- **Mandatory Pending Blockers & Stage 0 Status (`reports/paper1/stage0_readiness_audit.md` — CONDITIONAL GO, Zero Paid GPU Runs Yet):**
-  - [x] **Stage 0 Audit — Reconcile NLBS Cohort Unit:** Reconciled `5,997` folders / `5,935` descriptor unique / `6,430` pairs / `6,359` unique `StudyInstanceUID` / `5,942` `split_cluster_id` / `149` pos clusters vs `151` pos exams (`p_4334`, `p_4461`); verified **`6,184 / 6,359` (`97.25%`)** 4-view studies (**`151 / 151` cancers**) and `935` multi-view ties (`reports/paper1/stage0_readiness_audit.md`).
-  - [x] **Stage 0 Audit — RSNA Calibration vs. Independent Source Test Design:** Resolved `val_calib` double-use via zero-retrain patient-disjoint 50/50 split (`source_op_calib` `1,191` pts / `49` pos vs `source_heldout_test` `1,191` pts / `48` pos) + 2-fold OOF (`97` pos), reusing `eval_val_calib_fp32.pt` & `locked_nlbs_predictions.csv` at `$0` GPU cost (`<= 3.55e-5` CPU FP32 vs L40S AMP parity).
-  - [x] **Stage 0 Audit — Provenance, Overlap, Caches & Budget Plan:** Audited `Mammo-CLIP` (`UPMC`, `CC BY-NC-SA 4.0`), `GMIC` & `NYU` (`NYU 2010–2017`, `AGPL-3.0`), `DINOv2` (`LVD-142M`, `Apache-2.0`), `ResNet-50` (`ImageNet-1K`, `BSD-3-Clause`). Cut GMIC/NYU inference scope by `53%` (RSNA `val_calib` + NLBS only) and planned `1520x912` Stage-1 PNG reuse for DINOv2/ResNet-50 (`~$17.50–$28.00` projected within `$30` cap).
-  - [ ] **Gate 0.1 — Modal Credit Balance Check:** Verify exact USD credit balance on `hasinishrak2015` (and `hasinishrak74001`) before any GPU launch.
-  - [ ] **Gate 0.2 — CPU Scaffold & Frozen Split CSVs:** Create `studies/paper1/` (`README.md`, `protocol_v1.md`, `model_manifest.yaml`, `eval_config.yaml`, `analysis_plan.md`), freeze deterministic RSNA `val_calib` 2-fold CSV + NLBS 4-view tie-break manifest, and compute CPU CE/TRUST 2-fold source metrics.
-  - [ ] **Gate 0.3 — Per-Model Parity & Throughput Pilots:** Pass `sample_data` parity + 200-unit L40S cost projection for GMIC/NYU and 1-epoch L40S cost + `train_calib` AUROC gate for ResNet-50 prior to full runs.
+  - [x] `ce_b5` & `trust_b5`: Reused cleanly via 2-fold OOF RSNA source test (`0.7428` / `0.7442` AUROC; `@98%` `98.97%` sens) & common 4-view NLBS (`N=6,184`, `151` pos: `ce_b5` `0.7089`, `trust_b5` `0.7040` AUROC) in `reports/paper1/ce_trust_{rsna_source_eval,nlbs_common_4view}.{json,md}`.
+  - [x] `gmic_pretrained` (`nyukat/GMIC` `594029efe6184bcca3a151fa1dd46c5fd620cb25`, `sample_model_1.p` `3b792e6d...`): Parity reproduced (`0.1356/0.0081`), Modal pipeline & L40S benchmark passed (`0` fallbacks, `0.292 GB` VRAM, `$1.12` projected full run).
+  - [x] `nyu_fourview_pretrained` (`nyukat/breast_cancer_classifier` `6176ebea6950b0a953339593d2da417ab846dae0`, `sample_image_model.p` `9a1d97f9...`): Parity reproduced (`0.0091/0.0179`), `pandas 2.3` bug fixed in adapter, Modal pipeline & L40S benchmark passed (`2/32` view fallbacks, `2.410 GB` VRAM, `$9.69` projected full run).
+  - [x] `dinov2_rsna` (`facebookresearch/dinov2` `7764ea0f912e53c92e82eb78a2a1631e92725fc8`, `dinov2_vits14_pretrain.pth` `b938bf1b...`): Frozen encoder + Stage-1 extraction + `train_paper1_dinov2_head.py` verified; L40S benchmark passed (`1.606 GB` VRAM, `519.88 img/s` GPU compute; `$10.99` cold IO / `~$0.60` NVMe-staged).
+  - [x] `resnet50_rsna` (`torchvision` `ResNet50_Weights.IMAGENET1K_V2`, `resnet50-11ad3fa6.pth` `11ad3fa6...`): Fine-tuning & frozen-inference pipeline verified; L40S benchmark passed (`26.277 GB` VRAM, `115.1 img/s` AMP train, `$3.31` 10-epoch training projection).
+- **Mandatory Gates & Remaining Work (`reports/paper1/stage1_model_readiness.md` — GO):**
+  - [x] **Stage 0 Audit — Reconciliation, Splits, Provenance & Budget:** Complete (`reports/paper1/stage0_readiness_audit.md`).
+  - [x] **Gate 0.2 — Study Protocol, Frozen Splits & CPU Baseline Source Eval:** Created `studies/paper1/*`, `datasets/paper1/*` (`rsna_val_calib_2fold_seed42.csv`, `rsna_val_calib_4view_selection.csv`, `nlbs_4view_study_eligibility.csv`, `nlbs_4view_common_cohort_label_free.csv`), and `reports/paper1/ce_trust_{rsna_source_eval,nlbs_common_4view}.{json,md}`.
+  - [x] **Gate 0.3 — Four-Model Official Verification & L40S Smoke Benchmarks:** All 4 checkpoints verified & uploaded to `hasinishrak2015` `rsna-mammography-vol:/models/paper1/`; `29/29` CPU tests PASS; live L40S benchmark `ap-VqaH4fOfCP46dJKO9V9Gei` PASSED (`reports/paper1/l40s_smoke_and_benchmark.json`).
+  - [ ] **Stage 2 — Execute Full Four-Model Paper 1 Runs (Paused Pending Approval):** Run `GMIC`, `NYU Four-View`, `DINOv2`, and `ResNet-50` across RSNA & NLBS on `hasinishrak2015` (`~$14.70–$25.11` total; confirm `hasinishrak2015` credit balance first & optionally add `/tmp` NVMe staging to `run_paper1_dinov2_modal.py`).
   - [ ] **Blocker 3 (Manuscript Gate) — Adversarial Literature Matrix:** Formal *MEDINFO 2025/2026 Meta-Repository* & *Sensors (June 2026)* comparison before manuscript drafting.
 
 ---
