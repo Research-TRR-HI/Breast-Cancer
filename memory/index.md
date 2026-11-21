@@ -32,7 +32,7 @@ This repository (`https://github.com/Research-TRR-HI/Breast-Cancer`) houses **tw
 - `datasets/paper1/`: Paper 1 Gate 0.2 frozen manifests (`rsna_val_calib_2fold_seed42.csv`, `rsna_val_calib_4view_selection.csv`, `nlbs_4view_study_eligibility.csv`, `nlbs_4view_common_cohort_label_free.csv`).
 
 ### `src/` *(Shared Verified Pipeline Modules)*
-- `paper1/`: Paper 1 model adapters & preprocessors (`gmic_adapter.py`, `nyu_fourview_adapter.py`, `dinov2_model.py`, `resnet50_model.py`).
+- `paper1/`: Paper 1 model adapters, preprocessors & evaluation (`gmic_adapter.py`, `nyu_fourview_adapter.py`, `dinov2_model.py`, `resnet50_model.py`, `six_model_eval.py`).
 - `models/efficientnet_custom.py` & `models/efficient_net_custom_utils.py`: Canonical Mammo-CLIP EfficientNet-B5 backbone matching `852/852` tensors of `b5-model-best-epoch-7.tar`.
 - `models/trust_model.py`: `MammoCLIPEncoder`, `TRUSTClassifier`, `aggregate_case_scores` (max aggregation + strict checks), and `aggregate_case_labels`.
 - `models/losses.py`: Exact TRUST losses (`FocalLoss` `gamma=2.0`, `alpha=None`; `DynamicDismissalLoss` `m=0.10`, `lambda_dismiss=0.05`; `TRUSTLoss.forward_microbatch`).
@@ -46,7 +46,7 @@ This repository (`https://github.com/Research-TRR-HI/Breast-Cancer`) houses **tw
 - `utils/env_metadata.py`: Pinned Python `3.12` / 13-package metadata constants & runtime collector.
 
 ### `scripts/`
-- **Paper 1 Gate 0.2 & Four-Model Pipelines:** `prepare_paper1_gate02.py`, `paper1_modal_smoke_and_bench.py`, `run_paper1_gmic_modal.py`, `run_paper1_nyu_modal.py`, `run_paper1_dinov2_modal.py`, `run_paper1_resnet50_modal.py`, `train_paper1_dinov2_head.py`.
+- **Paper 1 Gate 0.2 & Four-Model Pipelines:** `prepare_paper1_gate02.py`, `paper1_modal_smoke_and_bench.py`, `run_paper1_gmic_modal.py`, `run_paper1_nyu_modal.py`, `run_paper1_dinov2_modal.py`, `run_paper1_resnet50_modal.py`, `train_paper1_dinov2_head.py`, `evaluate_paper1_six_models.py`.
 - **Shared / Stage A–C Executed:** `download_{rsna,nlbs,mammoclip}_modal.py`, `audit_datasets_modal.py`, `stage_a3_nlbs_extract_modal.py`, `smoke_test_stage_b_modal.py`, `benchmark_l40s_comparison_modal.py`, `cache_stage1_rsna_modal.py`, `pilot_parity_modal.py`, `train_trust_modal.py`, `run_stage_b_pipeline.py`, `build_nlbs_inference_manifest.py`, `eval_nlbs_stage_c_modal.py` (2-phase CPU Stage-1 -> NVMe L40S inference), `evaluate_locked_nlbs_stage_c.py`.
 
 ### `reports/` & `research_logs/` *(Shared Evidence & Immutable Historical Results)*
@@ -61,11 +61,13 @@ This repository (`https://github.com/Research-TRR-HI/Breast-Cancer`) houses **tw
   - `reports/paper1/stage0_readiness_audit.md`: Paper 1 Stage 0 CPU-only readiness audit (**CONDITIONAL GO**) covering NLBS `5,997 / 5,935 / 6,430 / 6,359 / 5,942` & `6,184` 4-view reconciliation, zero-retrain `val_calib` 2-fold source-test redesign, CE/TRUST `$0` reuse verification, pretrained overlap/license matrix, 4-model implementation specs, and `$17.50–$28.00` Modal budget strategy.
   - `reports/paper1/ce_trust_{rsna_source_eval,nlbs_common_4view}.{json,md}`: Gate 0.2 CPU CE/TRUST 2-fold OOF RSNA source metrics & common 4-view NLBS (`N=6,184`) evaluations.
   - `reports/paper1/l40s_smoke_and_benchmark.json`: Live `hasinishrak2015` NVIDIA L40S smoke & throughput benchmark across `gmic_pretrained`, `nyu_fourview_pretrained`, `dinov2_rsna`, and `resnet50_rsna`.
+  - `reports/paper1/dinov2_nvme_benchmark.json`: NVMe-staged `512`-image L40S DINOv2 throughput benchmark (`74.2 img/s` end-to-end, `ap-acCim6bfGllCdJjTKtPDv6`).
   - `reports/paper1/stage1_model_readiness.md`: Paper 1 Stage 1 Readiness Audit (**GO**) consolidating Gate 0.2 manifests, model provenance/SHA-256 hashes, `sample_data` parity, L40S benchmarks, and full execution CLI commands.
+  - `reports/paper1/stage1_final_corrections.md`: Paper 1 Stage 1 Final Critical Corrections (**GO**) documenting ResNet-50 `scaler.unscale_` + RNG resume, DINOv2 NVMe speedup, NYU `patient_id=71` non-warping fallback root cause, 6-model paired evaluation suite, and recalculated `~$13.15` total run plan.
 - **Planned Paper-Specific Folders *(NOT YET CREATED — add when corresponding tracks execute)*:**
   - `studies/anchorshift/`, `reports/anchorshift/` (Paper 2 Stage D UPA, Protocol 3 oracle reference, any candidate adaptation experiments).
 
 ### `tests/`
 - `tests/test_stage_b_smoke.py`: 20-test local CPU suite across Categories A–H (`20/20` PASS).
 - `tests/test_stage_c_quarantine_and_eval.py`: 3-test suite verifying forbidden-column quarantine, tamper-abort SHA-256 verification, and cluster CI evaluation (`3/3` PASS).
-- `tests/test_paper1_models_and_gate02.py`: 6-test suite verifying Gate 0.2 splits/quarantine, `GMIC` & `NYU Four-View` official `sample_data` parity, `DINOv2` frozen forward + CPU head training/locking smoke test, and `ResNet-50` forward/backward pass (`6/6` PASS).
+- `tests/test_paper1_models_and_gate02.py`: 9-test suite verifying Gate 0.2 splits/quarantine, `GMIC` & `NYU Four-View` official `sample_data` parity, `DINOv2` frozen forward + CPU head training/locking smoke test, `ResNet-50` AMP unscale+clip & bit-exact resume, 6-model paired statistical/tamper evaluation, and native-scale crop fallback (`9/9` PASS).
