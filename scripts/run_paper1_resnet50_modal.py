@@ -61,8 +61,11 @@ def train_resnet50_rsna(epochs: int = 10, batch_size: int = 64, lr: float = 1e-4
     from src.models.trust_model import aggregate_case_labels, aggregate_case_scores
     from src.paper1.resnet50_model import (
         RESNET50_IMAGENET1K_V2_SHA256,
+        amp_train_step,
         build_resnet50_classifier,
+        load_resnet50_checkpoint,
         prepare_resnet50_tensor_from_uint16,
+        save_resnet50_checkpoint,
     )
 
     torch.manual_seed(seed)
@@ -108,16 +111,12 @@ def train_resnet50_rsna(epochs: int = 10, batch_size: int = 64, lr: float = 1e-4
     )
     aug_rng = np.random.default_rng(seed + 100)
 
-    start_ep, best_auroc, history = 1, -1.0, []
+    start_ep, best_auroc, best_epoch, history = 1, -1.0, 0, []
     if resume and latest_pt.exists():
-        ck = torch.load(latest_pt, map_location=device, weights_only=False)
-        model.load_state_dict(ck["model"])
-        opt.load_state_dict(ck["optimizer"])
-        sched.load_state_dict(ck["scheduler"])
-        scaler.load_state_dict(ck["scaler"])
-        start_ep = int(ck["epoch"]) + 1
-        best_auroc = float(ck["best_auroc"])
-        history = ck["history"]
+        last_ep, best_auroc, best_epoch, history = load_resnet50_checkpoint(
+            latest_pt, model, opt, sched, scaler, sampler, aug_rng, device
+        )
+        start_ep = last_ep + 1
 
     train_ids = train_df["image_id"].astype(str).tolist()
     train_lbls = train_df["cancer"].values.astype(np.float32)
@@ -129,6 +128,7 @@ def train_resnet50_rsna(epochs: int = 10, batch_size: int = 64, lr: float = 1e-4
         t0 = time.perf_counter()
         model.train()
         ep_loss = 0.0
+        grad_norms = []
         with ThreadPoolExecutor(max_workers=8) as pool:
             for b_idx, indices in enumerate(sampler):
                 augs = [sample_augmentation_params(aug_rng) for _ in indices]
@@ -138,14 +138,19 @@ def train_resnet50_rsna(epochs: int = 10, batch_size: int = 64, lr: float = 1e-4
                     dim=0,
                 ).to(device, non_blocking=True)
                 by = torch.tensor([train_lbls[i] for i in indices], dtype=torch.float32, device=device).unsqueeze(1)
-                opt.zero_grad()
-                with torch.amp.autocast("cuda", enabled=True):
-                    loss = crit(model(bx), by)
-                scaler.scale(loss).backward()
-                torch.nn.utils.clip_grad_norm_(model.parameters(), 5.0)
-                scaler.step(opt)
-                scaler.update()
-                ep_loss += float(loss.item())
+                step_loss, gnorm = amp_train_step(
+                    model=model,
+                    bx=bx,
+                    by=by,
+                    criterion=crit,
+                    optimizer=opt,
+                    scaler=scaler,
+                    max_grad_norm=5.0,
+                    amp_enabled=True,
+                )
+                ep_loss += step_loss
+                if np.isfinite(gnorm):
+                    grad_norms.append(gnorm)
         sched.step()
 
         # Select strictly on train_calib case AUROC (never touch val_calib!)
@@ -164,16 +169,31 @@ def train_resnet50_rsna(epochs: int = 10, batch_size: int = 64, lr: float = 1e-4
         cl = aggregate_case_labels(tc_lbls, tc_pids)
         pids_s = sorted(cs.keys())
         tc_auroc = compute_auroc(np.array([cl[p] for p in pids_s]), np.array([cs[p] for p in pids_s]))
-        history.append({"epoch": ep, "loss": round(ep_loss / len(sampler), 5), "train_calib_auroc": round(tc_auroc, 5), "sec": round(time.perf_counter() - t0, 1)})
-
-        payload = {"epoch": ep, "model": model.state_dict(), "optimizer": opt.state_dict(), "scheduler": sched.state_dict(), "scaler": scaler.state_dict(), "best_auroc": max(best_auroc, tc_auroc), "history": history}
-        torch.save(payload, latest_pt)
         if tc_auroc > best_auroc:
             best_auroc = tc_auroc
-            torch.save(payload, best_pt)
+            best_epoch = ep
+        history.append(
+            {
+                "epoch": ep,
+                "loss": round(ep_loss / len(sampler), 5),
+                "train_calib_auroc": round(tc_auroc, 5),
+                "mean_unscaled_grad_norm": round(float(np.mean(grad_norms)), 4) if grad_norms else None,
+                "finite_grad_steps": f"{len(grad_norms)}/{len(sampler)}",
+                "scaler_scale": float(scaler.get_scale()),
+                "sec": round(time.perf_counter() - t0, 1),
+            }
+        )
+
+        save_resnet50_checkpoint(
+            latest_pt, model, opt, sched, scaler, ep, best_auroc, best_epoch, history, sampler, aug_rng, seed
+        )
+        if best_epoch == ep:
+            save_resnet50_checkpoint(
+                best_pt, model, opt, sched, scaler, ep, best_auroc, best_epoch, history, sampler, aug_rng, seed
+            )
         RSNA_VOL.commit()
 
-    return {"best_train_calib_auroc": best_auroc, "history": history, "best_ckpt": str(best_pt)}
+    return {"best_epoch": best_epoch, "best_train_calib_auroc": best_auroc, "history": history, "best_ckpt": str(best_pt)}
 
 
 @app.function(
