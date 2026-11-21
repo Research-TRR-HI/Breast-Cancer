@@ -196,6 +196,187 @@ class TestPaper1Preparation(unittest.TestCase):
             self.assertTrue((td_p / "out" / "locked_nlbs_predictions.csv").exists())
             self.assertEqual(res["locked_nlbs_studies"], int(nlbs_df["StudyInstanceUID"].nunique()))
 
+    def test_7_resnet50_amp_unscale_clip_and_resume_parity(self):
+        import random
+        import tempfile
+        import torch.nn as nn
+        from torchvision.models import resnet18
+        from src.data.rsna_dataset import BalancedBatchSampler
+        from src.paper1.resnet50_model import (
+            amp_train_step,
+            load_resnet50_checkpoint,
+            save_resnet50_checkpoint,
+        )
+
+        # Verify scaler.unscale_(optimizer) is called strictly BEFORE clip_grad_norm_
+        call_order = []
+
+        class _MockScaler:
+            def scale(self, loss):
+                call_order.append("scale")
+                return loss
+
+            def unscale_(self, opt):
+                call_order.append("unscale")
+
+            def step(self, opt):
+                call_order.append("step")
+                opt.step()
+
+            def update(self):
+                call_order.append("update")
+
+        m_mock = resnet18(weights=None)
+        m_mock.fc = nn.Linear(m_mock.fc.in_features, 1)
+        opt_m = torch.optim.AdamW(m_mock.parameters(), lr=1e-3)
+        orig_clip = torch.nn.utils.clip_grad_norm_
+
+        def _spy_clip(*args, **kwargs):
+            call_order.append("clip")
+            return orig_clip(*args, **kwargs)
+
+        torch.nn.utils.clip_grad_norm_ = _spy_clip
+        try:
+            loss_v, gn = amp_train_step(
+                m_mock,
+                torch.randn(4, 3, 64, 64),
+                torch.ones(4, 1),
+                nn.BCEWithLogitsLoss(),
+                opt_m,
+                _MockScaler(),
+                max_grad_norm=5.0,
+                amp_enabled=False,
+            )
+            self.assertEqual(call_order, ["scale", "unscale", "clip", "step", "update"])
+            self.assertTrue(np.isfinite(loss_v) and np.isfinite(gn))
+        finally:
+            torch.nn.utils.clip_grad_norm_ = orig_clip
+
+        # Verify bit-exact 2-epoch pause & resume vs uninterrupted 4-epoch run (incl. RNG & sampler)
+        labels = np.array([1] * 8 + [0] * 16)
+
+        def _run_sim(resume_at_ep2: bool):
+            torch.manual_seed(42)
+            np.random.seed(42)
+            random.seed(42)
+            mod = resnet18(weights=None)
+            mod.fc = nn.Linear(mod.fc.in_features, 1)
+            opt = torch.optim.AdamW(mod.parameters(), lr=1e-3)
+            sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=4)
+            scaler = torch.amp.GradScaler("cuda", enabled=False)
+            crit = nn.BCEWithLogitsLoss()
+            sampler = BalancedBatchSampler(labels, batch_size=8, n_pos=2, seed=42, steps_per_epoch=2)
+            aug_rng = np.random.default_rng(142)
+
+            with tempfile.TemporaryDirectory() as td:
+                ckpt_p = Path(td) / "ckpt.pt"
+                for ep in range(1, 5):
+                    for idx in sampler:
+                        _ = aug_rng.uniform(-1, 1)
+                        bx = torch.randn(len(idx), 3, 32, 32)
+                        by = torch.from_numpy(labels[idx].astype(np.float32)).unsqueeze(1)
+                        amp_train_step(mod, bx, by, crit, opt, scaler, 5.0, amp_enabled=False)
+                    sched.step()
+                    if resume_at_ep2 and ep == 2:
+                        save_resnet50_checkpoint(ckpt_p, mod, opt, sched, scaler, 2, 0.5, 2, [], sampler, aug_rng, 42)
+                        # Fresh objects + perturbed RNG before restoring
+                        torch.manual_seed(999)
+                        np.random.seed(999)
+                        mod = resnet18(weights=None)
+                        mod.fc = nn.Linear(mod.fc.in_features, 1)
+                        opt = torch.optim.AdamW(mod.parameters(), lr=1e-3)
+                        sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=4)
+                        scaler = torch.amp.GradScaler("cuda", enabled=False)
+                        sampler = BalancedBatchSampler(labels, batch_size=8, n_pos=2, seed=42, steps_per_epoch=2)
+                        aug_rng = np.random.default_rng(999)
+                        load_resnet50_checkpoint(ckpt_p, mod, opt, sched, scaler, sampler, aug_rng, torch.device("cpu"))
+                return {k: v.clone() for k, v in mod.state_dict().items()}
+
+        sd_cont = _run_sim(resume_at_ep2=False)
+        sd_res = _run_sim(resume_at_ep2=True)
+        for k in sd_cont:
+            self.assertTrue(torch.equal(sd_cont[k], sd_res[k]), f"Resume mismatch on parameter {k}")
+
+    def test_8_six_model_eval_locking_and_paired_contrasts(self):
+        import tempfile
+        from src.paper1.six_model_eval import (
+            ALL_SIX_MODELS,
+            calibrate_rsna_thresholds_only,
+            evaluate_six_models,
+            lock_nlbs_model_predictions,
+            verify_and_load_locked_model,
+        )
+
+        fold_df = pd.read_csv(ROOT / "datasets/paper1/rsna_val_calib_2fold_seed42.csv")
+        rsna_pts = fold_df.groupby("patient_id", as_index=False)["cancer"].max()
+        exam_df = pd.read_csv(ROOT / "datasets/nlbs/exam_manifest.csv").drop_duplicates("StudyInstanceUID").reset_index(drop=True)
+        c4v_df = pd.read_csv(ROOT / "datasets/paper1/nlbs_4view_common_cohort_label_free.csv")
+        c4v_uids = set(c4v_df["StudyInstanceUID"].astype(str).unique())
+
+        rng = np.random.default_rng(123)
+        rsna_cases = {}
+        nlbs_preds = {}
+        for idx, m in enumerate(ALL_SIX_MODELS):
+            r_sc = np.clip(rng.uniform(0.05, 0.35, size=len(rsna_pts)) + 0.35 * rsna_pts["cancer"].values + 0.02 * idx, 0.0, 1.0)
+            rsna_cases[m] = pd.DataFrame({"patient_id": rsna_pts["patient_id"], "cancer": rsna_pts["cancer"], "score": r_sc})
+
+            sub_ex = exam_df[exam_df["StudyInstanceUID"].isin(c4v_uids)] if m == "nyu_fourview_pretrained" else exam_df
+            # Negative score shift on NLBS positives -> tests calibration collapse & fallback sensitivity
+            n_sc = np.clip(rng.uniform(0.05, 0.35, size=len(sub_ex)) + 0.25 * sub_ex["exam_cancer"].values, 0.0, 1.0)
+            n_fb = np.zeros(len(sub_ex), dtype=int)
+            if m == "nyu_fourview_pretrained":
+                n_fb[:20] = 1
+            nlbs_preds[m] = pd.DataFrame({"StudyInstanceUID": sub_ex["StudyInstanceUID"].astype(str), "score": n_sc, "n_crop_fallbacks": n_fb})
+
+        with tempfile.TemporaryDirectory() as td:
+            td_p = Path(td)
+            lock_dir = td_p / "locked"
+            out_dir = td_p / "out"
+            for m in ALL_SIX_MODELS:
+                r_eval = calibrate_rsna_thresholds_only(rsna_cases[m], ROOT / "datasets/paper1/rsna_val_calib_2fold_seed42.csv", n_boot=30, seed=42)
+                lock_nlbs_model_predictions(m, nlbs_preds[m], r_eval["full_val_calib_thresholds"], f"sha_{m}", lock_dir)
+
+            res = evaluate_six_models(
+                locked_dir=lock_dir,
+                rsna_case_dfs=rsna_cases,
+                fold_csv=ROOT / "datasets/paper1/rsna_val_calib_2fold_seed42.csv",
+                exam_manifest_csv=ROOT / "datasets/nlbs/exam_manifest.csv",
+                common_4view_csv=ROOT / "datasets/paper1/nlbs_4view_common_cohort_label_free.csv",
+                out_dir=out_dir,
+                n_boot=30,
+                seed=42,
+            )
+            self.assertEqual(res["nlbs_common_4view_primary"]["n_units"], 6184)
+            self.assertEqual(res["nlbs_common_4view_primary"]["n_clusters"], 5868)
+            self.assertEqual(res["nlbs_full_cohort_secondary"]["n_units"], 6359)
+            self.assertEqual(res["nlbs_cluster_collapsed_secondary"]["n_units"], 5868)
+            self.assertIn("ce_b5_minus_trust_b5", res["nlbs_common_4view_primary"]["paired_contrasts"])
+            self.assertEqual(
+                res["nlbs_common_4view_primary"]["models"]["nyu_fourview_pretrained"]["fallback_audit"]["n_studies_with_fallback"],
+                20,
+            )
+            self.assertTrue((out_dir / "six_model_summary.json").exists())
+            self.assertTrue((out_dir / "six_model_summary.md").exists())
+
+            # Tamper check must raise RuntimeError
+            tamper_csv = lock_dir / "ce_b5_locked_nlbs_predictions.csv"
+            tamper_csv.write_text(tamper_csv.read_text() + " ", encoding="utf-8")
+            with self.assertRaises(RuntimeError):
+                verify_and_load_locked_model(lock_dir, "ce_b5")
+
+    def test_9_nyu_gmic_fallback_preserves_native_scale(self):
+        ckpt = Path("external/GMIC/models/sample_model_1.p")
+        if not ckpt.exists():
+            self.skipTest("external/GMIC not present")
+        _, mods = build_gmic_model(ckpt, model_index="1", device=torch.device("cpu"))
+        # Construct thin 3500x2600 mammogram strip (<200 px wide) that fails 100-iter erosion -> triggers fallback
+        thin = np.zeros((3500, 2600), dtype=np.uint16)
+        thin[400:3000, :80] = 30000
+        proc, meta = preprocess_uint16_for_nyukat(thin, "L-CC", GMIC_INPUT_SIZE, mods)
+        self.assertTrue(meta["crop_fallback"])
+        self.assertEqual(meta["fallback_strategy"], "native_scale_optimal_window_no_resize")
+        self.assertEqual(proc.shape, GMIC_INPUT_SIZE)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
