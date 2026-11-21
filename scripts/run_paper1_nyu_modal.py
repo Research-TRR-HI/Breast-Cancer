@@ -99,6 +99,7 @@ def infer_nyu_shard(split_name: str, shard_idx: int, num_shards: int, num_tta_ep
 
     t0 = time.perf_counter()
     records = []
+    fallback_logs = []
     for idx, (cid, grp) in enumerate(df_str.groupby("_case", sort=True), start=1):
         view_crops = {}
         n_fallbacks = 0
@@ -106,6 +107,17 @@ def infer_nyu_shard(split_name: str, shard_idx: int, num_shards: int, num_tta_ep
             vc = extract_nyu_cropped_view(root_dir / getattr(r, path_col), r.view_slot, nyu_mods)
             if vc["crop_fallback"]:
                 n_fallbacks += 1
+                fallback_logs.append(
+                    {
+                        "case_id": cid,
+                        "view_slot": r.view_slot,
+                        "rel_path": str(getattr(r, path_col)),
+                        "photometric": vc["meta"].get("photometric", ""),
+                        "raw_shape": vc["meta"].get("raw_shape"),
+                        "fallback_strategy": vc["meta"].get("fallback_strategy", ""),
+                        "crop_error": vc["meta"].get("crop_error", ""),
+                    }
+                )
             view_crops[r.view_slot] = vc
         preds = score_nyu_fourview_exam(
             model, nyu_mods, view_crops, device=device, num_tta_epochs=num_tta_epochs, seed=0
@@ -114,11 +126,12 @@ def infer_nyu_shard(split_name: str, shard_idx: int, num_shards: int, num_tta_ep
             {
                 "case_id": cid,
                 "n_crop_fallbacks": n_fallbacks,
+                "has_crop_fallback": n_fallbacks > 0,
                 **preds,
             }
         )
         if idx % 100 == 0:
-            print(f"[NYU {split_name} shard {shard_idx}] {idx}/{len(shard_cases)} exams", flush=True)
+            print(f"[NYU {split_name} shard {shard_idx}] {idx}/{len(shard_cases)} exams (fallbacks={len(fallback_logs)})", flush=True)
 
     payload = {
         "model_id": "nyu_fourview_pretrained",
@@ -127,6 +140,8 @@ def infer_nyu_shard(split_name: str, shard_idx: int, num_shards: int, num_tta_ep
         "shard_idx": shard_idx,
         "num_shards": num_shards,
         "elapsed_sec": round(time.perf_counter() - t0, 2),
+        "n_fallback_views": len(fallback_logs),
+        "fallback_logs": fallback_logs,
         "records": records,
     }
     tmp = shard_file.with_suffix(".json.tmp")
@@ -140,9 +155,12 @@ def infer_nyu_shard(split_name: str, shard_idx: int, num_shards: int, num_tta_ep
 def main(split: str = "rsna_val_calib", num_shards: int = 8, num_tta_epochs: int = 10) -> None:
     outs = list(infer_nyu_shard.starmap([(split, s, num_shards, num_tta_epochs) for s in range(num_shards)]))
     all_recs = [r for o in outs for r in o["records"]]
+    all_fbs = [f for o in outs for f in o.get("fallback_logs", [])]
     out_dir = Path("reports/paper1/predictions_locked")
     out_dir.mkdir(parents=True, exist_ok=True)
     out_file = out_dir / f"nyu_{split}_exam_scores.json"
     out_file.write_text(json.dumps({"records": all_recs}, indent=2), encoding="utf-8")
+    fb_file = out_dir / f"nyu_{split}_fallback_log.json"
+    fb_file.write_text(json.dumps({"n_exams": len(all_recs), "n_fallback_views": len(all_fbs), "fallbacks": all_fbs}, indent=2), encoding="utf-8")
     digest = hashlib.sha256(out_file.read_bytes()).hexdigest()
-    print(f"Saved {len(all_recs)} NYU exam records to {out_file} (sha256={digest})")
+    print(f"Saved {len(all_recs)} NYU exam records (fallback_views={len(all_fbs)}) to {out_file} (sha256={digest})")
