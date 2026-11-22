@@ -19,6 +19,8 @@ from src.paper1.nyu_fourview_adapter import (
     score_nyu_fourview_exam,
     select_representative_pilot_exams,
     validate_and_load_nyu_4view_manifest,
+    validate_nyu_cli_stage_and_guard,
+    verify_and_load_nyu_resumed_records,
 )
 
 
@@ -123,6 +125,58 @@ class TestNYUStep1CPUPreprocessing(unittest.TestCase):
             self.assertEqual(res_on["left_malignant"], res_ca["left_malignant"])
             self.assertEqual(res_on["right_malignant"], res_ca["right_malignant"])
             self.assertEqual(res_on["exam_score"], res_ca["exam_score"])
+
+    def test_4_sha256_resume_rejects_same_size_corruption_and_missing_hash(self):
+        import hashlib
+        import json
+        from src.evaluation.stage_c_eval import compute_sha256_file
+
+        with tempfile.TemporaryDirectory() as td:
+            td_p = Path(td)
+            png_dir = td_p / "png"
+            png_dir.mkdir()
+            prog = td_p / "shard.jsonl"
+            lines = []
+            for idx, item_id in enumerate(("a", "b", "c")):
+                arr = np.full((8, 8), idx + 1, dtype=np.uint16)
+                p = png_dir / f"{item_id}.png"
+                nb = save_uint16_png_atomic(arr, p, compression=1)
+                lines.append(
+                    {
+                        "item_id": item_id,
+                        "file_bytes": int(nb),
+                        "png_sha256": compute_sha256_file(p) if item_id != "c" else "",
+                        "u16_sha256": hashlib.sha256(arr.tobytes()).hexdigest(),
+                        "height": 8,
+                        "width": 8,
+                        "best_center_y": 4,
+                        "best_center_x": 4,
+                    }
+                )
+            prog.write_text("\n".join(json.dumps(x) for x in lines) + "\n", encoding="utf-8")
+
+            # Corrupt 1 byte in `b.png` keeping EXACT file_bytes length
+            bp = png_dir / "b.png"
+            raw = bytearray(bp.read_bytes())
+            raw[len(raw) // 2] ^= 0xFF
+            bp.write_bytes(bytes(raw))
+
+            done, stats = verify_and_load_nyu_resumed_records(prog, png_dir)
+            self.assertEqual(list(done.keys()), ["a"])
+            self.assertEqual(stats["valid_resumed"], 1)
+            self.assertEqual(stats["rejected"], 2)
+
+    def test_5_guarded_build_cli_blocks_without_approval(self):
+        with self.assertRaises(RuntimeError):
+            validate_nyu_cli_stage_and_guard("build", "all", 12, approve_full_build=False)
+        self.assertEqual(
+            validate_nyu_cli_stage_and_guard("build", "all", 12, approve_full_build=True),
+            ["rsna_val_calib", "nlbs_4view"],
+        )
+        self.assertEqual(
+            validate_nyu_cli_stage_and_guard("validate_config", "rsna_val_calib", 8, approve_full_build=False),
+            ["rsna_val_calib"],
+        )
 
 
 if __name__ == "__main__":
