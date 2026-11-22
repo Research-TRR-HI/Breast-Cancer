@@ -5,21 +5,29 @@ cropping, optimal-center selection, and malignant_pred extraction from:
     https://github.com/nyukat/GMIC (AGPL-3.0)
 """
 
+import hashlib
 import importlib
+import json
+import math
 import os
 from pathlib import Path
 import sys
 import types
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 import cv2
 import numpy as np
+import pandas as pd
 import torch
 
 from src.data.preprocessing import decode_dicom_array
+from src.evaluation.stage_c_eval import assert_no_forbidden_columns, compute_sha256_file
 
 GMIC_REPO_DEFAULT = Path(__file__).resolve().parent.parent.parent / "external" / "GMIC"
 GMIC_INPUT_SIZE = (2944, 1920)
 GMIC_PERCENT_T_MAP = {"1": 0.02, "2": 0.03, "3": 0.03, "4": 0.05, "5": 0.1}
+GMIC_MODEL_ID = "gmic_pretrained"
+GMIC_CKPT_SHA256 = "3b792e6de22fdccd34a43b4c1cc87a94f5f4fa8aed42722dce4e4badac347991"
+GMIC_PREPROCESS_VERSION = "paper1_gmic_uint16_v1"
 
 
 def _ensure_gmic_importable(gmic_repo_dir: Path = GMIC_REPO_DEFAULT) -> Any:
@@ -315,3 +323,220 @@ def score_gmic_preprocessed_tensor(
     with torch.no_grad():
         out = model(x).float().cpu().numpy()[0]
     return float(out[0]), float(out[1])
+
+
+def compute_item_ids_sha256(item_ids: Sequence[str]) -> str:
+    """Compute deterministic SHA-256 digest of an ordered sequence of image IDs."""
+    payload = json.dumps([str(i) for i in item_ids], separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def validate_gmic_shard_payload(
+    payload: Dict[str, Any],
+    *,
+    expected_item_ids: Sequence[str],
+    batch_size: int,
+    split_name: str,
+    shard_idx: int,
+    num_shards: int,
+    checkpoint_sha256: str = GMIC_CKPT_SHA256,
+    preprocess_version: str = GMIC_PREPROCESS_VERSION,
+    preprocess_manifest_sha256: Optional[str] = None,
+) -> Tuple[bool, str]:
+    """Verify resumed shard provenance (batch size, checkpoint hash, preprocess version, exact item IDs, finite scores)."""
+    if not isinstance(payload, dict):
+        return False, "payload_not_dict"
+    if payload.get("model_id") != GMIC_MODEL_ID:
+        return False, f"model_id_mismatch:{payload.get('model_id')}"
+    if str(payload.get("checkpoint_sha256", "")).lower() != str(checkpoint_sha256).lower():
+        return False, f"checkpoint_sha256_mismatch:{payload.get('checkpoint_sha256')}"
+    if payload.get("preprocess_version") != preprocess_version:
+        return False, f"preprocess_version_mismatch:{payload.get('preprocess_version')}"
+    if preprocess_manifest_sha256 and payload.get("preprocess_manifest_sha256") != preprocess_manifest_sha256:
+        return False, f"preprocess_manifest_sha256_mismatch:{payload.get('preprocess_manifest_sha256')}"
+    if payload.get("split_name") != split_name:
+        return False, f"split_name_mismatch:{payload.get('split_name')}"
+    if payload.get("shard_idx") != int(shard_idx) or payload.get("num_shards") != int(num_shards):
+        return False, f"shard_spec_mismatch:{payload.get('shard_idx')}/{payload.get('num_shards')}"
+    if payload.get("batch_size") != int(batch_size):
+        return False, f"batch_size_mismatch:{payload.get('batch_size')}!=expected_{int(batch_size)}"
+
+    exp_ids = [str(i) for i in expected_item_ids]
+    exp_hash = compute_item_ids_sha256(exp_ids)
+    if payload.get("expected_item_ids_sha256") != exp_hash:
+        return False, "expected_item_ids_sha256_mismatch"
+
+    records = payload.get("records")
+    if not isinstance(records, list) or len(records) != len(exp_ids):
+        return False, f"records_len_mismatch:{len(records) if isinstance(records, list) else None}!={len(exp_ids)}"
+    rec_ids = [str(r.get("item_id", "")) for r in records]
+    if rec_ids != exp_ids:
+        return False, "record_item_ids_order_or_set_mismatch"
+
+    for idx, rec in enumerate(records):
+        b = rec.get("benign_pred")
+        m = rec.get("malignant_pred")
+        if b is None or m is None or not (math.isfinite(float(b)) and math.isfinite(float(m))):
+            return False, f"non_finite_prediction_at_idx_{idx}"
+    return True, ""
+
+
+def finalize_and_lock_gmic_predictions(
+    split_name: str,
+    shard_outputs: Sequence[Dict[str, Any]],
+    expected_image_df: pd.DataFrame,
+    *,
+    item_col: str,
+    case_col: str,
+    case_out_col: str,
+    batch_size: int,
+    checkpoint_sha256: str = GMIC_CKPT_SHA256,
+    preprocess_version: str = GMIC_PREPROCESS_VERSION,
+    out_dir: Path,
+) -> Dict[str, Any]:
+    """Validate 100% coverage/uniqueness across shards, aggregate max-view case scores, and SHA-256-lock outputs."""
+    assert_no_forbidden_columns(expected_image_df.columns, context=f"gmic_lock_{split_name}_manifest")
+    exp_df = expected_image_df.copy()
+    exp_df[item_col] = exp_df[item_col].astype(str)
+    exp_df[case_col] = exp_df[case_col].astype(str)
+    exp_ids = set(exp_df[item_col].tolist())
+    if len(exp_ids) != len(exp_df):
+        raise ValueError(f"{split_name} expected manifest contains duplicate {item_col} rows")
+
+    all_recs: List[Dict[str, Any]] = []
+    all_fbs: List[Dict[str, Any]] = []
+    shard_meta: List[Dict[str, Any]] = []
+    preprocess_manifest_shas = set()
+    for o in sorted(shard_outputs, key=lambda x: int(x["shard_idx"])):
+        if str(o.get("checkpoint_sha256", "")).lower() != checkpoint_sha256.lower():
+            raise RuntimeError(f"Shard {o.get('shard_idx')} checkpoint_sha256 mismatch")
+        if o.get("preprocess_version") != preprocess_version:
+            raise RuntimeError(f"Shard {o.get('shard_idx')} preprocess_version mismatch: {o.get('preprocess_version')}")
+        if o.get("batch_size") != int(batch_size):
+            raise RuntimeError(f"Shard {o.get('shard_idx')} batch_size mismatch: {o.get('batch_size')} != {batch_size}")
+        if o.get("preprocess_manifest_sha256"):
+            preprocess_manifest_shas.add(str(o["preprocess_manifest_sha256"]))
+        all_recs.extend(o["records"])
+        all_fbs.extend(o.get("fallback_logs", []))
+        shard_meta.append(
+            {
+                "shard_idx": int(o["shard_idx"]),
+                "num_shards": int(o["num_shards"]),
+                "n_images": len(o["records"]),
+                "n_fallback_views": int(o.get("n_fallback_views", len(o.get("fallback_logs", [])))),
+                "elapsed_sec": o.get("elapsed_sec"),
+                "container_wall_sec": o.get("container_wall_sec"),
+                "model_load_sec": o.get("model_load_sec"),
+                "nvme_stage_sec": o.get("nvme_stage_sec"),
+                "decode_norm_sec": o.get("decode_norm_sec"),
+                "gpu_infer_sec": o.get("gpu_infer_sec"),
+                "estimated_cost_usd": o.get("estimated_cost_usd"),
+                "peak_vram_gb": o.get("peak_vram_gb"),
+                "host_rss_gb": o.get("host_rss_gb"),
+                "expected_item_ids_sha256": o.get("expected_item_ids_sha256"),
+                "resumed_from_cache": bool(o.get("resumed_from_cache", False)),
+            }
+        )
+
+    rec_df = pd.DataFrame(all_recs)
+    assert_no_forbidden_columns(rec_df.columns, context=f"gmic_lock_{split_name}_records")
+    if len(rec_df) != len(exp_df):
+        raise RuntimeError(f"{split_name} record count mismatch: {len(rec_df)} != {len(exp_df)}")
+    if rec_df["item_id"].duplicated().any():
+        raise RuntimeError(f"{split_name} contains duplicate item_id predictions")
+    if set(rec_df["item_id"].astype(str)) != exp_ids:
+        raise RuntimeError(f"{split_name} item_id set does not match expected manifest")
+    if not (np.all(np.isfinite(rec_df["benign_pred"].values)) and np.all(np.isfinite(rec_df["malignant_pred"].values))):
+        raise RuntimeError(f"{split_name} contains non-finite predictions")
+
+    rec_df = rec_df.sort_values(["case_id", "item_id"]).reset_index(drop=True)
+    case_df = (
+        rec_df.groupby("case_id", as_index=False)
+        .agg(
+            score=("malignant_pred", "max"),
+            max_benign_pred=("benign_pred", "max"),
+            n_views=("item_id", "count"),
+            n_crop_fallbacks=("crop_fallback", "sum"),
+        )
+        .rename(columns={"case_id": case_out_col})
+    )
+    case_df["n_crop_fallbacks"] = case_df["n_crop_fallbacks"].astype(int)
+    case_df["has_crop_fallback"] = case_df["n_crop_fallbacks"] > 0
+    if len(case_df) != int(exp_df[case_col].nunique()):
+        raise RuntimeError(f"{split_name} incomplete case coverage: {len(case_df)} != {exp_df[case_col].nunique()}")
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    img_json_p = out_dir / f"gmic_{split_name}_image_scores.json"
+    img_csv_p = out_dir / f"gmic_{split_name}_image_scores.csv"
+    case_csv_p = out_dir / f"gmic_{split_name}_case_scores.csv"
+    fb_json_p = out_dir / f"gmic_{split_name}_fallback_log.json"
+    lock_json_p = out_dir / f"gmic_{split_name}_provenance_lock.json"
+
+    img_payload = {
+        "schema_version": "paper1_gmic_image_scores_v2",
+        "model_id": GMIC_MODEL_ID,
+        "checkpoint_file": "sample_model_1.p",
+        "checkpoint_sha256": checkpoint_sha256,
+        "preprocess_version": preprocess_version,
+        "preprocess_manifest_sha256s": sorted(preprocess_manifest_shas),
+        "split_name": split_name,
+        "batch_size": int(batch_size),
+        "n_images": int(len(rec_df)),
+        "n_cases": int(len(case_df)),
+        "records": rec_df.to_dict(orient="records"),
+    }
+    img_json_p.write_text(json.dumps(img_payload, indent=2), encoding="utf-8")
+    rec_df.to_csv(img_csv_p, index=False)
+    case_df.to_csv(case_csv_p, index=False)
+
+    fb_df = pd.DataFrame(all_fbs)
+    fb_payload = {
+        "split_name": split_name,
+        "n_images": int(len(rec_df)),
+        "n_fallback_views": int(len(all_fbs)),
+        "n_fallback_cases": int(fb_df["case_id"].nunique()) if len(all_fbs) else 0,
+        "by_view_slot": fb_df["view_slot"].value_counts().to_dict() if len(all_fbs) else {},
+        "by_photometric": fb_df["photometric"].value_counts().to_dict() if len(all_fbs) else {},
+        "by_error": fb_df["crop_error"].value_counts().to_dict() if len(all_fbs) else {},
+        "fallbacks": sorted(all_fbs, key=lambda x: (str(x["case_id"]), str(x["item_id"]))),
+    }
+    fb_json_p.write_text(json.dumps(fb_payload, indent=2), encoding="utf-8")
+
+    mal_arr = rec_df["malignant_pred"].values.astype(np.float64)
+    case_arr = case_df["score"].values.astype(np.float64)
+    lock_manifest = {
+        "schema_version": "paper1_gmic_step2_lock_v1",
+        "model_id": GMIC_MODEL_ID,
+        "checkpoint_file": "sample_model_1.p",
+        "checkpoint_sha256": checkpoint_sha256,
+        "preprocess_version": preprocess_version,
+        "preprocess_manifest_sha256s": sorted(preprocess_manifest_shas),
+        "split_name": split_name,
+        "batch_size": int(batch_size),
+        "label_quarantine_enforced": True,
+        "n_unique_images": int(rec_df["item_id"].nunique()),
+        "n_unique_cases": int(len(case_df)),
+        "all_scores_finite": bool(np.all(np.isfinite(mal_arr)) and np.all(np.isfinite(case_arr))),
+        "image_malignant_summary_label_free": {
+            "min": round(float(np.min(mal_arr)), 6),
+            "median": round(float(np.median(mal_arr)), 6),
+            "max": round(float(np.max(mal_arr)), 6),
+        },
+        "case_malignant_summary_label_free": {
+            "min": round(float(np.min(case_arr)), 6),
+            "median": round(float(np.median(case_arr)), 6),
+            "max": round(float(np.max(case_arr)), 6),
+        },
+        "n_fallback_views": int(len(all_fbs)),
+        "n_cases_with_fallback": int(case_df["has_crop_fallback"].sum()),
+        "total_estimated_cost_usd": round(sum(float(s["estimated_cost_usd"] or 0.0) for s in shard_meta), 5),
+        "shards": shard_meta,
+        "locked_files_sha256": {
+            img_json_p.name: compute_sha256_file(img_json_p),
+            img_csv_p.name: compute_sha256_file(img_csv_p),
+            case_csv_p.name: compute_sha256_file(case_csv_p),
+            fb_json_p.name: compute_sha256_file(fb_json_p),
+        },
+    }
+    lock_json_p.write_text(json.dumps(lock_manifest, indent=2), encoding="utf-8")
+    return lock_manifest
