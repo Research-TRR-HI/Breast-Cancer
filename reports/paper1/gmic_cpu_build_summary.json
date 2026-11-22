@@ -1,0 +1,373 @@
+{
+  "rsna_val_calib": {
+    "total_images": 10982,
+    "newly_processed": 10282,
+    "skipped_resumed": 700,
+    "n_fallbacks": 80,
+    "cost_usd": 0.828,
+    "shards": [
+      {
+        "split_name": "rsna_val_calib",
+        "shard_idx": 0,
+        "num_shards": 16,
+        "total_in_shard": 687,
+        "skipped_resumed": 100,
+        "newly_processed": 587,
+        "n_fallbacks": 3,
+        "wall_sec": 523.35,
+        "cost_usd": 0.03672
+      },
+      {
+        "split_name": "rsna_val_calib",
+        "shard_idx": 1,
+        "num_shards": 16,
+        "total_in_shard": 687,
+        "skipped_resumed": 0,
+        "newly_processed": 687,
+        "n_fallbacks": 6,
+        "wall_sec": 715.31,
+        "cost_usd": 0.05018
+      },
+      {
+        "split_name": "rsna_val_calib",
+        "shard_idx": 2,
+        "num_shards": 16,
+        "total_in_shard": 687,
+        "skipped_resumed": 0,
+        "newly_processed": 687,
+        "n_fallbacks": 8,
+        "wall_sec": 714.75,
+        "cost_usd": 0.05014
+      },
+      {
+        "split_name": "rsna_val_calib",
+        "shard_idx": 3,
+        "num_shards": 16,
+        "total_in_shard": 687,
+        "skipped_resumed": 100,
+        "newly_processed": 587,
+        "n_fallbacks": 7,
+        "wall_sec": 473.6,
+        "cost_usd": 0.03323
+      },
+      {
+        "split_name": "rsna_val_calib",
+        "shard_idx": 4,
+        "num_shards": 16,
+        "total_in_shard": 687,
+        "skipped_resumed": 0,
+        "newly_processed": 687,
+        "n_fallbacks": 5,
+        "wall_sec": 808.95,
+        "cost_usd": 0.05675
+      },
+      {
+        "split_name": "rsna_val_calib",
+        "shard_idx": 5,
+        "num_shards": 16,
+        "total_in_shard": 687,
+        "skipped_resumed": 0,
+        "newly_processed": 687,
+        "n_fallbacks": 8,
+        "wall_sec": 710.17,
+        "cost_usd": 0.04982
+      },
+      {
+        "split_name": "rsna_val_calib",
+        "shard_idx": 6,
+        "num_shards": 16,
+        "total_in_shard": 686,
+        "skipped_resumed": 100,
+        "newly_processed": 586,
+        "n_fallbacks": 4,
+        "wall_sec": 657.21,
+        "cost_usd": 0.04611
+      },
+      {
+        "split_name": "rsna_val_calib",
+        "shard_idx": 7,
+        "num_shards": 16,
+        "total_in_shard": 686,
+        "skipped_resumed": 0,
+        "newly_processed": 686,
+        "n_fallbacks": 4,
+        "wall_sec": 857.49,
+        "cost_usd": 0.06016
+      },
+      {
+        "split_name": "rsna_val_calib",
+        "shard_idx": 8,
+        "num_shards": 16,
+        "total_in_shard": 686,
+        "skipped_resumed": 100,
+        "newly_processed": 586,
+        "n_fallbacks": 4,
+        "wall_sec": 638.82,
+        "cost_usd": 0.04482
+      },
+      {
+        "split_name": "rsna_val_calib",
+        "shard_idx": 9,
+        "num_shards": 16,
+        "total_in_shard": 686,
+        "skipped_resumed": 0,
+        "newly_processed": 686,
+        "n_fallbacks": 2,
+        "wall_sec": 684.72,
+        "cost_usd": 0.04804
+      },
+      {
+        "split_name": "rsna_val_calib",
+        "shard_idx": 10,
+        "num_shards": 16,
+        "total_in_shard": 686,
+        "skipped_resumed": 0,
+        "newly_processed": 686,
+        "n_fallbacks": 6,
+        "wall_sec": 1172.93,
+        "cost_usd": 0.08229
+      },
+      {
+        "split_name": "rsna_val_calib",
+        "shard_idx": 11,
+        "num_shards": 16,
+        "total_in_shard": 686,
+        "skipped_resumed": 100,
+        "newly_processed": 586,
+        "n_fallbacks": 4,
+        "wall_sec": 1066.59,
+        "cost_usd": 0.07483
+      },
+      {
+        "split_name": "rsna_val_calib",
+        "shard_idx": 12,
+        "num_shards": 16,
+        "total_in_shard": 686,
+        "skipped_resumed": 100,
+        "newly_processed": 586,
+        "n_fallbacks": 3,
+        "wall_sec": 601.95,
+        "cost_usd": 0.04223
+      },
+      {
+        "split_name": "rsna_val_calib",
+        "shard_idx": 13,
+        "num_shards": 16,
+        "total_in_shard": 686,
+        "skipped_resumed": 0,
+        "newly_processed": 686,
+        "n_fallbacks": 4,
+        "wall_sec": 621.63,
+        "cost_usd": 0.04361
+      },
+      {
+        "split_name": "rsna_val_calib",
+        "shard_idx": 14,
+        "num_shards": 16,
+        "total_in_shard": 686,
+        "skipped_resumed": 100,
+        "newly_processed": 586,
+        "n_fallbacks": 6,
+        "wall_sec": 895.69,
+        "cost_usd": 0.06284
+      },
+      {
+        "split_name": "rsna_val_calib",
+        "shard_idx": 15,
+        "num_shards": 16,
+        "total_in_shard": 686,
+        "skipped_resumed": 0,
+        "newly_processed": 686,
+        "n_fallbacks": 6,
+        "wall_sec": 658.87,
+        "cost_usd": 0.04622
+      }
+    ]
+  },
+  "nlbs": {
+    "total_images": 26988,
+    "newly_processed": 26988,
+    "skipped_resumed": 0,
+    "n_fallbacks": 0,
+    "cost_usd": 0.7564,
+    "shards": [
+      {
+        "split_name": "nlbs",
+        "shard_idx": 0,
+        "num_shards": 16,
+        "total_in_shard": 1687,
+        "skipped_resumed": 0,
+        "newly_processed": 1687,
+        "n_fallbacks": 0,
+        "wall_sec": 479.52,
+        "cost_usd": 0.03364
+      },
+      {
+        "split_name": "nlbs",
+        "shard_idx": 1,
+        "num_shards": 16,
+        "total_in_shard": 1687,
+        "skipped_resumed": 0,
+        "newly_processed": 1687,
+        "n_fallbacks": 0,
+        "wall_sec": 512.43,
+        "cost_usd": 0.03595
+      },
+      {
+        "split_name": "nlbs",
+        "shard_idx": 2,
+        "num_shards": 16,
+        "total_in_shard": 1687,
+        "skipped_resumed": 0,
+        "newly_processed": 1687,
+        "n_fallbacks": 0,
+        "wall_sec": 499.55,
+        "cost_usd": 0.03505
+      },
+      {
+        "split_name": "nlbs",
+        "shard_idx": 3,
+        "num_shards": 16,
+        "total_in_shard": 1687,
+        "skipped_resumed": 0,
+        "newly_processed": 1687,
+        "n_fallbacks": 0,
+        "wall_sec": 832.67,
+        "cost_usd": 0.05842
+      },
+      {
+        "split_name": "nlbs",
+        "shard_idx": 4,
+        "num_shards": 16,
+        "total_in_shard": 1687,
+        "skipped_resumed": 0,
+        "newly_processed": 1687,
+        "n_fallbacks": 0,
+        "wall_sec": 732.27,
+        "cost_usd": 0.05137
+      },
+      {
+        "split_name": "nlbs",
+        "shard_idx": 5,
+        "num_shards": 16,
+        "total_in_shard": 1687,
+        "skipped_resumed": 0,
+        "newly_processed": 1687,
+        "n_fallbacks": 0,
+        "wall_sec": 749.03,
+        "cost_usd": 0.05255
+      },
+      {
+        "split_name": "nlbs",
+        "shard_idx": 6,
+        "num_shards": 16,
+        "total_in_shard": 1687,
+        "skipped_resumed": 0,
+        "newly_processed": 1687,
+        "n_fallbacks": 0,
+        "wall_sec": 724.32,
+        "cost_usd": 0.05082
+      },
+      {
+        "split_name": "nlbs",
+        "shard_idx": 7,
+        "num_shards": 16,
+        "total_in_shard": 1687,
+        "skipped_resumed": 0,
+        "newly_processed": 1687,
+        "n_fallbacks": 0,
+        "wall_sec": 760.74,
+        "cost_usd": 0.05337
+      },
+      {
+        "split_name": "nlbs",
+        "shard_idx": 8,
+        "num_shards": 16,
+        "total_in_shard": 1687,
+        "skipped_resumed": 0,
+        "newly_processed": 1687,
+        "n_fallbacks": 0,
+        "wall_sec": 435.34,
+        "cost_usd": 0.03054
+      },
+      {
+        "split_name": "nlbs",
+        "shard_idx": 9,
+        "num_shards": 16,
+        "total_in_shard": 1687,
+        "skipped_resumed": 0,
+        "newly_processed": 1687,
+        "n_fallbacks": 0,
+        "wall_sec": 858.13,
+        "cost_usd": 0.0602
+      },
+      {
+        "split_name": "nlbs",
+        "shard_idx": 10,
+        "num_shards": 16,
+        "total_in_shard": 1687,
+        "skipped_resumed": 0,
+        "newly_processed": 1687,
+        "n_fallbacks": 0,
+        "wall_sec": 806.25,
+        "cost_usd": 0.05656
+      },
+      {
+        "split_name": "nlbs",
+        "shard_idx": 11,
+        "num_shards": 16,
+        "total_in_shard": 1687,
+        "skipped_resumed": 0,
+        "newly_processed": 1687,
+        "n_fallbacks": 0,
+        "wall_sec": 469.59,
+        "cost_usd": 0.03294
+      },
+      {
+        "split_name": "nlbs",
+        "shard_idx": 12,
+        "num_shards": 16,
+        "total_in_shard": 1686,
+        "skipped_resumed": 0,
+        "newly_processed": 1686,
+        "n_fallbacks": 0,
+        "wall_sec": 770.38,
+        "cost_usd": 0.05405
+      },
+      {
+        "split_name": "nlbs",
+        "shard_idx": 13,
+        "num_shards": 16,
+        "total_in_shard": 1686,
+        "skipped_resumed": 0,
+        "newly_processed": 1686,
+        "n_fallbacks": 0,
+        "wall_sec": 682.04,
+        "cost_usd": 0.04785
+      },
+      {
+        "split_name": "nlbs",
+        "shard_idx": 14,
+        "num_shards": 16,
+        "total_in_shard": 1686,
+        "skipped_resumed": 0,
+        "newly_processed": 1686,
+        "n_fallbacks": 0,
+        "wall_sec": 793.11,
+        "cost_usd": 0.05564
+      },
+      {
+        "split_name": "nlbs",
+        "shard_idx": 15,
+        "num_shards": 16,
+        "total_in_shard": 1686,
+        "skipped_resumed": 0,
+        "newly_processed": 1686,
+        "n_fallbacks": 0,
+        "wall_sec": 675.89,
+        "cost_usd": 0.04742
+      }
+    ]
+  },
+  "total_build_cost_usd": 1.5844
+}
