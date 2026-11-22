@@ -119,6 +119,7 @@ def _process_one_nyu_view(
     nyu_mods: Dict[str, Any],
     compression: int = 1,
 ) -> Dict[str, Any]:
+    from src.evaluation.stage_c_eval import compute_sha256_file
     from src.paper1.gmic_adapter import save_uint16_png_atomic
     from src.paper1.nyu_fourview_adapter import extract_nyu_cropped_view
 
@@ -128,6 +129,7 @@ def _process_one_nyu_view(
     u16 = res["image_u16"]
     meta = res["meta"]
     file_bytes = save_uint16_png_atomic(u16, out_png, compression=compression)
+    png_sha = compute_sha256_file(out_png)
     u16_sha = hashlib.sha256(u16.tobytes()).hexdigest()
     return {
         "split_name": row["split_name"],
@@ -142,6 +144,7 @@ def _process_one_nyu_view(
         "crop_window": meta["crop_window"],
         "raw_shape": meta["raw_shape"],
         "file_bytes": int(file_bytes),
+        "png_sha256": png_sha,
         "u16_sha256": u16_sha,
         "photometric": str(meta["photometric"]),
         "oriented_flipped": bool(meta["oriented_flipped"]),
@@ -396,22 +399,177 @@ def run_nyu_efficiency_probe_2c3g(n_exams_per_split: int = 5, compression: int =
     image=image,
     volumes={str(RSNA_MOUNT): RSNA_VOL, str(NLBS_MOUNT): NLBS_VOL},
     cpu=2.0,
-    memory=6144,
+    memory=8192,
+    timeout=3600,
+)
+def validate_full_cpu_config_and_storage(n_exams_per_split: int = 20, compression: int = 1) -> Dict[str, Any]:
+    """Benchmark actual full-run config (2 vCPU / 8 GiB RAM) on 160 imgs, test SHA-256 resume, and audit volume GiB."""
+    import numpy as np
+    import resource
+    import shutil
+    import torch
+    from src.evaluation.stage_c_eval import compute_sha256_file
+    from src.paper1.nyu_fourview_adapter import (
+        _ensure_nyu_importable,
+        select_representative_pilot_exams,
+        verify_and_load_nyu_resumed_records,
+    )
+
+    if torch.cuda.is_available():
+        raise RuntimeError("GPU detected inside strict CPU-only validation!")
+
+    nyu_mods = _ensure_nyu_importable(Path("/root/external/breast_cancer_classifier"))
+    rsna_rows = _load_split_rows("rsna_val_calib")
+    nlbs_rows = _load_split_rows("nlbs_4view")
+    fb_doc = json.loads(
+        Path("/root/reports/paper1/predictions_locked/gmic_rsna_val_calib_fallback_log.json").read_text(encoding="utf-8")
+    )
+    gmic_fb_cases = sorted({str(x["case_id"]) for x in fb_doc.get("fallbacks", [])})
+    sel_rsna, sel_nlbs, sel_meta = select_representative_pilot_exams(
+        rsna_rows, nlbs_rows, gmic_fb_cases, n_exams_per_split=n_exams_per_split
+    )
+
+    val_root = RSNA_MOUNT / "cache" / f"{CACHE_ROOT_NAME}_validate_2c8g"
+    if val_root.exists():
+        shutil.rmtree(val_root)
+    png_dir = val_root / "png"
+    png_dir.mkdir(parents=True, exist_ok=True)
+    prog_path = val_root / "shard_validate.jsonl"
+
+    all_rows = sel_rsna + sel_nlbs
+    t0 = time.perf_counter()
+    records: List[Dict[str, Any]] = []
+    with ThreadPoolExecutor(max_workers=2) as pool, open(prog_path, "w", encoding="utf-8") as logf:
+        recs = list(pool.map(lambda r: _process_one_nyu_view(r, png_dir, nyu_mods, compression), all_rows))
+        for rec in recs:
+            logf.write(json.dumps(rec) + "\n")
+            records.append(rec)
+        logf.flush()
+        os.fsync(logf.fileno())
+    RSNA_VOL.commit()
+    wall_sec = time.perf_counter() - t0
+    host_rss_gb = float(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / (1024 * 1024))
+
+    # Live SHA-256 resume test: tamper 1 PNG preserving byte length + delete 1 PNG -> ensure BOTH rejected
+    tampered_id = records[0]["item_id"]
+    deleted_id = records[1]["item_id"]
+    tp = png_dir / f"{tampered_id}.png"
+    b = bytearray(tp.read_bytes())
+    b[len(b) // 2] ^= 0x01
+    tp.write_bytes(bytes(b))
+    (png_dir / f"{deleted_id}.png").unlink()
+
+    done_map, res_stats = verify_and_load_nyu_resumed_records(prog_path, png_dir)
+    if res_stats["valid_resumed"] != len(records) - 2 or res_stats["rejected"] != 2:
+        raise RuntimeError(f"Live SHA-256 resume check failed: {res_stats}")
+
+    # Recompute the 2 rejected items and confirm 100% SHA-256 match
+    todo_rows = [r for r in all_rows if r["item_id"] not in done_map]
+    with ThreadPoolExecutor(max_workers=2) as pool, open(prog_path, "a", encoding="utf-8") as logf:
+        for rec in pool.map(lambda r: _process_one_nyu_view(r, png_dir, nyu_mods, compression), todo_rows):
+            logf.write(json.dumps(rec) + "\n")
+        logf.flush()
+        os.fsync(logf.fileno())
+    RSNA_VOL.commit()
+    done_after, stats_after = verify_and_load_nyu_resumed_records(prog_path, png_dir)
+    if len(done_after) != len(all_rows) or stats_after["rejected"] != 0:
+        raise RuntimeError(f"Post-repair SHA-256 resume verify failed: {stats_after}")
+    # Also cross-check live hash vs stored png_sha256 for tampered item
+    if compute_sha256_file(png_dir / f"{tampered_id}.png") != done_after[tampered_id]["png_sha256"]:
+        raise RuntimeError("Repaired PNG hash mismatch")
+
+    # Read-only exact storage footprint audit of /rsna_vol and /nlbs_vol (ZERO deletions!)
+    def _dir_bytes(p: Path) -> int:
+        tot = 0
+        for dirpath, _, filenames in os.walk(p):
+            dp = Path(dirpath)
+            for fn in filenames:
+                try:
+                    tot += (dp / fn).lstat().st_size
+                except OSError:
+                    pass
+        return tot
+
+    rsna_vol_breakdown = {}
+    for child in sorted(RSNA_MOUNT.iterdir()):
+        if child.is_dir():
+            if child.name == "cache":
+                for csub in sorted(child.iterdir()):
+                    if csub.is_dir():
+                        rsna_vol_breakdown[f"cache/{csub.name}"] = round(_dir_bytes(csub) / (1024 ** 3), 3)
+            else:
+                rsna_vol_breakdown[child.name] = round(_dir_bytes(child) / (1024 ** 3), 3)
+    nlbs_vol_gib = round(_dir_bytes(NLBS_MOUNT) / (1024 ** 3), 3)
+
+    rsna_bytes = [r["file_bytes"] for r in records if r["split_name"] == "rsna_val_calib"]
+    nlbs_bytes = [r["file_bytes"] for r in records if r["split_name"] == "nlbs_4view"]
+    avg_rsna_mb = float(np.mean(rsna_bytes)) / (1024 * 1024)
+    avg_nlbs_mb = float(np.mean(nlbs_bytes)) / (1024 * 1024)
+    est_rsna_gib = (float(np.mean(rsna_bytes)) * 9528) / (1024 ** 3)
+    est_nlbs_gib = (float(np.mean(nlbs_bytes)) * 24736) / (1024 ** 3)
+
+    n_imgs = len(records)
+    ips = n_imgs / max(wall_sec, 1e-6)
+    cost_usd = _compute_cpu_cost_usd(wall_sec, 2.0, 8.0)
+
+    return {
+        "gpu_allocated": False,
+        "config": "2vCPU/8GiB",
+        "selection_meta": sel_meta,
+        "n_processed_images": n_imgs,
+        "n_fallbacks": int(sum(1 for r in records if r["crop_fallback"])),
+        "wall_sec": round(wall_sec, 3),
+        "imgs_per_sec": round(ips, 3),
+        "host_rss_gb": round(host_rss_gb, 3),
+        "rss_headroom_gb_under_8gib": round(8.0 - host_rss_gb, 3),
+        "measured_cost_usd": round(cost_usd, 5),
+        "sha256_resume_tamper_test": {
+            "pass1_tampered_same_size": tampered_id,
+            "pass1_deleted": deleted_id,
+            "resumed_before_repair": res_stats,
+            "resumed_after_repair": stats_after,
+            "passed": True,
+        },
+        "storage_per_split": {
+            "rsna_avg_mb": round(avg_rsna_mb, 3),
+            "nlbs_avg_mb": round(avg_nlbs_mb, 3),
+            "est_rsna_9528_gib": round(est_rsna_gib, 2),
+            "est_nlbs_24736_gib": round(est_nlbs_gib, 2),
+            "est_total_34264_gib": round(est_rsna_gib + est_nlbs_gib, 2),
+        },
+        "existing_volume_usage_gib_no_deletions": {
+            "rsna_mammography_vol_breakdown_gib": rsna_vol_breakdown,
+            "rsna_mammography_vol_total_gib": round(sum(rsna_vol_breakdown.values()), 3),
+            "nlbs_mammography_vol_total_gib": nlbs_vol_gib,
+            "combined_paper_volumes_gib": round(sum(rsna_vol_breakdown.values()) + nlbs_vol_gib, 3),
+        },
+    }
+
+
+@app.function(
+    image=image,
+    volumes={str(RSNA_MOUNT): RSNA_VOL, str(NLBS_MOUNT): NLBS_VOL},
+    cpu=2.0,
+    memory=8192,
     timeout=3600,
 )
 def process_nyu_cpu_shard(
     split_name: str, shard_idx: int, num_shards: int, compression: int = 1
 ) -> Dict[str, Any]:
-    """Resumable CPU-only NYU preprocessing worker (2 vCPU / 6 GiB RAM, exam-aligned sharding)."""
+    """Resumable CPU-only NYU preprocessing worker (2 vCPU / 8 GiB RAM, exam-aligned sharding + SHA-256 resume)."""
+    import resource
     import torch
-    from src.paper1.nyu_fourview_adapter import _ensure_nyu_importable
+    from src.paper1.nyu_fourview_adapter import (
+        _ensure_nyu_importable,
+        verify_and_load_nyu_resumed_records,
+    )
 
     if torch.cuda.is_available():
         raise RuntimeError("GPU detected inside strict CPU-only NYU shard worker!")
 
+    t_container0 = time.perf_counter()
     nyu_mods = _ensure_nyu_importable(Path("/root/external/breast_cancer_classifier"))
     rows_all = _load_split_rows(split_name)
-    # Shard cleanly by whole 4-view exam (4 contiguous rows per exam)
     all_cases = sorted({r["case_id"] for r in rows_all})
     shard_case_set = set(all_cases[shard_idx::num_shards])
     rows = [r for r in rows_all if r["case_id"] in shard_case_set]
@@ -423,39 +581,38 @@ def process_nyu_cpu_shard(
     shard_dir.mkdir(parents=True, exist_ok=True)
     prog_path = shard_dir / f"shard_{shard_idx:03d}_of_{num_shards:03d}.jsonl"
 
-    done_map: Dict[str, Dict[str, Any]] = {}
-    if prog_path.exists():
-        for line in prog_path.read_text(encoding="utf-8").splitlines():
-            if not line.strip():
-                continue
-            rec = json.loads(line)
-            p_file = png_dir / f"{rec['item_id']}.png"
-            if p_file.exists() and p_file.stat().st_size == int(rec["file_bytes"]) and int(rec["file_bytes"]) > 0:
-                done_map[rec["item_id"]] = rec
-
+    done_map, resume_stats = verify_and_load_nyu_resumed_records(prog_path, png_dir)
     todo = [r for r in rows if r["item_id"] not in done_map]
     skipped = len(rows) - len(todo)
     t0 = time.perf_counter()
     newly_processed = 0
 
     try:
-        with ThreadPoolExecutor(max_workers=2) as pool, open(prog_path, "a", encoding="utf-8") as logf:
-            batch_sz = 100
-            for s in range(0, len(todo), batch_sz):
-                chunk = todo[s : s + batch_sz]
-                recs = list(pool.map(lambda r: _process_one_nyu_view(r, png_dir, nyu_mods, compression), chunk))
-                for rec in recs:
-                    logf.write(json.dumps(rec) + "\n")
-                    done_map[rec["item_id"]] = rec
-                    newly_processed += 1
-                logf.flush()
-                os.fsync(logf.fileno())
-                RSNA_VOL.commit()
+        if todo:
+            with ThreadPoolExecutor(max_workers=2) as pool, open(prog_path, "a", encoding="utf-8") as logf:
+                batch_sz = 100
+                for s in range(0, len(todo), batch_sz):
+                    chunk = todo[s : s + batch_sz]
+                    recs = list(pool.map(lambda r: _process_one_nyu_view(r, png_dir, nyu_mods, compression), chunk))
+                    for rec in recs:
+                        logf.write(json.dumps(rec) + "\n")
+                        done_map[rec["item_id"]] = rec
+                        newly_processed += 1
+                    logf.flush()
+                    os.fsync(logf.fileno())
+                    RSNA_VOL.commit()
+                    print(
+                        f"[NYU-CPU {split_name} s{shard_idx:02d}/{num_shards}] "
+                        f"done={len(done_map)}/{len(rows)} (new={newly_processed}, skip={skipped})",
+                        flush=True,
+                    )
     finally:
         RSNA_VOL.commit()
 
     wall_sec = time.perf_counter() - t0
-    cost_usd = _compute_cpu_cost_usd(wall_sec, 2.0, 6.0)
+    container_wall_sec = time.perf_counter() - t_container0
+    host_rss_gb = float(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / (1024 * 1024))
+    cost_usd = _compute_cpu_cost_usd(container_wall_sec, 2.0, 8.0)
     recs_final = [done_map[r["item_id"]] for r in rows]
     n_fallbacks = sum(1 for rec in recs_final if rec["crop_fallback"])
     return {
@@ -465,20 +622,149 @@ def process_nyu_cpu_shard(
         "total_exams_in_shard": len(shard_case_set),
         "total_images_in_shard": len(rows),
         "skipped_resumed": skipped,
+        "rejected_corrupt_resumed": resume_stats["rejected"],
         "newly_processed": newly_processed,
         "n_fallbacks": n_fallbacks,
-        "wall_sec": round(wall_sec, 2),
+        "loop_wall_sec": round(wall_sec, 2),
+        "container_wall_sec": round(container_wall_sec, 2),
+        "host_rss_gb": round(host_rss_gb, 3),
         "cost_usd": round(cost_usd, 5),
     }
 
 
+@app.function(
+    image=image,
+    volumes={str(RSNA_MOUNT): RSNA_VOL},
+    cpu=2.0,
+    memory=4096,
+    timeout=1800,
+)
+def verify_nyu_cpu_cache(split_name: str, num_shards: int = 12, pixel_spot_n: int = 16) -> Dict[str, Any]:
+    """Consolidate shard JSONLs, verify 100% PNG SHA-256 + 4-view exam completeness, and write manifest."""
+    import cv2
+    import numpy as np
+    import pandas as pd
+    import torch
+    from src.evaluation.stage_c_eval import compute_sha256_file
+    from src.paper1.nyu_fourview_adapter import (
+        NYU_VIEWS,
+        verify_and_load_nyu_resumed_records,
+    )
+
+    if torch.cuda.is_available():
+        raise RuntimeError("GPU detected inside CPU cache verification!")
+
+    RSNA_VOL.reload()
+    rows_all = _load_split_rows(split_name)
+    split_root = RSNA_MOUNT / "cache" / CACHE_ROOT_NAME / split_name
+    png_dir = split_root / "png"
+    shard_dir = split_root / "shards"
+
+    all_done: Dict[str, Dict[str, Any]] = {}
+    for s in range(num_shards):
+        p = shard_dir / f"shard_{s:03d}_of_{num_shards:03d}.jsonl"
+        sub_done, sub_stats = verify_and_load_nyu_resumed_records(p, png_dir)
+        if sub_stats["rejected"] > 0:
+            raise RuntimeError(f"{split_name} shard {s}: {sub_stats['rejected']} PNGs failed SHA-256 check")
+        all_done.update(sub_done)
+
+    exp_ids = [r["item_id"] for r in rows_all]
+    if len(all_done) != len(exp_ids) or set(all_done.keys()) != set(exp_ids):
+        raise RuntimeError(f"{split_name}: missing cached items ({len(all_done)} != {len(exp_ids)})")
+
+    recs_ordered = [all_done[i] for i in exp_ids]
+    df_man = pd.DataFrame(recs_ordered)
+    if df_man["item_id"].duplicated().any():
+        raise RuntimeError(f"{split_name}: duplicate item_id in consolidated manifest")
+    v_counts = df_man.groupby("case_id")["view_slot"].nunique()
+    if not (v_counts == len(NYU_VIEWS)).all():
+        raise RuntimeError(f"{split_name}: incomplete 4-view exam coverage")
+
+    # Pixel decode + u16_sha256 spot check on subset (all PNG files already SHA-256 verified on resume!)
+    step = max(1, len(recs_ordered) // max(1, pixel_spot_n))
+    for rec in recs_ordered[::step]:
+        arr = cv2.imread(str(png_dir / f"{rec['item_id']}.png"), cv2.IMREAD_UNCHANGED)
+        if arr is None or arr.dtype != np.uint16 or arr.shape != (rec["height"], rec["width"]):
+            raise RuntimeError(f"Decoded PNG mismatch for {rec['item_id']}")
+        if hashlib.sha256(np.ascontiguousarray(arr).tobytes()).hexdigest() != rec["u16_sha256"]:
+            raise RuntimeError(f"Pixel u16_sha256 mismatch for {rec['item_id']}")
+
+    man_csv = split_root / "manifest.csv"
+    tmp_csv = split_root / "manifest.csv.tmp"
+    df_man.to_csv(tmp_csv, index=False)
+    tmp_csv.replace(man_csv)
+
+    fb_df = df_man[df_man["crop_fallback"].astype(bool)]
+    summary = {
+        "split_name": split_name,
+        "n_images": int(len(df_man)),
+        "n_exams": int(df_man["case_id"].nunique()),
+        "n_fallback_views": int(len(fb_df)),
+        "n_fallback_exams": int(fb_df["case_id"].nunique()) if len(fb_df) else 0,
+        "total_storage_gib": round(float(df_man["file_bytes"].sum()) / (1024 ** 3), 3),
+        "manifest_sha256": compute_sha256_file(man_csv),
+    }
+    (split_root / "verify_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    RSNA_VOL.commit()
+    return summary
+
+
 @app.local_entrypoint()
-def main(stage: str = "pilot", n_exams_per_split: int = 40, compression: int = 1) -> None:
-    if stage != "pilot":
-        raise RuntimeError(
-            "Full NYU CPU preprocessing build is blocked until user approves pilot cost & parity results! "
-            "Use --stage pilot only."
-        )
+def main(
+    stage: str = "pilot",
+    split: str = "all",
+    num_shards: int = 12,
+    n_exams_per_split: int = 40,
+    compression: int = 1,
+    approve_full_build: bool = False,
+) -> None:
+    from src.paper1.nyu_fourview_adapter import validate_nyu_cli_stage_and_guard
+
+    target_splits = validate_nyu_cli_stage_and_guard(
+        stage=stage, split=split, num_shards=num_shards, approve_full_build=approve_full_build
+    )
+
+    if stage == "validate_config":
+        res = validate_full_cpu_config_and_storage.remote(n_exams_per_split=20, compression=compression)
+        rsna_gib = res["storage_per_split"]["est_rsna_9528_gib"]
+        nlbs_gib = res["storage_per_split"]["est_nlbs_24736_gib"]
+        rate = res["imgs_per_sec"]
+        # Account for container startup/commit overhead (~25s per container across num_shards containers/split)
+        overhead_sec_per_shard = 25.0
+        rsna_sec = (9528 / max(rate, 1e-6)) + (num_shards * overhead_sec_per_shard)
+        nlbs_sec = (24736 / max(rate, 1e-6)) + (num_shards * overhead_sec_per_shard)
+        total_sec = rsna_sec + nlbs_sec
+        res["full_projection_2c8g_with_overhead"] = {
+            "num_shards_per_split": num_shards,
+            "overhead_sec_per_shard": overhead_sec_per_shard,
+            "proj_rsna_9528_usd": round(_compute_cpu_cost_usd(rsna_sec, 2.0, 8.0), 4),
+            "proj_nlbs_24736_usd": round(_compute_cpu_cost_usd(nlbs_sec, 2.0, 8.0), 4),
+            "proj_total_34264_usd": round(_compute_cpu_cost_usd(total_sec, 2.0, 8.0), 4),
+            "est_total_storage_gib": round(rsna_gib + nlbs_gib, 2),
+        }
+        out_p = Path("reports/paper1/nyu_step1_config_validation.json")
+        out_p.parent.mkdir(parents=True, exist_ok=True)
+        out_p.write_text(json.dumps(res, indent=2), encoding="utf-8")
+        print(json.dumps(res, indent=2))
+        return
+
+    if stage == "build":
+        build_report: Dict[str, Any] = {}
+        for sp in target_splits:
+            outs = list(process_nyu_cpu_shard.starmap([(sp, s, num_shards, compression) for s in range(num_shards)]))
+            ver = verify_nyu_cpu_cache.remote(sp, num_shards=num_shards)
+            build_report[sp] = {
+                "shards": outs,
+                "total_compute_usd": round(sum(float(o["cost_usd"]) for o in outs), 4),
+                "verify": ver,
+            }
+        print(json.dumps(build_report, indent=2))
+        return
+
+    if stage == "verify":
+        ver_out = {sp: verify_nyu_cpu_cache.remote(sp, num_shards=num_shards) for sp in target_splits}
+        print(json.dumps(ver_out, indent=2))
+        return
 
     main_res = run_nyu_pilot_4c4g.remote(n_exams_per_split=n_exams_per_split, compression=compression)
     probe_2c = run_nyu_efficiency_probe_2c3g.remote(n_exams_per_split=5, compression=compression)
