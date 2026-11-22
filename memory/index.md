@@ -46,7 +46,7 @@ This repository (`https://github.com/Research-TRR-HI/Breast-Cancer`) houses **tw
 - `utils/env_metadata.py`: Pinned Python `3.12` / 13-package metadata constants & runtime collector.
 
 ### `scripts/`
-- **Paper 1 Gate 0.2 & Four-Model Pipelines:** `prepare_paper1_gate02.py`, `paper1_modal_smoke_and_bench.py`, `preprocess_paper1_gmic_cpu.py`, `run_paper1_gmic_modal.py`, `run_paper1_nyu_modal.py`, `run_paper1_dinov2_modal.py`, `run_paper1_resnet50_modal.py`, `train_paper1_dinov2_head.py`, `evaluate_paper1_six_models.py`.
+- **Paper 1 Gate 0.2 & Four-Model Pipelines:** `prepare_paper1_gate02.py`, `paper1_modal_smoke_and_bench.py`, `preprocess_paper1_gmic_cpu.py`, `run_paper1_gmic_modal.py`, `evaluate_paper1_gmic_step3.py`, `preprocess_paper1_nyu_cpu.py`, `run_paper1_nyu_modal.py`, `run_paper1_dinov2_modal.py`, `run_paper1_resnet50_modal.py`, `train_paper1_dinov2_head.py`, `evaluate_paper1_six_models.py`.
 - **Shared / Stage A–C Executed:** `download_{rsna,nlbs,mammoclip}_modal.py`, `audit_datasets_modal.py`, `stage_a3_nlbs_extract_modal.py`, `smoke_test_stage_b_modal.py`, `benchmark_l40s_comparison_modal.py`, `cache_stage1_rsna_modal.py`, `pilot_parity_modal.py`, `train_trust_modal.py`, `run_stage_b_pipeline.py`, `build_nlbs_inference_manifest.py`, `eval_nlbs_stage_c_modal.py` (2-phase CPU Stage-1 -> NVMe L40S inference), `evaluate_locked_nlbs_stage_c.py`.
 
 ### `reports/` & `research_logs/` *(Shared Evidence & Immutable Historical Results)*
@@ -68,6 +68,7 @@ This repository (`https://github.com/Research-TRR-HI/Breast-Cancer`) houses **tw
   - `reports/paper1/gmic_step2_gpu_pilot.json` & `reports/paper1/gmic_step2_gpu_pilot_report.md`: GMIC Step 2 L40S `400`-image pilot receipts (`32.52 img/s` e2e, `1.511 GB` VRAM, `$0.771` full-run projection <= `$2` budget, `80` RSNA fallbacks + `5` supplemental views audited clean).
   - `reports/paper1/gmic_step2_full_inference_report.md` & `reports/paper1/predictions_locked/gmic_{rsna_val_calib,nlbs}_*`: GMIC Step 2 full `batch_size=1` locked predictions (`10,982` RSNA / `2,382` pts + `26,988` NLBS / `6,359` studies = `37,970` images, SHA-256 provenance locks `fe65b68f...` / `4c84005c...`, **`$1.8101 USD`** settled L40S spend).
   - `reports/paper1/gmic_step3_eval/`: Immutable CPU-only GMIC Step 3 RSNA calibration (`gmic_rsna_calibration.{json,md}`, `5bae9b54...`), pre-join SHA-locked NLBS CSV (`locked_nlbs/gmic_pretrained_*`), full vs common 4-view (`N=6,184`) comparison vs OUR CE & TRUST (`gmic_step3_nlbs_evaluation.{json,md}`, `ce_trust_gmic_comparison_table.csv`).
+  - `reports/paper1/nyu_step1_cpu_pilot.{json,_report.md}` (`nyu_step1_cpu_pilot.json` & `nyu_step1_cpu_pilot_report.md`): NYU Step 1 CPU-only `320`-image pilot receipts (`0.0` 10-TTA parity, `26` fallbacks logged, `2vCPU/6GiB` `~$0.99` full build projection, `~135 GB` storage note).
 - **Planned Paper-Specific Folders *(NOT YET CREATED — add when corresponding tracks execute)*:**
   - `studies/anchorshift/`, `reports/anchorshift/` (Paper 2 Stage D UPA, Protocol 3 oracle reference, any candidate adaptation experiments).
 
@@ -76,3 +77,4 @@ This repository (`https://github.com/Research-TRR-HI/Breast-Cancer`) houses **tw
 - `tests/test_stage_c_quarantine_and_eval.py`: 3-test suite verifying forbidden-column quarantine, tamper-abort SHA-256 verification, and cluster CI evaluation (`3/3` PASS).
 - `tests/test_paper1_models_and_gate02.py`: 11-test suite verifying Gate 0.2 splits/quarantine, `GMIC` & `NYU Four-View` official `sample_data` parity, `DINOv2` frozen forward + CPU head training/locking smoke test, `ResNet-50` AMP unscale+clip & bit-exact resume, 6-model paired statistical/tamper evaluation, native-scale crop fallback, lossless uint16 PNG parity, and GMIC shard resume provenance validation/locking.
 - `tests/test_paper1_gmic_step3.py`: 3-test suite verifying Step 3 RSNA tie-handling thresholds, cryptographic verification of all 37,970 Step 2 locked predictions, tamper rejection prior to NLBS label join, and synthetic 3-model cohort matching.
+- `tests/test_paper1_nyu_step1_cpu.py`: 3-test suite verifying strict NYU 4-view manifest validation (rejecting missing/duplicate views), pilot selection (`patient_id=71` & SIEMENS), and lossless uint16 cache `10`-TTA bit-exact parity.
