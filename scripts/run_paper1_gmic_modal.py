@@ -34,7 +34,8 @@ NLBS_VOL = modal.Volume.from_name("nlbs-mammography-vol")
 RSNA_MOUNT = Path("/rsna_vol")
 NLBS_MOUNT = Path("/nlbs_vol")
 GMIC_CKPT_SHA256 = "3b792e6de22fdccd34a43b4c1cc87a94f5f4fa8aed42722dce4e4badac347991"
-L40S_COMBINED_HOURLY_USD = 2.3608
+L40S_COMBINED_HOURLY_USD = 2.3618  # Nvidia L40S ($1.95) + 6 vCPU ($0.2838) + 16 GiB RAM ($0.1280)
+PREPROCESS_VERSION = "paper1_gmic_uint16_v1"
 
 app = modal.App(APP_NAME)
 
@@ -372,41 +373,52 @@ def run_gmic_step2_pilot(n_per_split: int = 200, batch_size: int = 8) -> Dict[st
     ephemeral_disk=524288,
     timeout=7200,
 )
-def infer_gmic_shard(split_name: str, shard_idx: int, num_shards: int, batch_size: int = 8) -> Dict[str, Any]:
+def infer_gmic_shard(split_name: str, shard_idx: int, num_shards: int, batch_size: int = 1) -> Dict[str, Any]:
     """Run resumable GMIC sample_model_1.p inference using NVMe-staged Step-1 (2944x1920, uint16) PNGs."""
     import cv2
     import numpy as np
     import pandas as pd
     import resource
     import torch
-    from src.evaluation.stage_c_eval import compute_sha256_file, load_label_free_inference_manifest
+    from src.evaluation.stage_c_eval import (
+        assert_no_forbidden_columns,
+        compute_sha256_file,
+        load_label_free_inference_manifest,
+    )
     from src.paper1.gmic_adapter import (
         GMIC_INPUT_SIZE,
         build_gmic_model,
+        compute_item_ids_sha256,
         standard_normalize_gmic_uint16,
+        validate_gmic_shard_payload,
     )
 
-    out_dir = RSNA_MOUNT / "cache" / "paper1_gmic_shards" / split_name
-    out_dir.mkdir(parents=True, exist_ok=True)
-    shard_file = out_dir / f"shard_{shard_idx:02d}_of_{num_shards:02d}.json"
-    if shard_file.exists():
-        return json.loads(shard_file.read_text(encoding="utf-8"))
+    if int(batch_size) < 1:
+        raise ValueError(f"batch_size must be >= 1, got {batch_size}")
+    batch_size = int(batch_size)
+    RSNA_VOL.reload()
+    t_container0 = time.perf_counter()
 
     ckpt_path = RSNA_MOUNT / "models" / "paper1" / "sample_model_1.p"
     got_sha = compute_sha256_file(ckpt_path).lower()
     if got_sha != GMIC_CKPT_SHA256:
         raise RuntimeError(f"GMIC checkpoint SHA mismatch: {got_sha} != {GMIC_CKPT_SHA256}")
 
-    cache_root = RSNA_MOUNT / "cache" / "paper1_gmic_uint16_v1" / split_name
+    cache_root = RSNA_MOUNT / "cache" / PREPROCESS_VERSION / split_name
     vol_png_dir = cache_root / "png_2944x1920"
     manifest_csv = cache_root / "manifest.csv"
     if not manifest_csv.exists():
         raise FileNotFoundError(f"Step 1 GMIC manifest missing: {manifest_csv}")
+    step1_manifest_sha = compute_sha256_file(manifest_csv)
     step1_df = pd.read_csv(manifest_csv, dtype={"item_id": str, "case_id": str})
     step1_map = step1_df.set_index("item_id")[["crop_fallback", "crop_error", "fallback_strategy", "photometric"]].to_dict("index")
 
     if split_name == "rsna_val_calib":
-        df = pd.read_csv("/root/datasets/rsna/splits_seed42.csv")
+        df = pd.read_csv(
+            "/root/datasets/rsna/splits_seed42.csv",
+            usecols=["image_id", "patient_id", "split", "laterality", "view"],
+        )
+        assert_no_forbidden_columns(df.columns, context="infer_gmic_shard_rsna_val_calib")
         df = df[df["split"] == "val_calib"].sort_values(["patient_id", "image_id"]).reset_index(drop=True)
         rows = [
             {"item_id": str(r.image_id), "case_id": str(r.patient_id), "view_slot": f"{r.laterality}-{r.view}"}
@@ -421,13 +433,47 @@ def infer_gmic_shard(split_name: str, shard_idx: int, num_shards: int, batch_siz
     else:
         raise ValueError(f"Unsupported split_name={split_name}")
 
+    expected_item_ids = [r["item_id"] for r in rows]
+    expected_item_ids_sha = compute_item_ids_sha256(expected_item_ids)
+
+    out_dir = RSNA_MOUNT / "cache" / "paper1_gmic_shards" / split_name
+    out_dir.mkdir(parents=True, exist_ok=True)
+    shard_file = out_dir / f"shard_{shard_idx:02d}_of_{num_shards:02d}_bs{batch_size}.json"
+    # Validate requested file AND reject any incompatible payload even if a legacy file path existed
+    if shard_file.exists():
+        try:
+            cached = json.loads(shard_file.read_text(encoding="utf-8"))
+        except Exception as exc:
+            cached = {}
+            print(f"[GMIC {split_name} shard {shard_idx}] Corrupt cached shard ignored ({exc}); recomputing.", flush=True)
+        ok, reason = validate_gmic_shard_payload(
+            cached,
+            expected_item_ids=expected_item_ids,
+            batch_size=batch_size,
+            split_name=split_name,
+            shard_idx=shard_idx,
+            num_shards=num_shards,
+            checkpoint_sha256=GMIC_CKPT_SHA256,
+            preprocess_version=PREPROCESS_VERSION,
+            preprocess_manifest_sha256=step1_manifest_sha,
+        )
+        if ok:
+            cached["resumed_from_cache"] = True
+            print(f"[GMIC {split_name} shard {shard_idx}] Resumed validated cache ({len(expected_item_ids)} imgs, bs={batch_size}).", flush=True)
+            return cached
+        print(f"[GMIC {split_name} shard {shard_idx}] Incompatible cached shard ({reason}); recomputing cleanly.", flush=True)
+
     nvme_dir = Path(f"/tmp/gmic_{split_name}_s{shard_idx:02d}")
-    _stage_pngs_nvme([r["item_id"] for r in rows], vol_png_dir, nvme_dir, max_workers=16)
+    nvme_stage_sec = _stage_pngs_nvme(expected_item_ids, vol_png_dir, nvme_dir, max_workers=16)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if device.type != "cuda":
+        raise RuntimeError("L40S GPU expected for GMIC shard inference!")
+    t_load0 = time.perf_counter()
     model, _ = build_gmic_model(
         ckpt_path, model_index="1", device=device, gmic_repo_dir=Path("/root/external/GMIC")
     )
+    model_load_sec = time.perf_counter() - t_load0
 
     def _load_norm(row: Dict[str, str]) -> np.ndarray:
         arr = cv2.imread(str(nvme_dir / f"{row['item_id']}.png"), cv2.IMREAD_UNCHANGED)
@@ -435,16 +481,45 @@ def infer_gmic_shard(split_name: str, shard_idx: int, num_shards: int, batch_siz
             raise RuntimeError(f"Invalid Step 1 cached PNG: {row['item_id']}")
         return standard_normalize_gmic_uint16(arr)
 
-    t0 = time.perf_counter()
+    from collections import deque
+
+    torch.cuda.reset_peak_memory_stats()
+    t_loop0 = time.perf_counter()
+    decode_norm_sec = 0.0
+    gpu_infer_sec = 0.0
     records = []
     fallback_logs = []
+    prefetch_limit = max(24, batch_size * 4)
     with ThreadPoolExecutor(max_workers=8) as pool:
+        pending = deque()
+        next_submit = 0
+        while next_submit < len(rows) and len(pending) < prefetch_limit:
+            pending.append((rows[next_submit], pool.submit(_load_norm, rows[next_submit])))
+            next_submit += 1
+
         for s in range(0, len(rows), batch_size):
             b_rows = rows[s : s + batch_size]
-            norms = list(pool.map(_load_norm, b_rows))
-            bx = torch.from_numpy(np.stack(norms, axis=0)[:, np.newaxis, :, :].copy()).to(device, non_blocking=True)
+            t_d0 = time.perf_counter()
+            norms = [pending.popleft()[1].result() for _ in b_rows]
+            while next_submit < len(rows) and len(pending) < prefetch_limit:
+                pending.append((rows[next_submit], pool.submit(_load_norm, rows[next_submit])))
+                next_submit += 1
+            if batch_size == 1:
+                bx = torch.from_numpy(norms[0][np.newaxis, np.newaxis, :, :]).to(device, non_blocking=True)
+            else:
+                bx = torch.from_numpy(np.stack(norms, axis=0)[:, np.newaxis, :, :]).to(device, non_blocking=True)
+            decode_norm_sec += time.perf_counter() - t_d0
+
+            torch.cuda.synchronize()
+            t_g0 = time.perf_counter()
             with torch.no_grad():
                 outs = model(bx).float().cpu().numpy()
+            torch.cuda.synchronize()
+            gpu_infer_sec += time.perf_counter() - t_g0
+
+            if not np.all(np.isfinite(outs)):
+                raise RuntimeError(f"Non-finite GMIC output in {split_name} shard {shard_idx} batch {s}")
+
             for row, pred in zip(b_rows, outs):
                 fb_meta = step1_map[row["item_id"]]
                 is_fb = bool(fb_meta["crop_fallback"])
@@ -469,31 +544,84 @@ def infer_gmic_shard(split_name: str, shard_idx: int, num_shards: int, batch_siz
                         "crop_fallback": is_fb,
                     }
                 )
-            if (s // batch_size + 1) % 50 == 0:
-                print(f"[GMIC {split_name} shard {shard_idx}] {min(s + batch_size, len(rows))}/{len(rows)}", flush=True)
+            done = min(s + batch_size, len(rows))
+            if done % 500 == 0 or done == len(rows):
+                print(f"[GMIC {split_name} shard {shard_idx}] {done}/{len(rows)} (bs={batch_size})", flush=True)
+
+    elapsed_sec = time.perf_counter() - t_loop0
+    container_wall_sec = time.perf_counter() - t_container0
+    peak_vram_gb = float(torch.cuda.max_memory_allocated() / 1e9)
+    host_rss_gb = float(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / (1024 * 1024))
+    estimated_cost_usd = (container_wall_sec / 3600.0) * L40S_COMBINED_HOURLY_USD
 
     payload = {
+        "schema_version": "paper1_gmic_shard_v2",
         "model_id": "gmic_pretrained",
+        "checkpoint_file": "sample_model_1.p",
         "checkpoint_sha256": GMIC_CKPT_SHA256,
+        "preprocess_version": PREPROCESS_VERSION,
+        "preprocess_manifest_sha256": step1_manifest_sha,
         "split_name": split_name,
         "shard_idx": shard_idx,
         "num_shards": num_shards,
-        "elapsed_sec": round(time.perf_counter() - t0, 2),
+        "batch_size": batch_size,
+        "expected_n_images": len(expected_item_ids),
+        "expected_item_ids_sha256": expected_item_ids_sha,
+        "model_load_sec": round(model_load_sec, 3),
+        "nvme_stage_sec": round(nvme_stage_sec, 3),
+        "decode_norm_sec": round(decode_norm_sec, 3),
+        "gpu_infer_sec": round(gpu_infer_sec, 3),
+        "elapsed_sec": round(elapsed_sec, 3),
+        "container_wall_sec": round(container_wall_sec, 3),
+        "l40s_hourly_usd": L40S_COMBINED_HOURLY_USD,
+        "estimated_cost_usd": round(estimated_cost_usd, 5),
+        "peak_vram_gb": round(peak_vram_gb, 3),
+        "host_rss_gb": round(host_rss_gb, 3),
         "n_fallback_views": len(fallback_logs),
         "fallback_logs": fallback_logs,
         "records": records,
     }
+    ok, reason = validate_gmic_shard_payload(
+        payload,
+        expected_item_ids=expected_item_ids,
+        batch_size=batch_size,
+        split_name=split_name,
+        shard_idx=shard_idx,
+        num_shards=num_shards,
+        checkpoint_sha256=GMIC_CKPT_SHA256,
+        preprocess_version=PREPROCESS_VERSION,
+        preprocess_manifest_sha256=step1_manifest_sha,
+    )
+    if not ok:
+        raise RuntimeError(f"Generated shard failed self-validation: {reason}")
+
     tmp = shard_file.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(payload), encoding="utf-8")
     tmp.replace(shard_file)
     RSNA_VOL.commit()
+    payload["resumed_from_cache"] = False
     return payload
 
 
 @app.local_entrypoint()
-def main(stage: str = "pilot", split: str = "rsna_val_calib", num_shards: int = 8) -> None:
+def main(
+    stage: str = "pilot",
+    split: str = "rsna_val_calib",
+    num_shards: int = 4,
+    batch_size: int = 1,
+    shard_indices: str = "",
+) -> None:
+    import pandas as pd
+    from src.evaluation.stage_c_eval import assert_no_forbidden_columns, load_label_free_inference_manifest
+    from src.paper1.gmic_adapter import finalize_and_lock_gmic_predictions
+
+    if batch_size < 1:
+        raise ValueError(f"--batch-size must be >= 1, got {batch_size}")
+    if num_shards < 1:
+        raise ValueError(f"--num-shards must be >= 1, got {num_shards}")
+
     if stage == "pilot":
-        res = run_gmic_step2_pilot.remote(n_per_split=200, batch_size=8)
+        res = run_gmic_step2_pilot.remote(n_per_split=200, batch_size=batch_size)
         out_p = Path("reports/paper1/gmic_step2_gpu_pilot.json")
         out_p.parent.mkdir(parents=True, exist_ok=True)
         out_p.write_text(json.dumps(res, indent=2), encoding="utf-8")
@@ -501,18 +629,52 @@ def main(stage: str = "pilot", split: str = "rsna_val_calib", num_shards: int = 
         return
 
     if stage == "infer":
-        shards = list(range(num_shards))
-        outs = list(infer_gmic_shard.starmap([(split, s, num_shards) for s in shards]))
-        all_recs = [r for o in outs for r in o["records"]]
-        all_fbs = [f for o in outs for f in o.get("fallback_logs", [])]
+        if split == "rsna_val_calib":
+            exp_df = pd.read_csv(
+                "datasets/rsna/splits_seed42.csv",
+                usecols=["image_id", "patient_id", "split", "laterality", "view"],
+            )
+            assert_no_forbidden_columns(exp_df.columns, context="local_infer_rsna_val_calib")
+            exp_df = exp_df[exp_df["split"] == "val_calib"].reset_index(drop=True)
+            item_col, case_col, case_out_col = "image_id", "patient_id", "patient_id"
+        elif split == "nlbs":
+            exp_df = load_label_free_inference_manifest(Path("datasets/nlbs/inference_manifest_stage_c.csv"))
+            item_col, case_col, case_out_col = "image_uid", "StudyInstanceUID", "StudyInstanceUID"
+        else:
+            raise ValueError(f"Unsupported split={split!r}; use rsna_val_calib or nlbs")
+
+        shards = (
+            [int(x.strip()) for x in shard_indices.split(",") if x.strip()]
+            if shard_indices.strip()
+            else list(range(num_shards))
+        )
+        outs = list(infer_gmic_shard.starmap([(split, s, num_shards, batch_size) for s in shards]))
+        for o in sorted(outs, key=lambda x: int(x["shard_idx"])):
+            print(
+                f"[Shard {o['shard_idx']}/{o['num_shards']}] n={len(o['records'])} "
+                f"bs={o['batch_size']} wall={o['container_wall_sec']}s "
+                f"decode={o['decode_norm_sec']}s gpu={o['gpu_infer_sec']}s "
+                f"est_cost=${o['estimated_cost_usd']:.5f} resumed={o.get('resumed_from_cache', False)}"
+            )
+
+        if len(shards) < num_shards or set(shards) != set(range(num_shards)):
+            print(f"[Partial shard run {shards}/{num_shards}] Skipping final split lock until all shards complete.")
+            return
+
         out_dir = Path("reports/paper1/predictions_locked")
-        out_dir.mkdir(parents=True, exist_ok=True)
-        out_file = out_dir / f"gmic_{split}_image_scores.json"
-        out_file.write_text(json.dumps({"records": all_recs}, indent=2), encoding="utf-8")
-        fb_file = out_dir / f"gmic_{split}_fallback_log.json"
-        fb_file.write_text(json.dumps({"n_images": len(all_recs), "n_fallback_views": len(all_fbs), "fallbacks": all_fbs}, indent=2), encoding="utf-8")
-        digest = hashlib.sha256(out_file.read_bytes()).hexdigest()
-        print(f"Saved {len(all_recs)} GMIC records (fallback_views={len(all_fbs)}) to {out_file} (sha256={digest})")
+        lock_manifest = finalize_and_lock_gmic_predictions(
+            split_name=split,
+            shard_outputs=outs,
+            expected_image_df=exp_df,
+            item_col=item_col,
+            case_col=case_col,
+            case_out_col=case_out_col,
+            batch_size=batch_size,
+            checkpoint_sha256=GMIC_CKPT_SHA256,
+            preprocess_version=PREPROCESS_VERSION,
+            out_dir=out_dir,
+        )
+        print(json.dumps(lock_manifest, indent=2))
         return
 
     raise ValueError(f"Unknown stage={stage!r}; use pilot or infer")
