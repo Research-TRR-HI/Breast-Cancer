@@ -409,6 +409,96 @@ class TestPaper1Preparation(unittest.TestCase):
             self.assertAlmostEqual(b_on, b_ca, places=6)
             self.assertAlmostEqual(m_on, m_ca, places=6)
 
+    def test_11_gmic_shard_resume_validation_and_lock(self):
+        import json
+        import tempfile
+        from src.paper1.gmic_adapter import (
+            GMIC_CKPT_SHA256,
+            GMIC_MODEL_ID,
+            GMIC_PREPROCESS_VERSION,
+            compute_item_ids_sha256,
+            finalize_and_lock_gmic_predictions,
+            validate_gmic_shard_payload,
+        )
+
+        exp_ids = ["img_a", "img_b"]
+        base_payload = {
+            "model_id": GMIC_MODEL_ID,
+            "checkpoint_sha256": GMIC_CKPT_SHA256,
+            "preprocess_version": GMIC_PREPROCESS_VERSION,
+            "preprocess_manifest_sha256": "msha123",
+            "split_name": "rsna_val_calib",
+            "shard_idx": 0,
+            "num_shards": 4,
+            "batch_size": 1,
+            "expected_item_ids_sha256": compute_item_ids_sha256(exp_ids),
+            "records": [
+                {"item_id": "img_a", "case_id": "case_1", "view_slot": "L-CC", "benign_pred": 0.1, "malignant_pred": 0.02, "crop_fallback": False},
+                {"item_id": "img_b", "case_id": "case_1", "view_slot": "R-CC", "benign_pred": 0.2, "malignant_pred": 0.09, "crop_fallback": True},
+            ],
+            "fallback_logs": [{"item_id": "img_b", "case_id": "case_1", "view_slot": "R-CC", "photometric": "MONOCHROME2", "fallback_strategy": "native", "crop_error": "empty"}],
+            "n_fallback_views": 1,
+            "elapsed_sec": 1.2,
+            "container_wall_sec": 2.0,
+            "estimated_cost_usd": 0.001,
+        }
+        ok, reason = validate_gmic_shard_payload(
+            base_payload,
+            expected_item_ids=exp_ids,
+            batch_size=1,
+            split_name="rsna_val_calib",
+            shard_idx=0,
+            num_shards=4,
+            preprocess_manifest_sha256="msha123",
+        )
+        self.assertTrue(ok, reason)
+
+        # Mismatched batch_size, checkpoint hash, preprocess version, or item IDs must NEVER be reused
+        for bad_patch in (
+            {"batch_size": 8},
+            {"checkpoint_sha256": "0" * 64},
+            {"preprocess_version": "paper1_gmic_v0"},
+            {"expected_item_ids_sha256": "bad"},
+        ):
+            bad = {**base_payload, **bad_patch}
+            ok_bad, _ = validate_gmic_shard_payload(
+                bad,
+                expected_item_ids=exp_ids,
+                batch_size=1,
+                split_name="rsna_val_calib",
+                shard_idx=0,
+                num_shards=4,
+                preprocess_manifest_sha256="msha123",
+            )
+            self.assertFalse(ok_bad)
+
+        # Non-finite score rejection
+        bad_nan = json.loads(json.dumps(base_payload))
+        bad_nan["records"][1]["malignant_pred"] = float("nan")
+        ok_nan, _ = validate_gmic_shard_payload(
+            bad_nan, expected_item_ids=exp_ids, batch_size=1, split_name="rsna_val_calib", shard_idx=0, num_shards=4
+        )
+        self.assertFalse(ok_nan)
+
+        exp_df = pd.DataFrame({"image_id": exp_ids, "patient_id": ["case_1", "case_1"]})
+        with tempfile.TemporaryDirectory() as td:
+            lock = finalize_and_lock_gmic_predictions(
+                "rsna_val_calib",
+                [base_payload],
+                exp_df,
+                item_col="image_id",
+                case_col="patient_id",
+                case_out_col="patient_id",
+                batch_size=1,
+                out_dir=Path(td),
+            )
+            self.assertEqual(lock["n_unique_images"], 2)
+            self.assertEqual(lock["n_unique_cases"], 1)
+            self.assertTrue(lock["all_scores_finite"])
+            case_df = pd.read_csv(Path(td) / "gmic_rsna_val_calib_case_scores.csv")
+            self.assertAlmostEqual(float(case_df["score"].iloc[0]), 0.09, places=6)
+            self.assertEqual(int(case_df["n_crop_fallbacks"].iloc[0]), 1)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
