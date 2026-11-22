@@ -1,8 +1,8 @@
 # state.md — Unified Two-Paper Workspace State
 
 **Last Updated:** 2026-11-22  
-**Verified Repo Head (Prior):** `34ae63d` (`main`)  
-**Current Decision Across Both Papers:** Paper 1 **GMIC Step 1 CPU Cache = COMPLETE** (`10,982` RSNA + `26,988` NLBS `(2944,1920)` `uint16` PNGs verified at `$1.5844` USD build cost, `0` GPU, Step 2 Ready); Paper 2 AnchorShift Stage D pending (`MODIFY / INVESTIGATE`)
+**Verified Repo Head (Prior):** `411c3a6` (`main`)  
+**Current Decision Across Both Papers:** Paper 1 **GMIC Step 2 L40S Pilot = COMPLETE** (`400` imgs @ `32.52 img/s` e2e, `1.511 GB` VRAM, `$0.00807` infer spend -> **`$0.771` full proj <= `$2` budget**, `80` fallbacks + `5` supp views verified clean; full inference awaiting launch); Paper 2 AnchorShift Stage D pending (`MODIFY / INVESTIGATE`)
 
 ---
 
@@ -39,8 +39,9 @@
   - [x] **Gate 0.2 — Study Protocol, Frozen Splits & CPU Baseline Source Eval:** Created `studies/paper1/*`, `datasets/paper1/*` (`rsna_val_calib_2fold_seed42.csv`, `rsna_val_calib_4view_selection.csv`, `nlbs_4view_study_eligibility.csv`, `nlbs_4view_common_cohort_label_free.csv`), and `reports/paper1/ce_trust_{rsna_source_eval,nlbs_common_4view}.{json,md}`.
   - [x] **Gate 0.3 — Four-Model Official Verification & L40S Smoke Benchmarks:** All 4 checkpoints verified & uploaded to `hasinishrak2015` `rsna-mammography-vol:/models/paper1/`; live L40S benchmarks (`ap-acCim6bfGllCdJjTKtPDv6`, `ap-vMdXP2h5eFu2wqzAOGyAYs`) & `32/32` CPU tests PASSED.
   - [x] **Stage 1.5 — Final Critical Corrections (`reports/paper1/stage1_final_corrections.md` — GO):** Fixed ResNet-50 `scaler.unscale_` + full RNG/sampler resume (`test_7`); added DINOv2 NVMe staging + resumable 4k chunks (`74.2 img/s`, `~$0.72` full); diagnosed NYU `2/32` fallbacks (`patient_id=71 MONOCHROME1`), removed `cv2.resize` distortion, added fallback sensitivity audit (`test_9`); built & tested complete 6-model paired eval & statistical decomposition suite (`src/paper1/six_model_eval.py`, `scripts/evaluate_paper1_six_models.py`, `test_8`).
-  - [x] **GMIC Step 1 — CPU-Only Preprocessing & Volume Cache (`hasinishrak2015`, `ap-i9HV9RJvsFrAoyBBZ7mlk5`):** Processed & verified `10,982` RSNA `val_calib` (`80` fallbacks, `62.06 GB`, `$0.8280`) + `26,988` NLBS (`0` fallbacks, `97.29 GB`, `$0.7564`) = **`37,970` `(2944, 1920)` `uint16` PNGs** at `0.0` parity diff for **`$1.5844` build spend** (`0` GPU, `reports/paper1/gmic_step1_preprocessing_report.md`). `run_paper1_gmic_modal.py` wired to read cache -> **Step 2 READY**.
-  - [ ] **Stage 2 — Execute Full Four-Model Paper 1 Runs (GMIC Step 2 Ready):** Run `GMIC Step 2 GPU -> NYU -> DINOv2 -> ResNet-50 -> evaluate_paper1_six_models.py` on `hasinishrak2015`.
+  - [x] **GMIC Step 1 — CPU-Only Preprocessing & Volume Cache (`hasinishrak2015`, `ap-i9HV9RJvsFrAoyBBZ7mlk5`):** Processed & verified `10,982` RSNA `val_calib` (`80` fallbacks, `62.06 GB`, `$0.8280`) + `26,988` NLBS (`0` fallbacks, `97.29 GB`, `$0.7564`) = **`37,970` `(2944, 1920)` `uint16` PNGs** at `0.0` parity diff for **`$1.5844` build spend** (`0` GPU, `reports/paper1/gmic_step1_preprocessing_report.md`).
+  - [x] **GMIC Step 2 GPU Pilot (`hasinishrak2015`, `ap-YYXH9MfyVOBIXfb5IPctzQ`):** Verified NVMe-staged L40S `batch=8` inference across `200` RSNA + `200` NLBS cached PNGs (`32.52 img/s` e2e, `1.511 GB` VRAM, `sample_data` & raw parity verified), audited all `80` RSNA fallbacks (`36` pts, `51` M1/`29` M2, `0` corrupt) & `5` supplemental views, and measured **`$0.00807` pilot** -> **`$0.771` full projection** (within `$2` budget, `reports/paper1/gmic_step2_gpu_pilot_report.md`).
+  - [ ] **Stage 2 — Execute Full Four-Model Paper 1 Runs:** Run `GMIC Step 2 Full Infer (~$0.77) -> NYU -> DINOv2 -> ResNet-50 -> evaluate_paper1_six_models.py` on `hasinishrak2015`.
   - [ ] **Blocker 3 (Manuscript Gate) — Adversarial Literature Matrix:** Formal *MEDINFO 2025/2026 Meta-Repository* & *Sensors (June 2026)* comparison before manuscript drafting.
 
 ---
