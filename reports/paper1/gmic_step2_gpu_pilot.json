@@ -1,0 +1,283 @@
+{
+  "modal_profile": "hasinishrak2015",
+  "gpu_name": "NVIDIA L40S",
+  "checkpoint_sha256": "3b792e6de22fdccd34a43b4c1cc87a94f5f4fa8aed42722dce4e4badac347991",
+  "checkpoint_strict_verified": true,
+  "pilot_counts": {
+    "rsna": 200,
+    "nlbs": 200,
+    "total": 400,
+    "batch_size": 8
+  },
+  "all_scores_finite": true,
+  "score_summary_no_labels": {
+    "min": 0.001441,
+    "median": 0.026833,
+    "max": 0.931492
+  },
+  "sample_data_readme_parity_l40s": {
+    "0_L-CC": {
+      "benign_pred": 0.13576,
+      "malignant_pred": 0.00812,
+      "readme_benign": 0.1356,
+      "readme_malignant": 0.0081,
+      "benign_abs_err": 0.00016,
+      "malignant_abs_err": 2e-05
+    },
+    "0_R-CC": {
+      "benign_pred": 0.89243,
+      "malignant_pred": 0.32523,
+      "readme_benign": 0.8929,
+      "readme_malignant": 0.3259,
+      "benign_abs_err": 0.00047,
+      "malignant_abs_err": 0.00067
+    },
+    "0_L-MLO": {
+      "benign_pred": 0.23641,
+      "malignant_pred": 0.0334,
+      "readme_benign": 0.2368,
+      "readme_malignant": 0.0335,
+      "benign_abs_err": 0.00039,
+      "malignant_abs_err": 0.0001
+    },
+    "0_R-MLO": {
+      "benign_pred": 0.95082,
+      "malignant_pred": 0.18122,
+      "readme_benign": 0.9509,
+      "readme_malignant": 0.1812,
+      "benign_abs_err": 8e-05,
+      "malignant_abs_err": 2e-05
+    }
+  },
+  "cached_vs_raw_parity_10imgs": {
+    "max_batch8_vs_b1_diff": 0.001930922269821167,
+    "max_cached_vs_online_raw_diff": 0.001930922269821167,
+    "samples": [
+      {
+        "dataset": "rsna",
+        "item_id": "822390278",
+        "view_slot": "R-CC",
+        "malignant_cached_b8": 0.258828,
+        "malignant_cached_b1": 0.258738,
+        "malignant_online_raw": 0.258738,
+        "abs_diff_vs_raw": 8.96e-05
+      },
+      {
+        "dataset": "rsna",
+        "item_id": "1442180348",
+        "view_slot": "L-MLO",
+        "malignant_cached_b8": 0.10301,
+        "malignant_cached_b1": 0.102983,
+        "malignant_online_raw": 0.102983,
+        "abs_diff_vs_raw": 2.73e-05
+      },
+      {
+        "dataset": "rsna",
+        "item_id": "1760744211",
+        "view_slot": "L-ML",
+        "malignant_cached_b8": 0.130861,
+        "malignant_cached_b1": 0.130642,
+        "malignant_online_raw": 0.130642,
+        "abs_diff_vs_raw": 0.0002191
+      },
+      {
+        "dataset": "rsna",
+        "item_id": "602126376",
+        "view_slot": "R-AT",
+        "malignant_cached_b8": 0.172046,
+        "malignant_cached_b1": 0.170115,
+        "malignant_online_raw": 0.170115,
+        "abs_diff_vs_raw": 0.0019309
+      },
+      {
+        "dataset": "rsna",
+        "item_id": "1249745058",
+        "view_slot": "R-MLO",
+        "malignant_cached_b8": 0.240923,
+        "malignant_cached_b1": 0.240995,
+        "malignant_online_raw": 0.240995,
+        "abs_diff_vs_raw": 7.24e-05
+      },
+      {
+        "dataset": "nlbs",
+        "item_id": "nlbs_img_00000",
+        "view_slot": "L-CC",
+        "malignant_cached_b8": 0.023237,
+        "malignant_cached_b1": 0.023267,
+        "malignant_online_raw": 0.023267,
+        "abs_diff_vs_raw": 2.93e-05
+      },
+      {
+        "dataset": "nlbs",
+        "item_id": "nlbs_img_00001",
+        "view_slot": "L-MLO",
+        "malignant_cached_b8": 0.041965,
+        "malignant_cached_b1": 0.042032,
+        "malignant_online_raw": 0.042032,
+        "abs_diff_vs_raw": 6.69e-05
+      },
+      {
+        "dataset": "nlbs",
+        "item_id": "nlbs_img_00002",
+        "view_slot": "R-CC",
+        "malignant_cached_b8": 0.019918,
+        "malignant_cached_b1": 0.019928,
+        "malignant_online_raw": 0.019928,
+        "abs_diff_vs_raw": 9.7e-06
+      },
+      {
+        "dataset": "nlbs",
+        "item_id": "nlbs_img_00003",
+        "view_slot": "R-CC",
+        "malignant_cached_b8": 0.019918,
+        "malignant_cached_b1": 0.019928,
+        "malignant_online_raw": 0.019928,
+        "abs_diff_vs_raw": 9.7e-06
+      },
+      {
+        "dataset": "nlbs",
+        "item_id": "nlbs_img_00004",
+        "view_slot": "R-MLO",
+        "malignant_cached_b8": 0.027067,
+        "malignant_cached_b1": 0.027043,
+        "malignant_online_raw": 0.027043,
+        "abs_diff_vs_raw": 2.43e-05
+      }
+    ]
+  },
+  "fallback_audit_all_80_rsna": {
+    "n_fallback_images": 80,
+    "n_unique_cases": 36,
+    "by_view_slot": {
+      "L-MLO": 29,
+      "R-MLO": 26,
+      "R-CC": 13,
+      "L-CC": 12
+    },
+    "by_photometric": {
+      "MONOCHROME1": 51,
+      "MONOCHROME2": 29
+    },
+    "by_error": {
+      "attempt to get argmax of an empty sequence": 80
+    },
+    "overlap_with_supplemental_views": 0,
+    "all_fallback_pngs_valid_nonzero": true,
+    "fallback_nonzero_frac_min_med_max": [
+      0.0032,
+      0.0799,
+      0.8765
+    ]
+  },
+  "supplemental_view_audit_all_5_rsna": [
+    {
+      "item_id": "1760744211",
+      "case_id": "1511",
+      "raw_view_slot": "L-ML",
+      "nyukat_proxy_view": "L-MLO",
+      "photometric": "MONOCHROME2",
+      "oriented_flipped": false,
+      "crop_fallback": false,
+      "png_stats": {
+        "item_id": "1760744211",
+        "valid": true,
+        "nonzero_frac": 0.9036,
+        "mean": 13879.47,
+        "std": 10983.95,
+        "max": 64086
+      }
+    },
+    {
+      "item_id": "602126376",
+      "case_id": "3386",
+      "raw_view_slot": "R-AT",
+      "nyukat_proxy_view": "R-CC",
+      "photometric": "MONOCHROME2",
+      "oriented_flipped": true,
+      "crop_fallback": false,
+      "png_stats": {
+        "item_id": "602126376",
+        "valid": true,
+        "nonzero_frac": 0.5891,
+        "mean": 10175.08,
+        "std": 10857.94,
+        "max": 65535
+      }
+    },
+    {
+      "item_id": "917413880",
+      "case_id": "3386",
+      "raw_view_slot": "L-AT",
+      "nyukat_proxy_view": "L-CC",
+      "photometric": "MONOCHROME2",
+      "oriented_flipped": true,
+      "crop_fallback": false,
+      "png_stats": {
+        "item_id": "917413880",
+        "valid": true,
+        "nonzero_frac": 0.5384,
+        "mean": 8998.27,
+        "std": 10629.2,
+        "max": 65535
+      }
+    },
+    {
+      "item_id": "771225790",
+      "case_id": "40235",
+      "raw_view_slot": "L-LM",
+      "nyukat_proxy_view": "L-MLO",
+      "photometric": "MONOCHROME2",
+      "oriented_flipped": false,
+      "crop_fallback": false,
+      "png_stats": {
+        "item_id": "771225790",
+        "valid": true,
+        "nonzero_frac": 0.5579,
+        "mean": 10017.08,
+        "std": 10349.01,
+        "max": 65455
+      }
+    },
+    {
+      "item_id": "1473114297",
+      "case_id": "40235",
+      "raw_view_slot": "R-LM",
+      "nyukat_proxy_view": "R-MLO",
+      "photometric": "MONOCHROME2",
+      "oriented_flipped": false,
+      "crop_fallback": false,
+      "png_stats": {
+        "item_id": "1473114297",
+        "valid": true,
+        "nonzero_frac": 0.5896,
+        "mean": 10651.41,
+        "std": 10678.88,
+        "max": 65519
+      }
+    }
+  ],
+  "timing_sec": {
+    "model_load_sec": 2.06,
+    "nvme_stage_sec": 2.252,
+    "decode_norm_sec": 8.022,
+    "gpu_infer_sec": 2.026,
+    "infer_e2e_sec": 12.3,
+    "total_container_sec": 26.485
+  },
+  "throughput": {
+    "e2e_imgs_per_sec": 32.52,
+    "gpu_only_imgs_per_sec": 197.47
+  },
+  "memory": {
+    "peak_vram_gb": 1.511,
+    "host_rss_gb": 6.167
+  },
+  "cost": {
+    "l40s_hourly_usd": 2.3608,
+    "measured_pilot_infer_only_usd": 0.00807,
+    "measured_pilot_total_container_usd": 0.01737,
+    "projected_full_37970_hours": 0.3266,
+    "projected_full_37970_usd": 0.771,
+    "within_2usd_budget": true
+  }
+}
