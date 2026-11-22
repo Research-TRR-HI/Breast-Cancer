@@ -46,7 +46,7 @@ This repository (`https://github.com/Research-TRR-HI/Breast-Cancer`) houses **tw
 - `utils/env_metadata.py`: Pinned Python `3.12` / 13-package metadata constants & runtime collector.
 
 ### `scripts/`
-- **Paper 1 Gate 0.2 & Four-Model Pipelines:** `prepare_paper1_gate02.py`, `paper1_modal_smoke_and_bench.py`, `run_paper1_gmic_modal.py`, `run_paper1_nyu_modal.py`, `run_paper1_dinov2_modal.py`, `run_paper1_resnet50_modal.py`, `train_paper1_dinov2_head.py`, `evaluate_paper1_six_models.py`.
+- **Paper 1 Gate 0.2 & Four-Model Pipelines:** `prepare_paper1_gate02.py`, `paper1_modal_smoke_and_bench.py`, `preprocess_paper1_gmic_cpu.py`, `run_paper1_gmic_modal.py`, `run_paper1_nyu_modal.py`, `run_paper1_dinov2_modal.py`, `run_paper1_resnet50_modal.py`, `train_paper1_dinov2_head.py`, `evaluate_paper1_six_models.py`.
 - **Shared / Stage A–C Executed:** `download_{rsna,nlbs,mammoclip}_modal.py`, `audit_datasets_modal.py`, `stage_a3_nlbs_extract_modal.py`, `smoke_test_stage_b_modal.py`, `benchmark_l40s_comparison_modal.py`, `cache_stage1_rsna_modal.py`, `pilot_parity_modal.py`, `train_trust_modal.py`, `run_stage_b_pipeline.py`, `build_nlbs_inference_manifest.py`, `eval_nlbs_stage_c_modal.py` (2-phase CPU Stage-1 -> NVMe L40S inference), `evaluate_locked_nlbs_stage_c.py`.
 
 ### `reports/` & `research_logs/` *(Shared Evidence & Immutable Historical Results)*
@@ -64,6 +64,7 @@ This repository (`https://github.com/Research-TRR-HI/Breast-Cancer`) houses **tw
   - `reports/paper1/dinov2_nvme_benchmark.json`: NVMe-staged `512`-image L40S DINOv2 throughput benchmark (`74.2 img/s` end-to-end, `ap-acCim6bfGllCdJjTKtPDv6`).
   - `reports/paper1/stage1_model_readiness.md`: Paper 1 Stage 1 Readiness Audit (**GO**) consolidating Gate 0.2 manifests, model provenance/SHA-256 hashes, `sample_data` parity, L40S benchmarks, and full execution CLI commands.
   - `reports/paper1/stage1_final_corrections.md`: Paper 1 Stage 1 Final Critical Corrections (**GO**) documenting ResNet-50 `scaler.unscale_` + RNG resume, DINOv2 NVMe speedup, NYU `patient_id=71` non-warping fallback root cause, 6-model paired evaluation suite, and recalculated `~$13.15` total run plan.
+  - `reports/paper1/gmic_cpu_{bench_200,build_summary,verify_summary}.json` & `reports/paper1/gmic_step1_preprocessing_report.md`: GMIC Step 1 CPU-only preprocessing receipts (`10,982` RSNA + `26,988` NLBS verified `(2944x1920, uint16)` PNGs, `$1.5844` build spend, `0.0` parity diff, Step 2 ready).
 - **Planned Paper-Specific Folders *(NOT YET CREATED — add when corresponding tracks execute)*:**
   - `studies/anchorshift/`, `reports/anchorshift/` (Paper 2 Stage D UPA, Protocol 3 oracle reference, any candidate adaptation experiments).
 
