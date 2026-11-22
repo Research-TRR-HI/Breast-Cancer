@@ -1,0 +1,391 @@
+{
+  "modal_profile": "hasinishrak2015",
+  "cache_version": "paper1_nyu_uint16_v1",
+  "pilot_main_4c4g": {
+    "gpu_allocated": false,
+    "cpu_cores": 4,
+    "compression_level": 1,
+    "selection_meta": {
+      "n_rsna_exams": 40,
+      "n_rsna_images": 160,
+      "n_rsna_known_difficult_exams": 15,
+      "includes_patient_71": true,
+      "n_nlbs_exams": 40,
+      "n_nlbs_images": 160,
+      "n_nlbs_siemens_exams": 3,
+      "n_nlbs_multi_candidate_exams": 15
+    },
+    "n_processed_images": 320,
+    "n_rsna_processed": 160,
+    "n_nlbs_processed": 160,
+    "all_uint16_valid_nonzero": true,
+    "n_crop_fallbacks": 26,
+    "fallback_cases": [
+      {
+        "split_name": "rsna_val_calib",
+        "case_id": "71",
+        "item_id": "2004100590",
+        "view_slot": "R-CC",
+        "photometric": "MONOCHROME1",
+        "raw_shape": [
+          4740,
+          3540
+        ],
+        "crop_error": "attempt to get argmax of an empty sequence"
+      },
+      {
+        "split_name": "rsna_val_calib",
+        "case_id": "71",
+        "item_id": "1249745058",
+        "view_slot": "R-MLO",
+        "photometric": "MONOCHROME1",
+        "raw_shape": [
+          4740,
+          3540
+        ],
+        "crop_error": "attempt to get argmax of an empty sequence"
+      },
+      {
+        "split_name": "rsna_val_calib",
+        "case_id": "1625",
+        "item_id": "1009635466",
+        "view_slot": "L-MLO",
+        "photometric": "MONOCHROME2",
+        "raw_shape": [
+          2776,
+          2082
+        ],
+        "crop_error": "attempt to get argmax of an empty sequence"
+      },
+      {
+        "split_name": "rsna_val_calib",
+        "case_id": "1625",
+        "item_id": "1534902733",
+        "view_slot": "R-MLO",
+        "photometric": "MONOCHROME2",
+        "raw_shape": [
+          2776,
+          2082
+        ],
+        "crop_error": "attempt to get argmax of an empty sequence"
+      },
+      {
+        "split_name": "rsna_val_calib",
+        "case_id": "3435",
+        "item_id": "661965933",
+        "view_slot": "L-MLO",
+        "photometric": "MONOCHROME2",
+        "raw_shape": [
+          2776,
+          2082
+        ],
+        "crop_error": "attempt to get argmax of an empty sequence"
+      },
+      {
+        "split_name": "rsna_val_calib",
+        "case_id": "3435",
+        "item_id": "1998917882",
+        "view_slot": "R-MLO",
+        "photometric": "MONOCHROME2",
+        "raw_shape": [
+          2776,
+          2082
+        ],
+        "crop_error": "attempt to get argmax of an empty sequence"
+      },
+      {
+        "split_name": "rsna_val_calib",
+        "case_id": "5244",
+        "item_id": "1099568643",
+        "view_slot": "L-CC",
+        "photometric": "MONOCHROME1",
+        "raw_shape": [
+          4740,
+          3540
+        ],
+        "crop_error": "attempt to get argmax of an empty sequence"
+      },
+      {
+        "split_name": "rsna_val_calib",
+        "case_id": "5244",
+        "item_id": "663953227",
+        "view_slot": "L-MLO",
+        "photometric": "MONOCHROME1",
+        "raw_shape": [
+          4740,
+          3540
+        ],
+        "crop_error": "attempt to get argmax of an empty sequence"
+      },
+      {
+        "split_name": "rsna_val_calib",
+        "case_id": "5736",
+        "item_id": "2077132944",
+        "view_slot": "L-MLO",
+        "photometric": "MONOCHROME2",
+        "raw_shape": [
+          2776,
+          2082
+        ],
+        "crop_error": "attempt to get argmax of an empty sequence"
+      },
+      {
+        "split_name": "rsna_val_calib",
+        "case_id": "5736",
+        "item_id": "493963325",
+        "view_slot": "R-MLO",
+        "photometric": "MONOCHROME2",
+        "raw_shape": [
+          2776,
+          2082
+        ],
+        "crop_error": "attempt to get argmax of an empty sequence"
+      },
+      {
+        "split_name": "rsna_val_calib",
+        "case_id": "7439",
+        "item_id": "790351858",
+        "view_slot": "L-MLO",
+        "photometric": "MONOCHROME2",
+        "raw_shape": [
+          2776,
+          2082
+        ],
+        "crop_error": "attempt to get argmax of an empty sequence"
+      },
+      {
+        "split_name": "rsna_val_calib",
+        "case_id": "7439",
+        "item_id": "1537772603",
+        "view_slot": "R-MLO",
+        "photometric": "MONOCHROME2",
+        "raw_shape": [
+          2776,
+          2082
+        ],
+        "crop_error": "attempt to get argmax of an empty sequence"
+      },
+      {
+        "split_name": "rsna_val_calib",
+        "case_id": "7940",
+        "item_id": "523941837",
+        "view_slot": "L-MLO",
+        "photometric": "MONOCHROME2",
+        "raw_shape": [
+          2776,
+          2082
+        ],
+        "crop_error": "attempt to get argmax of an empty sequence"
+      },
+      {
+        "split_name": "rsna_val_calib",
+        "case_id": "7940",
+        "item_id": "2018619402",
+        "view_slot": "R-MLO",
+        "photometric": "MONOCHROME2",
+        "raw_shape": [
+          2776,
+          2082
+        ],
+        "crop_error": "attempt to get argmax of an empty sequence"
+      },
+      {
+        "split_name": "rsna_val_calib",
+        "case_id": "12943",
+        "item_id": "823801773",
+        "view_slot": "R-MLO",
+        "photometric": "MONOCHROME1",
+        "raw_shape": [
+          4740,
+          3540
+        ],
+        "crop_error": "attempt to get argmax of an empty sequence"
+      },
+      {
+        "split_name": "rsna_val_calib",
+        "case_id": "14995",
+        "item_id": "1260676581",
+        "view_slot": "R-CC",
+        "photometric": "MONOCHROME1",
+        "raw_shape": [
+          4740,
+          3540
+        ],
+        "crop_error": "attempt to get argmax of an empty sequence"
+      },
+      {
+        "split_name": "rsna_val_calib",
+        "case_id": "14995",
+        "item_id": "665347060",
+        "view_slot": "L-MLO",
+        "photometric": "MONOCHROME1",
+        "raw_shape": [
+          4740,
+          3540
+        ],
+        "crop_error": "attempt to get argmax of an empty sequence"
+      },
+      {
+        "split_name": "rsna_val_calib",
+        "case_id": "17724",
+        "item_id": "386844732",
+        "view_slot": "L-CC",
+        "photometric": "MONOCHROME2",
+        "raw_shape": [
+          2776,
+          2082
+        ],
+        "crop_error": "attempt to get argmax of an empty sequence"
+      },
+      {
+        "split_name": "rsna_val_calib",
+        "case_id": "17724",
+        "item_id": "1659000615",
+        "view_slot": "R-CC",
+        "photometric": "MONOCHROME2",
+        "raw_shape": [
+          2776,
+          2082
+        ],
+        "crop_error": "attempt to get argmax of an empty sequence"
+      },
+      {
+        "split_name": "rsna_val_calib",
+        "case_id": "17724",
+        "item_id": "863566493",
+        "view_slot": "L-MLO",
+        "photometric": "MONOCHROME2",
+        "raw_shape": [
+          2776,
+          2082
+        ],
+        "crop_error": "attempt to get argmax of an empty sequence"
+      },
+      {
+        "split_name": "rsna_val_calib",
+        "case_id": "19499",
+        "item_id": "1043327287",
+        "view_slot": "L-MLO",
+        "photometric": "MONOCHROME1",
+        "raw_shape": [
+          4740,
+          3540
+        ],
+        "crop_error": "attempt to get argmax of an empty sequence"
+      },
+      {
+        "split_name": "rsna_val_calib",
+        "case_id": "21194",
+        "item_id": "394798221",
+        "view_slot": "L-CC",
+        "photometric": "MONOCHROME1",
+        "raw_shape": [
+          4740,
+          3540
+        ],
+        "crop_error": "attempt to get argmax of an empty sequence"
+      },
+      {
+        "split_name": "rsna_val_calib",
+        "case_id": "21468",
+        "item_id": "443577437",
+        "view_slot": "L-MLO",
+        "photometric": "MONOCHROME2",
+        "raw_shape": [
+          2776,
+          2082
+        ],
+        "crop_error": "attempt to get argmax of an empty sequence"
+      },
+      {
+        "split_name": "rsna_val_calib",
+        "case_id": "21468",
+        "item_id": "1212754999",
+        "view_slot": "R-MLO",
+        "photometric": "MONOCHROME2",
+        "raw_shape": [
+          2776,
+          2082
+        ],
+        "crop_error": "attempt to get argmax of an empty sequence"
+      },
+      {
+        "split_name": "rsna_val_calib",
+        "case_id": "26286",
+        "item_id": "1668421796",
+        "view_slot": "L-MLO",
+        "photometric": "MONOCHROME1",
+        "raw_shape": [
+          4740,
+          3540
+        ],
+        "crop_error": "attempt to get argmax of an empty sequence"
+      },
+      {
+        "split_name": "rsna_val_calib",
+        "case_id": "26286",
+        "item_id": "110927770",
+        "view_slot": "R-MLO",
+        "photometric": "MONOCHROME1",
+        "raw_shape": [
+          4740,
+          3540
+        ],
+        "crop_error": "attempt to get argmax of an empty sequence"
+      }
+    ],
+    "wall_sec": 164.925,
+    "imgs_per_sec": 1.94,
+    "host_rss_gb": 6.734,
+    "avg_png_mb": 4.024,
+    "comp3_vs_comp1_sample20": {
+      "avg_mb_z1": 1.267,
+      "avg_mb_z3": 1.251,
+      "size_ratio_z3_over_z1": 0.9876,
+      "extra_encode_sec_per_20": 3.385
+    },
+    "parity": {
+      "n_parity_exams": 8,
+      "n_parity_views": 32,
+      "n_tta_draws_per_exam": 10,
+      "best_center_mismatches": 0,
+      "max_image_abs_diff": 0.0,
+      "max_10tta_tensor_abs_diff": 0.0
+    },
+    "mem_gib": 4.0,
+    "measured_cost_usd": 0.01013
+  },
+  "efficiency_probe_2c3g": {
+    "n_processed_images": 80,
+    "wall_sec": 58.093,
+    "imgs_per_sec": 1.377,
+    "host_rss_gb": 5.16,
+    "measured_cost_usd": 0.00191
+  },
+  "projections_full_34264_images": {
+    "4vCPU_4GiB": {
+      "config": "4vCPU/4GiB",
+      "measured_imgs_per_sec": 1.94,
+      "host_rss_gb": 6.734,
+      "measured_cost_usd": 0.01013,
+      "proj_full_wall_hours_single_container": 4.906,
+      "proj_rsna_9528_usd": 0.3018,
+      "proj_nlbs_24736_usd": 0.7834,
+      "proj_total_34264_usd": 1.0852
+    },
+    "2vCPU_3GiB": {
+      "config": "2vCPU/3GiB",
+      "measured_imgs_per_sec": 1.377,
+      "host_rss_gb": 5.16,
+      "measured_cost_usd": 0.00191,
+      "proj_full_wall_hours_single_container": 6.912,
+      "proj_rsna_9528_usd": 0.228,
+      "proj_nlbs_24736_usd": 0.5918,
+      "proj_total_34264_usd": 0.8198
+    },
+    "storage_estimate_z1_gb": 134.65,
+    "storage_estimate_z3_gb": 132.98,
+    "additional_monthly_volume_usd_z1": 12.12,
+    "additional_monthly_volume_usd_z3": 11.97
+  }
+}
