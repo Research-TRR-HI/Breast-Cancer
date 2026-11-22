@@ -1,8 +1,8 @@
 # state.md — Unified Two-Paper Workspace State
 
-**Last Updated:** 2026-11-22  
-**Verified Repo Head (Prior):** `5f206fb` (`main`)  
-**Current Decision Across Both Papers:** Paper 1 **NYU Step 1 Pre-Build Validation = SAFE & READY** (`2vCPU/8GiB` validated on `160` imgs: `5.117 GB` RSS, `1.80 img/s`, SHA-256 resume & `--stage build` guard verified; **`~$0.869`** compute w/ overhead + `137.00 GiB` -> `~$0.41/day` beyond Modal's `1 TiB` free cap across 18 workspace volumes — awaiting approval); GMIC Steps 1–3 COMPLETE & LOCKED (`0.8541` AUROC, `97.35%` @98%); Paper 2 AnchorShift Stage D pending (`MODIFY / INVESTIGATE`)
+**Last Updated:** 2026-11-23  
+**Verified Repo Head (Prior):** `f8f7594` (`main`)  
+**Current Decision Across Both Papers:** Paper 1 **NYU Step 1 RSNA `val_calib` (`9,528` imgs / `2,382` exams) = 100% BUILT & SHA-256 VERIFIED (`69.779 GiB`, `66` fallbacks, `$0.6086` gross compute, `0` GPUs)**; **`nlbs_4view` (`24,736` imgs) PAUSED AT COST/STORAGE STOP GATE** (`RSNA storage 3.58x estimate` -> `~187–250 GiB` projected, `~USD 2.03` compute, `USD 9.34` Starter credits left until Dec 1 — awaiting user decision); GMIC Steps 1–3 COMPLETE & LOCKED (`0.8541` AUROC, `97.35%` @98%); Paper 2 AnchorShift Stage D pending (`MODIFY / INVESTIGATE`)
 
 ---
 
@@ -31,7 +31,7 @@
 - **Model Status Matrix:**
   - [x] `ce_b5` & `trust_b5`: Reused cleanly via 2-fold OOF RSNA source test (`0.7428` / `0.7442` AUROC; `@98%` `98.97%` sens) & common 4-view NLBS (`N=6,184`, `151` pos: `ce_b5` `0.7089`, `trust_b5` `0.7040` AUROC) in `reports/paper1/ce_trust_{rsna_source_eval,nlbs_common_4view}.{json,md}`.
   - [x] `gmic_pretrained` (`nyukat/GMIC` `594029efe6184bcca3a151fa1dd46c5fd620cb25`, `sample_model_1.p` `3b792e6d...`): **STEPS 1–3 COMPLETE & LOCKED** (RSNA `val_calib` AUROC `0.8301`, frozen `tau_98=0.028874`, `tau_95=0.046641`, `80` fallbacks `delta=0.0`; NLBS `N=6,184` AUROC **`0.8541`**, `@98%` **`97.35%`** [`4/151` missed, `24.27%` dis, CP99 UB `0.77%` — NO], `@95%` `93.38%` [`10/151` missed, `38.47%` dis — NO]; `reports/paper1/gmic_step3_eval/`).
-  - [x] `nyu_fourview_pretrained` (`nyukat/breast_cancer_classifier` `6176ebea6950b0a953339593d2da417ab846dae0`, `sample_image_model.p` `9a1d97f9...`): **STEP 1 PILOT & 2vCPU/8GiB VALIDATION COMPLETE (`0.0` parity, SHA-256 resume & CLI guard verified)**; `preprocess_paper1_nyu_cpu.py` ready (`~$0.869` compute w/ overhead, `137.00 GiB` / `~$0.41/day` beyond 1 TiB, awaiting `--approve-full-build`).
+  - [x] `nyu_fourview_pretrained` (`nyukat/breast_cancer_classifier` `6176ebea6950b0a953339593d2da417ab846dae0`, `sample_image_model.p` `9a1d97f9...`): **STEP 1 RSNA `val_calib` (`9,528` imgs / `2,382` exams) BUILT & 100% SHA-256 VERIFIED (`69.779 GiB`, `66` fallbacks, `$0.6086` gross, `0` GPU)**; `nlbs_4view` (`24,736` imgs) **PAUSED AT STOP GATE** (`RSNA storage 3.58x estimate` -> `~187–250 GiB` total, `USD 9.34` credits left until Dec 1).
   - [x] `dinov2_rsna` (`facebookresearch/dinov2` `7764ea0f912e53c92e82eb78a2a1631e92725fc8`, `dinov2_vits14_pretrain.pth` `b938bf1b...`): Frozen encoder + Stage-1 extraction + `train_paper1_dinov2_head.py` verified; L40S benchmark passed (`1.606 GB` VRAM, `519.88 img/s` GPU compute; `$10.99` cold IO / `~$0.60` NVMe-staged).
   - [x] `resnet50_rsna` (`torchvision` `ResNet50_Weights.IMAGENET1K_V2`, `resnet50-11ad3fa6.pth` `11ad3fa6...`): Fine-tuning & frozen-inference pipeline verified; L40S benchmark passed (`26.277 GB` VRAM, `115.1 img/s` AMP train, `$3.31` 10-epoch training projection).
 - **Mandatory Gates & Remaining Work (`reports/paper1/stage1_model_readiness.md` — GO):**
@@ -45,7 +45,8 @@
   - [x] **GMIC Step 3 CPU Evaluation (`scripts/evaluate_paper1_gmic_step3.py`, `USD 0.00`):** Verified Step 2 locks, calibrated RSNA thresholds FIRST (`tau_98=0.028874`, `tau_95=0.046641`; RSNA OOF AUROC `0.8301`; `80` fallbacks `0` positive / `delta=0.0`), locked NLBS predictions BEFORE outcome join, and compared **CE vs TRUST vs GMIC** on common 4-view NLBS (`N=6,184`) + full (`N=6,359`) + cluster-collapsed (`N=5,868`): GMIC **`97.35%`** vs CE `90.07%` vs TRUST `84.77%` @98% (ALL 3 below 98.0%; `reports/paper1/gmic_step3_eval/`).
   - [x] **NYU Step 1 CPU Pilot (`hasinishrak2015`, `ap-8zAp1GZzkNZp4k7tPRSWrT`, `0` GPU):** Separated CPU caching (`preprocess_paper1_nyu_cpu.py`), ran `320`-img pilot (`40` RSNA incl. `pid=71` + `40` NLBS incl. `3` SIEMENS): **`0.0` 10-TTA parity diff**, `26` fallbacks handled cleanly (`reports/paper1/nyu_step1_cpu_pilot_report.md`).
   - [x] **NYU Step 1 Pre-Build Validation (`hasinishrak2015`, `ap-p0FrhTarpdGuiJaUUYKJ6Q`, `0` GPU):** Validated `2vCPU/8GiB` on `160` imgs (`1.80 img/s`, `5.117 GB` RSS, `$0.00392`), added & tamper-tested SHA-256 resume + guarded `--stage build` CLI (`5/5` tests), audited `968.214 GiB` Paper 1 + 16 legacy vols vs Modal `1 TiB` free tier: **`~$0.869` compute + `137.00 GiB` (`~$0.41/day` / `$12.33/mo` over 1 TiB)** (`reports/paper1/nyu_step1_config_validation_report.md`; awaiting approval).
-  - [ ] **Stage 2 — Execute Remaining Paper 1 Runs:** `NYU Step 1 Build -> NYU Step 2 Infer -> DINOv2 -> ResNet-50 -> evaluate_paper1_six_models.py` on `hasinishrak2015`.
+  - [x] **NYU Step 1 RSNA `val_calib` CPU Build & Parallel SHA-256 Verify (`hasinishrak2015`, `ap-1dMjmBD…` + `ap-yaZkL5T…`, `0` GPU):** Processed & verified `9,528 / 9,528` RSNA PNGs (`2,382 / 2,382` 4-view exams, `0` rejected, `101` pixel checks, `66` fallbacks, `69.779 GiB`, `$0.6086` gross / `~$0.546` net) via 12 parallel shards + new `verify_nyu_cpu_shard`. Paused before `nlbs_4view` per cost/storage stop gate (`reports/paper1/nyu_step1_rsna_checkpoint_report.md`).
+  - [ ] **Stage 2 — Execute Remaining Paper 1 Runs:** `NYU Step 1 NLBS (held at stop gate) -> NYU Step 2 Infer -> DINOv2 -> ResNet-50 -> evaluate_paper1_six_models.py` on `hasinishrak2015`.
   - [ ] **Blocker 3 (Manuscript Gate) — Adversarial Literature Matrix:** Formal *MEDINFO 2025/2026 Meta-Repository* & *Sensors (June 2026)* comparison before manuscript drafting.
 
 ---
