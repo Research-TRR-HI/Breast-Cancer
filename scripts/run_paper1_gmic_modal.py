@@ -57,7 +57,8 @@ image = (
     timeout=7200,
 )
 def infer_gmic_shard(split_name: str, shard_idx: int, num_shards: int) -> Dict[str, Any]:
-    """Run resumable GMIC sample_model_1.p inference on one shard of RSNA val_calib or NLBS."""
+    """Run resumable GMIC sample_model_1.p inference using verified Step-1 2944x1920 uint16 PNG cache."""
+    import cv2
     import numpy as np
     import pandas as pd
     import torch
@@ -65,9 +66,8 @@ def infer_gmic_shard(split_name: str, shard_idx: int, num_shards: int) -> Dict[s
     from src.paper1.gmic_adapter import (
         GMIC_INPUT_SIZE,
         build_gmic_model,
-        prepare_dicom_uint16_for_nyukat,
-        preprocess_uint16_for_nyukat,
         score_gmic_preprocessed_tensor,
+        standard_normalize_gmic_uint16,
     )
 
     out_dir = RSNA_MOUNT / "cache" / "paper1_gmic_shards" / split_name
@@ -81,6 +81,14 @@ def infer_gmic_shard(split_name: str, shard_idx: int, num_shards: int) -> Dict[s
     if got_sha != GMIC_CKPT_SHA256:
         raise RuntimeError(f"GMIC checkpoint SHA mismatch: {got_sha} != {GMIC_CKPT_SHA256}")
 
+    cache_root = RSNA_MOUNT / "cache" / "paper1_gmic_uint16_v1" / split_name
+    png_dir = cache_root / "png_2944x1920"
+    manifest_csv = cache_root / "manifest.csv"
+    if not manifest_csv.exists():
+        raise FileNotFoundError(f"Step 1 GMIC manifest missing: {manifest_csv}")
+    step1_df = pd.read_csv(manifest_csv, dtype={"item_id": str, "case_id": str})
+    step1_map = step1_df.set_index("item_id")[["crop_fallback", "crop_error", "fallback_strategy", "photometric"]].to_dict("index")
+
     if split_name == "rsna_val_calib":
         df = pd.read_csv("/root/datasets/rsna/splits_seed42.csv")
         df = df[df["split"] == "val_calib"].sort_values(["patient_id", "image_id"]).reset_index(drop=True)
@@ -89,7 +97,6 @@ def infer_gmic_shard(split_name: str, shard_idx: int, num_shards: int) -> Dict[s
                 "item_id": str(r.image_id),
                 "case_id": str(r.patient_id),
                 "view_slot": f"{r.laterality}-{r.view}",
-                "dcm_path": str(RSNA_MOUNT / "rsna" / "raw" / r.rel_path),
             }
             for r in df.iloc[shard_idx::num_shards].itertuples(index=False)
         ]
@@ -100,7 +107,6 @@ def infer_gmic_shard(split_name: str, shard_idx: int, num_shards: int) -> Dict[s
                 "item_id": str(r.image_uid),
                 "case_id": str(r.StudyInstanceUID),
                 "view_slot": f"{r.laterality}-{r.view_position}",
-                "dcm_path": str(NLBS_MOUNT / "nlbs" / "extracted" / r.dicom_rel_path),
             }
             for r in df.iloc[shard_idx::num_shards].itertuples(index=False)
         ]
@@ -108,7 +114,7 @@ def infer_gmic_shard(split_name: str, shard_idx: int, num_shards: int) -> Dict[s
         raise ValueError(f"Unsupported split_name={split_name}")
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model, gmic_mods = build_gmic_model(
+    model, _ = build_gmic_model(
         ckpt_path, model_index="1", device=device, gmic_repo_dir=Path("/root/external/GMIC")
     )
 
@@ -116,17 +122,22 @@ def infer_gmic_shard(split_name: str, shard_idx: int, num_shards: int) -> Dict[s
     records = []
     fallback_logs = []
     for idx, row in enumerate(rows, start=1):
-        arr_u16, d_meta = prepare_dicom_uint16_for_nyukat(Path(row["dcm_path"]), row["view_slot"].split("-")[0])
-        proc, p_meta = preprocess_uint16_for_nyukat(arr_u16, row["view_slot"], GMIC_INPUT_SIZE, gmic_mods)
-        if p_meta["crop_fallback"]:
+        png_path = png_dir / f"{row['item_id']}.png"
+        arr_u16 = cv2.imread(str(png_path), cv2.IMREAD_UNCHANGED)
+        if arr_u16 is None or arr_u16.shape != GMIC_INPUT_SIZE or arr_u16.dtype != np.uint16:
+            raise RuntimeError(f"Invalid Step 1 cached PNG: {png_path}")
+        proc = standard_normalize_gmic_uint16(arr_u16)
+        fb_meta = step1_map[row["item_id"]]
+        is_fb = bool(fb_meta["crop_fallback"])
+        if is_fb:
             fallback_logs.append(
                 {
                     "item_id": row["item_id"],
                     "case_id": row["case_id"],
                     "view_slot": row["view_slot"],
-                    "photometric": d_meta.get("photometric", ""),
-                    "fallback_strategy": p_meta.get("fallback_strategy", ""),
-                    "crop_error": p_meta.get("crop_error", ""),
+                    "photometric": str(fb_meta.get("photometric", "")),
+                    "fallback_strategy": str(fb_meta.get("fallback_strategy", "")),
+                    "crop_error": str(fb_meta.get("crop_error", "")),
                 }
             )
         benign, malignant = score_gmic_preprocessed_tensor(model, proc, device)
@@ -137,7 +148,7 @@ def infer_gmic_shard(split_name: str, shard_idx: int, num_shards: int) -> Dict[s
                 "view_slot": row["view_slot"],
                 "benign_pred": benign,
                 "malignant_pred": malignant,
-                "crop_fallback": bool(p_meta["crop_fallback"]),
+                "crop_fallback": is_fb,
             }
         )
         if idx % 200 == 0:
