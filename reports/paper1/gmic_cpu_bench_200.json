@@ -1,0 +1,17 @@
+{
+  "gpu_allocated": false,
+  "n_bench_images": 200,
+  "n_rsna_bench": 100,
+  "n_nlbs_bench": 100,
+  "wall_sec": 135.549,
+  "imgs_per_sec_4cpu": 1.475,
+  "bench_cost_usd": 0.00951,
+  "proj_full_37970_4cpu_hours": 7.148,
+  "proj_full_37970_cost_usd": 1.805,
+  "cost_gate_passed_under_3usd": true,
+  "avg_png_mb": 4.592,
+  "est_total_storage_gb": 170.28,
+  "n_fallbacks": 2,
+  "max_parity_abs_diff": 0.0,
+  "all_shapes_2944x1920": true
+}
