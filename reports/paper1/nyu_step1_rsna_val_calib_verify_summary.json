@@ -1,0 +1,109 @@
+{
+  "verify_shards": [
+    {
+      "shard_idx": 0,
+      "verified_count": 796,
+      "rejected": 0,
+      "wall_sec": 80.54,
+      "cost_usd": 0.00142
+    },
+    {
+      "shard_idx": 1,
+      "verified_count": 796,
+      "rejected": 0,
+      "wall_sec": 87.86,
+      "cost_usd": 0.00154
+    },
+    {
+      "shard_idx": 2,
+      "verified_count": 796,
+      "rejected": 0,
+      "wall_sec": 79.92,
+      "cost_usd": 0.00141
+    },
+    {
+      "shard_idx": 3,
+      "verified_count": 796,
+      "rejected": 0,
+      "wall_sec": 79.11,
+      "cost_usd": 0.00139
+    },
+    {
+      "shard_idx": 4,
+      "verified_count": 796,
+      "rejected": 0,
+      "wall_sec": 275.57,
+      "cost_usd": 0.00485
+    },
+    {
+      "shard_idx": 5,
+      "verified_count": 796,
+      "rejected": 0,
+      "wall_sec": 435.66,
+      "cost_usd": 0.00766
+    },
+    {
+      "shard_idx": 6,
+      "verified_count": 792,
+      "rejected": 0,
+      "wall_sec": 437.56,
+      "cost_usd": 0.00769
+    },
+    {
+      "shard_idx": 7,
+      "verified_count": 792,
+      "rejected": 0,
+      "wall_sec": 294.12,
+      "cost_usd": 0.00517
+    },
+    {
+      "shard_idx": 8,
+      "verified_count": 792,
+      "rejected": 0,
+      "wall_sec": 392.24,
+      "cost_usd": 0.0069
+    },
+    {
+      "shard_idx": 9,
+      "verified_count": 792,
+      "rejected": 0,
+      "wall_sec": 287.31,
+      "cost_usd": 0.00505
+    },
+    {
+      "shard_idx": 10,
+      "verified_count": 792,
+      "rejected": 0,
+      "wall_sec": 426.69,
+      "cost_usd": 0.0075
+    },
+    {
+      "shard_idx": 11,
+      "verified_count": 792,
+      "rejected": 0,
+      "wall_sec": 388.75,
+      "cost_usd": 0.00684
+    }
+  ],
+  "total_verify_shard_compute_usd": 0.0574,
+  "verify": {
+    "split_name": "rsna_val_calib",
+    "n_images": 9528,
+    "n_exams": 2382,
+    "n_fallback_views": 66,
+    "n_fallback_exams": 34,
+    "pixel_spot_checked": 101,
+    "total_storage_gib": 69.779,
+    "manifest_sha256": "bde6ae3fa12cff0c0d121de2b1344ddc775f1020b3645670b4d62ca00db8f866",
+    "by_view_slot": {
+      "L-CC": 2382,
+      "L-MLO": 2382,
+      "R-CC": 2382,
+      "R-MLO": 2382
+    },
+    "by_photometric": {
+      "MONOCHROME1": 1808,
+      "MONOCHROME2": 7720
+    }
+  }
+}
