@@ -7,6 +7,7 @@ examination scoring from:
     https://github.com/nyukat/breast_cancer_classifier (AGPL-3.0)
 """
 
+import importlib
 from pathlib import Path
 import sys
 import types
@@ -31,7 +32,7 @@ def _ensure_nyu_importable(nyu_repo_dir: Path = NYU_REPO_DEFAULT) -> Dict[str, A
     """Temporarily import nyukat/breast_cancer_classifier modules without polluting sys.modules['src']."""
     if "h5py" not in sys.modules:
         try:
-            import h5py  # noqa: F401
+            importlib.import_module("h5py")
         except ImportError:
             sys.modules["h5py"] = types.ModuleType("h5py")
 
@@ -41,21 +42,22 @@ def _ensure_nyu_importable(nyu_repo_dir: Path = NYU_REPO_DEFAULT) -> Dict[str, A
         del sys.modules[k]
     sys.path.insert(0, nyu_str)
     try:
-        from src.constants import LABELS, MODELMODES, VIEWANGLES, VIEWS
-        from src.cropping import crop_mammogram as n_crop
-        from src.data_loading import loading as n_load
-        from src.modeling import models as n_models, run_model as n_rm
-        from src.optimal_centers import calc_optimal_centers as n_coc
+        n_const = importlib.import_module("src.constants")
+        n_crop = importlib.import_module("src.cropping.crop_mammogram")
+        n_load = importlib.import_module("src.data_loading.loading")
+        n_models = importlib.import_module("src.modeling.models")
+        n_rm = importlib.import_module("src.modeling.run_model")
+        n_coc = importlib.import_module("src.optimal_centers.calc_optimal_centers")
         return {
             "crop_mammogram": n_crop,
             "loading": n_load,
             "models": n_models,
             "run_model": n_rm,
             "calc_optimal_centers": n_coc,
-            "VIEWS": VIEWS,
-            "VIEWANGLES": VIEWANGLES,
-            "LABELS": LABELS,
-            "MODELMODES": MODELMODES,
+            "VIEWS": n_const.VIEWS,
+            "VIEWANGLES": n_const.VIEWANGLES,
+            "LABELS": n_const.LABELS,
+            "MODELMODES": n_const.MODELMODES,
         }
     finally:
         if sys.path[0] == nyu_str:
