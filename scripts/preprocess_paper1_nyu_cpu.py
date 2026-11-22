@@ -635,12 +635,52 @@ def process_nyu_cpu_shard(
 @app.function(
     image=image,
     volumes={str(RSNA_MOUNT): RSNA_VOL},
+    cpu=1.0,
+    memory=2048,
+    timeout=1800,
+)
+def verify_nyu_cpu_shard(split_name: str, shard_idx: int, num_shards: int = 12) -> Dict[str, Any]:
+    """Verify 100% PNG SHA-256 checksums for one shard in parallel on Modal Volume."""
+    import time
+    import torch
+    from src.paper1.nyu_fourview_adapter import verify_and_load_nyu_resumed_records
+
+    if torch.cuda.is_available():
+        raise RuntimeError("GPU detected inside CPU shard verification!")
+
+    t0 = time.monotonic()
+    RSNA_VOL.reload()
+    split_root = RSNA_MOUNT / "cache" / CACHE_ROOT_NAME / split_name
+    png_dir = split_root / "png"
+    shard_path = split_root / "shards" / f"shard_{shard_idx:03d}_of_{num_shards:03d}.jsonl"
+    sub_done, sub_stats = verify_and_load_nyu_resumed_records(shard_path, png_dir)
+    if sub_stats["rejected"] > 0:
+        raise RuntimeError(f"{split_name} shard {shard_idx}: {sub_stats['rejected']} PNGs failed SHA-256 check")
+    wall_sec = time.monotonic() - t0
+    return {
+        "shard_idx": int(shard_idx),
+        "verified_count": int(len(sub_done)),
+        "rejected": int(sub_stats["rejected"]),
+        "wall_sec": round(wall_sec, 2),
+        "cost_usd": round(_compute_cpu_cost_usd(wall_sec, 1.0, 2.0), 5),
+    }
+
+
+@app.function(
+    image=image,
+    volumes={str(RSNA_MOUNT): RSNA_VOL},
     cpu=2.0,
     memory=4096,
     timeout=1800,
 )
-def verify_nyu_cpu_cache(split_name: str, num_shards: int = 12, pixel_spot_n: int = 16) -> Dict[str, Any]:
+def verify_nyu_cpu_cache(
+    split_name: str,
+    num_shards: int = 12,
+    pixel_spot_n: int = 16,
+    preverified_shards: Any = None,
+) -> Dict[str, Any]:
     """Consolidate shard JSONLs, verify 100% PNG SHA-256 + 4-view exam completeness, and write manifest."""
+    from concurrent.futures import ThreadPoolExecutor
     import cv2
     import numpy as np
     import pandas as pd
@@ -661,12 +701,30 @@ def verify_nyu_cpu_cache(split_name: str, num_shards: int = 12, pixel_spot_n: in
     shard_dir = split_root / "shards"
 
     all_done: Dict[str, Dict[str, Any]] = {}
-    for s in range(num_shards):
-        p = shard_dir / f"shard_{s:03d}_of_{num_shards:03d}.jsonl"
-        sub_done, sub_stats = verify_and_load_nyu_resumed_records(p, png_dir)
-        if sub_stats["rejected"] > 0:
-            raise RuntimeError(f"{split_name} shard {s}: {sub_stats['rejected']} PNGs failed SHA-256 check")
-        all_done.update(sub_done)
+    if preverified_shards is not None:
+        if len(preverified_shards) != num_shards:
+            raise RuntimeError(f"{split_name}: expected {num_shards} shard verifications, got {len(preverified_shards)}")
+        if any(int(sv.get("rejected", 1)) > 0 for sv in preverified_shards):
+            raise RuntimeError(f"{split_name}: shard verification reported rejected PNGs")
+        for s in range(num_shards):
+            p = shard_dir / f"shard_{s:03d}_of_{num_shards:03d}.jsonl"
+            if not p.exists():
+                raise RuntimeError(f"{split_name}: missing shard JSONL {p}")
+            for line in p.read_text(encoding="utf-8").splitlines():
+                if not line.strip():
+                    continue
+                rec = json.loads(line)
+                all_done[str(rec["item_id"])] = rec
+    else:
+        def _verify_one(s_idx: int):
+            p = shard_dir / f"shard_{s_idx:03d}_of_{num_shards:03d}.jsonl"
+            return verify_and_load_nyu_resumed_records(p, png_dir)
+
+        with ThreadPoolExecutor(max_workers=min(12, max(1, num_shards))) as pool:
+            for sub_done, sub_stats in pool.map(_verify_one, range(num_shards)):
+                if sub_stats["rejected"] > 0:
+                    raise RuntimeError(f"{split_name}: {sub_stats['rejected']} PNGs failed SHA-256 check")
+                all_done.update(sub_done)
 
     exp_ids = [r["item_id"] for r in rows_all]
     if len(all_done) != len(exp_ids) or set(all_done.keys()) != set(exp_ids):
@@ -695,18 +753,25 @@ def verify_nyu_cpu_cache(split_name: str, num_shards: int = 12, pixel_spot_n: in
     tmp_csv.replace(man_csv)
 
     fb_df = df_man[df_man["crop_fallback"].astype(bool)]
+    fallback_records = fb_df.to_dict(orient="records")
+    (split_root / "fallback_log.json").write_text(json.dumps(fallback_records, indent=2), encoding="utf-8")
     summary = {
         "split_name": split_name,
         "n_images": int(len(df_man)),
         "n_exams": int(df_man["case_id"].nunique()),
         "n_fallback_views": int(len(fb_df)),
         "n_fallback_exams": int(fb_df["case_id"].nunique()) if len(fb_df) else 0,
+        "pixel_spot_checked": int(len(recs_ordered[::step])),
         "total_storage_gib": round(float(df_man["file_bytes"].sum()) / (1024 ** 3), 3),
         "manifest_sha256": compute_sha256_file(man_csv),
     }
+    if "view_slot" in df_man.columns:
+        summary["by_view_slot"] = {str(k): int(v) for k, v in df_man["view_slot"].value_counts().sort_index().items()}
+    if "photometric" in df_man.columns:
+        summary["by_photometric"] = {str(k): int(v) for k, v in df_man["photometric"].value_counts().sort_index().items()}
     (split_root / "verify_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     RSNA_VOL.commit()
-    return summary
+    return {**summary, "fallback_records": fallback_records}
 
 
 @app.local_entrypoint()
@@ -749,20 +814,63 @@ def main(
         return
 
     if stage == "build":
+        from pathlib import Path
+
+        out_dir = Path("reports/paper1")
+        out_dir.mkdir(parents=True, exist_ok=True)
         build_report: Dict[str, Any] = {}
         for sp in target_splits:
             outs = list(process_nyu_cpu_shard.starmap([(sp, s, num_shards, compression) for s in range(num_shards)]))
-            ver = verify_nyu_cpu_cache.remote(sp, num_shards=num_shards)
-            build_report[sp] = {
+            (out_dir / f"nyu_step1_{sp}_shards_raw.json").write_text(json.dumps(outs, indent=2), encoding="utf-8")
+            shard_vers = list(verify_nyu_cpu_shard.starmap([(sp, s, num_shards) for s in range(num_shards)]))
+            ver = verify_nyu_cpu_cache.remote(
+                sp, num_shards=num_shards, pixel_spot_n=100, preverified_shards=shard_vers
+            )
+            fallback_records = ver.pop("fallback_records", [])
+            split_report = {
                 "shards": outs,
-                "total_compute_usd": round(sum(float(o["cost_usd"]) for o in outs), 4),
+                "verify_shards": shard_vers,
+                "total_shard_compute_usd": round(sum(float(o["cost_usd"]) for o in outs), 4),
+                "total_verify_shard_compute_usd": round(sum(float(v["cost_usd"]) for v in shard_vers), 4),
+                "total_compute_usd": round(
+                    sum(float(o["cost_usd"]) for o in outs) + sum(float(v["cost_usd"]) for v in shard_vers), 4
+                ),
                 "verify": ver,
             }
+            (out_dir / f"nyu_step1_{sp}_build_summary.json").write_text(
+                json.dumps(split_report, indent=2), encoding="utf-8"
+            )
+            (out_dir / f"nyu_step1_{sp}_fallback_log.json").write_text(
+                json.dumps(fallback_records, indent=2), encoding="utf-8"
+            )
+            build_report[sp] = split_report
         print(json.dumps(build_report, indent=2))
         return
 
     if stage == "verify":
-        ver_out = {sp: verify_nyu_cpu_cache.remote(sp, num_shards=num_shards) for sp in target_splits}
+        from pathlib import Path
+
+        out_dir = Path("reports/paper1")
+        out_dir.mkdir(parents=True, exist_ok=True)
+        ver_out: Dict[str, Any] = {}
+        for sp in target_splits:
+            shard_vers = list(verify_nyu_cpu_shard.starmap([(sp, s, num_shards) for s in range(num_shards)]))
+            ver = verify_nyu_cpu_cache.remote(
+                sp, num_shards=num_shards, pixel_spot_n=100, preverified_shards=shard_vers
+            )
+            fallback_records = ver.pop("fallback_records", [])
+            split_ver = {
+                "verify_shards": shard_vers,
+                "total_verify_shard_compute_usd": round(sum(float(v["cost_usd"]) for v in shard_vers), 4),
+                "verify": ver,
+            }
+            (out_dir / f"nyu_step1_{sp}_verify_summary.json").write_text(
+                json.dumps(split_ver, indent=2), encoding="utf-8"
+            )
+            (out_dir / f"nyu_step1_{sp}_fallback_log.json").write_text(
+                json.dumps(fallback_records, indent=2), encoding="utf-8"
+            )
+            ver_out[sp] = split_ver
         print(json.dumps(ver_out, indent=2))
         return
 
