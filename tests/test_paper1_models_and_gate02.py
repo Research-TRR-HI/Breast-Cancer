@@ -372,10 +372,42 @@ class TestPaper1Preparation(unittest.TestCase):
         # Construct thin 3500x2600 mammogram strip (<200 px wide) that fails 100-iter erosion -> triggers fallback
         thin = np.zeros((3500, 2600), dtype=np.uint16)
         thin[400:3000, :80] = 30000
-        proc, meta = preprocess_uint16_for_nyukat(thin, "L-CC", GMIC_INPUT_SIZE, mods)
+        proc, meta = preprocess_uint16_for_nyukat(thin, "L-ML", GMIC_INPUT_SIZE, mods)
         self.assertTrue(meta["crop_fallback"])
+        self.assertEqual(meta["nyukat_proxy_view"], "L-MLO")
         self.assertEqual(meta["fallback_strategy"], "native_scale_optimal_window_no_resize")
         self.assertEqual(proc.shape, GMIC_INPUT_SIZE)
+
+    def test_10_gmic_uint16_png_cache_bit_exact_parity(self):
+        import tempfile
+        import cv2
+        from src.paper1.gmic_adapter import save_uint16_png_atomic, standard_normalize_gmic_uint16
+
+        ckpt = Path("external/GMIC/models/sample_model_1.p")
+        if not ckpt.exists():
+            self.skipTest("external/GMIC checkpoint not present")
+        model, mods = build_gmic_model(ckpt, model_index="1", device=torch.device("cpu"))
+        img = mods["loading"].read_image_png("external/GMIC/sample_data/images/0_L-CC.png")
+
+        online_f32, _ = preprocess_uint16_for_nyukat(img, "L-CC", GMIC_INPUT_SIZE, mods, normalize=True)
+        cached_u16, _ = preprocess_uint16_for_nyukat(img, "L-CC", GMIC_INPUT_SIZE, mods, normalize=False)
+        self.assertEqual(cached_u16.dtype, np.uint16)
+        self.assertEqual(cached_u16.shape, GMIC_INPUT_SIZE)
+
+        with tempfile.TemporaryDirectory() as td:
+            png_p = Path(td) / "0_L-CC.png"
+            n_bytes = save_uint16_png_atomic(cached_u16, png_p, compression=1)
+            self.assertGreater(n_bytes, 0)
+            loaded_u16 = cv2.imread(str(png_p), cv2.IMREAD_UNCHANGED)
+            self.assertEqual(loaded_u16.dtype, np.uint16)
+            self.assertEqual(loaded_u16.shape, GMIC_INPUT_SIZE)
+            reconstructed_f32 = standard_normalize_gmic_uint16(loaded_u16)
+            max_diff = float(np.max(np.abs(online_f32 - reconstructed_f32)))
+            self.assertLessEqual(max_diff, 1e-6)
+            b_on, m_on = score_gmic_preprocessed_tensor(model, online_f32, torch.device("cpu"))
+            b_ca, m_ca = score_gmic_preprocessed_tensor(model, reconstructed_f32, torch.device("cpu"))
+            self.assertAlmostEqual(b_on, b_ca, places=6)
+            self.assertAlmostEqual(m_on, m_ca, places=6)
 
 
 if __name__ == "__main__":
