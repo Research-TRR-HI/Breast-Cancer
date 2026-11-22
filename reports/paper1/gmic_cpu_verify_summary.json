@@ -1,0 +1,89 @@
+{
+  "rsna_val_calib": {
+    "split_name": "rsna_val_calib",
+    "expected_images": 10982,
+    "verified_pngs": 10982,
+    "all_headers_2944x1920_16bit_gray": true,
+    "total_storage_gb": 62.058,
+    "n_fallbacks": 80,
+    "fallback_pct": 0.7285,
+    "fallback_items_head": [
+      {
+        "item_id": "1249745058",
+        "view_slot": "R-MLO",
+        "photometric": "MONOCHROME1",
+        "error": "attempt to get argmax of an empty sequence"
+      },
+      {
+        "item_id": "2004100590",
+        "view_slot": "R-CC",
+        "photometric": "MONOCHROME1",
+        "error": "attempt to get argmax of an empty sequence"
+      },
+      {
+        "item_id": "1009635466",
+        "view_slot": "L-MLO",
+        "photometric": "MONOCHROME2",
+        "error": "attempt to get argmax of an empty sequence"
+      },
+      {
+        "item_id": "1534902733",
+        "view_slot": "R-MLO",
+        "photometric": "MONOCHROME2",
+        "error": "attempt to get argmax of an empty sequence"
+      },
+      {
+        "item_id": "661965933",
+        "view_slot": "L-MLO",
+        "photometric": "MONOCHROME2",
+        "error": "attempt to get argmax of an empty sequence"
+      },
+      {
+        "item_id": "1998917882",
+        "view_slot": "R-MLO",
+        "photometric": "MONOCHROME2",
+        "error": "attempt to get argmax of an empty sequence"
+      },
+      {
+        "item_id": "663953227",
+        "view_slot": "L-MLO",
+        "photometric": "MONOCHROME1",
+        "error": "attempt to get argmax of an empty sequence"
+      },
+      {
+        "item_id": "1099568643",
+        "view_slot": "L-CC",
+        "photometric": "MONOCHROME1",
+        "error": "attempt to get argmax of an empty sequence"
+      },
+      {
+        "item_id": "1423709598",
+        "view_slot": "L-CC",
+        "photometric": "MONOCHROME1",
+        "error": "attempt to get argmax of an empty sequence"
+      },
+      {
+        "item_id": "1874353943",
+        "view_slot": "R-CC",
+        "photometric": "MONOCHROME1",
+        "error": "attempt to get argmax of an empty sequence"
+      }
+    ],
+    "parity_checked_n": 10,
+    "max_parity_abs_diff": 0.0,
+    "manifest_csv": "/rsna_vol/cache/paper1_gmic_uint16_v1/rsna_val_calib/manifest.csv"
+  },
+  "nlbs": {
+    "split_name": "nlbs",
+    "expected_images": 26988,
+    "verified_pngs": 26988,
+    "all_headers_2944x1920_16bit_gray": true,
+    "total_storage_gb": 97.291,
+    "n_fallbacks": 0,
+    "fallback_pct": 0.0,
+    "fallback_items_head": [],
+    "parity_checked_n": 10,
+    "max_parity_abs_diff": 0.0,
+    "manifest_csv": "/rsna_vol/cache/paper1_gmic_uint16_v1/nlbs/manifest.csv"
+  }
+}
