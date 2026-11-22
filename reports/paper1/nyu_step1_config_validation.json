@@ -1,0 +1,72 @@
+{
+  "gpu_allocated": false,
+  "config": "2vCPU/8GiB",
+  "selection_meta": {
+    "n_rsna_exams": 20,
+    "n_rsna_images": 80,
+    "n_rsna_known_difficult_exams": 15,
+    "includes_patient_71": true,
+    "n_nlbs_exams": 20,
+    "n_nlbs_images": 80,
+    "n_nlbs_siemens_exams": 3,
+    "n_nlbs_multi_candidate_exams": 14
+  },
+  "n_processed_images": 160,
+  "n_fallbacks": 26,
+  "wall_sec": 88.874,
+  "imgs_per_sec": 1.8,
+  "host_rss_gb": 5.117,
+  "rss_headroom_gb_under_8gib": 2.883,
+  "measured_cost_usd": 0.00392,
+  "sha256_resume_tamper_test": {
+    "pass1_tampered_same_size": "198449006",
+    "pass1_deleted": "2004100590",
+    "resumed_before_repair": {
+      "total_lines": 160,
+      "valid_resumed": 158,
+      "rejected": 2
+    },
+    "resumed_after_repair": {
+      "total_lines": 162,
+      "valid_resumed": 160,
+      "rejected": 0
+    },
+    "passed": true
+  },
+  "storage_per_split": {
+    "rsna_avg_mb": 2.094,
+    "nlbs_avg_mb": 4.865,
+    "est_rsna_9528_gib": 19.48,
+    "est_nlbs_24736_gib": 117.52,
+    "est_total_34264_gib": 137.0
+  },
+  "existing_volume_usage_gib_no_deletions": {
+    "rsna_mammography_vol_breakdown_gib": {
+      "cache/bench_1000": 0.012,
+      "cache/paper1_dinov2_vits14_bench": 0.001,
+      "cache/paper1_gmic_shards": 0.007,
+      "cache/paper1_gmic_uint16_v1": 159.371,
+      "cache/paper1_gmic_uint16_v1_bench200": 0.897,
+      "cache/paper1_nyu_uint16_v1_bench_40ex_c4_z1": 1.258,
+      "cache/paper1_nyu_uint16_v1_bench_5ex_c2_z1": 0.156,
+      "cache/paper1_nyu_uint16_v1_validate_2c8g": 0.544,
+      "cache/parity_pilot_1200": 0.154,
+      "cache/stage1_nlbs_uint16": 35.939,
+      "cache/stage1_rsna_uint16": 65.95,
+      "models": 1.798,
+      "reports": 0.002,
+      "rsna": 293.115
+    },
+    "rsna_mammography_vol_total_gib": 559.204,
+    "nlbs_mammography_vol_total_gib": 409.01,
+    "combined_paper_volumes_gib": 968.214
+  },
+  "full_projection_2c8g_with_overhead": {
+    "num_shards_per_split": 12,
+    "overhead_sec_per_shard": 25.0,
+    "proj_rsna_9528_usd": 0.2464,
+    "proj_nlbs_24736_usd": 0.6186,
+    "proj_total_34264_usd": 0.8651,
+    "est_total_storage_gib": 137.0
+  }
+}
