@@ -9,6 +9,7 @@ examination scoring from:
 
 import hashlib
 import importlib
+import json
 from pathlib import Path
 import sys
 import types
@@ -18,7 +19,7 @@ import numpy as np
 import pandas as pd
 import torch
 
-from src.evaluation.stage_c_eval import assert_no_forbidden_columns
+from src.evaluation.stage_c_eval import assert_no_forbidden_columns, compute_sha256_file
 from src.paper1.gmic_adapter import prepare_dicom_uint16_for_nyukat
 
 NYU_REPO_DEFAULT = Path(__file__).resolve().parent.parent.parent / "external" / "breast_cancer_classifier"
@@ -232,6 +233,84 @@ def load_nyu_cached_view(
         "image_f32": arr.astype(np.float32),
         "best_center": (int(best_center[0]), int(best_center[1])),
     }
+
+
+def verify_and_load_nyu_resumed_records(
+    prog_path: Path,
+    png_dir: Path,
+) -> Tuple[Dict[str, Dict[str, Any]], Dict[str, int]]:
+    """Verify existing NYU shard JSONL records against both file_bytes AND disk PNG SHA-256 checksums."""
+    done_map: Dict[str, Dict[str, Any]] = {}
+    stats = {"total_lines": 0, "valid_resumed": 0, "rejected": 0}
+    if not prog_path.exists():
+        return done_map, stats
+
+    seen_recs: Dict[str, Dict[str, Any]] = {}
+    for line in prog_path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        stats["total_lines"] += 1
+        try:
+            rec = json.loads(line)
+        except json.JSONDecodeError:
+            stats["rejected"] += 1
+            continue
+        item_id = str(rec.get("item_id", ""))
+        if item_id:
+            seen_recs[item_id] = rec
+
+    for item_id, rec in seen_recs.items():
+        png_sha = str(rec.get("png_sha256", "")).lower()
+        u16_sha = str(rec.get("u16_sha256", "")).lower()
+        file_bytes = int(rec.get("file_bytes", 0) or 0)
+        p_file = png_dir / f"{item_id}.png"
+        if (
+            len(png_sha) != 64
+            or len(u16_sha) != 64
+            or file_bytes <= 0
+            or int(rec.get("height", 0) or 0) <= 0
+            or int(rec.get("width", 0) or 0) <= 0
+            or "best_center_y" not in rec
+            or "best_center_x" not in rec
+            or not p_file.exists()
+            or p_file.stat().st_size != file_bytes
+        ):
+            stats["rejected"] += 1
+            continue
+        if compute_sha256_file(p_file).lower() != png_sha:
+            stats["rejected"] += 1
+            continue
+        done_map[item_id] = rec
+        stats["valid_resumed"] += 1
+
+    return done_map, stats
+
+
+def validate_nyu_cli_stage_and_guard(
+    stage: str,
+    split: str,
+    num_shards: int,
+    approve_full_build: bool,
+) -> List[str]:
+    """Validate CLI parameters and block unapproved full-dataset `--stage build` runs."""
+    valid_stages = ("pilot", "validate_config", "build", "verify")
+    if stage not in valid_stages:
+        raise ValueError(f"Unknown --stage={stage!r}; expected one of {valid_stages}")
+    if int(num_shards) < 1:
+        raise ValueError(f"--num-shards must be >= 1, got {num_shards}")
+    if split == "all":
+        splits = ["rsna_val_calib", "nlbs_4view"]
+    elif split in ("rsna_val_calib", "nlbs_4view"):
+        splits = [split]
+    else:
+        raise ValueError(f"Unsupported --split={split!r}; expected 'rsna_val_calib', 'nlbs_4view', or 'all'")
+
+    if stage == "build" and not approve_full_build:
+        raise RuntimeError(
+            "BLOCKED: `--stage build` requires explicit `--approve-full-build` confirmation so no full-dataset "
+            "preprocessing job starts unapproved. Re-run with `--stage build --approve-full-build` once ready."
+        )
+    return splits
 
 
 def select_representative_pilot_exams(
