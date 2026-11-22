@@ -1,0 +1,12 @@
+# Research Log — 2026-11-22: `[Paper 1]` NYU Four-View Step 1 — CPU-Only Preprocessing & Pilot Audit
+
+- **Scope & Strict Gate:** Separated NYU Four-View (`nyu_fourview_pretrained`) CPU DICOM decode/cropping from GPU inference cleanly without modifying `run_paper1_nyu_modal.py`, GMIC, CE, or TRUST artifacts. Executed strictly CPU-only Modal pilot (`ap-8zAp1GZzkNZp4k7tPRSWrT`, ZERO GPUs allocated, ZERO inference or NLBS labels touched).
+- **Implementation (`src/paper1/nyu_fourview_adapter.py`, `scripts/preprocess_paper1_nyu_cpu.py`, `tests/test_paper1_nyu_step1_cpu.py`):**
+  1. Preserved lossless `uint16` `cropped_flip_u16` PNGs + exact `(best_center_y, best_center_x)` (`paper1_nyu_uint16_v1`) so Step 2 `augment_and_normalize_image(..., num_tta_epochs=10, seed=0)` maintains full margin context for `max_crop_noise=(100,100)` & `max_crop_size_noise=100`.
+  2. Added `validate_and_load_nyu_4view_manifest` enforcing `assert_no_forbidden_columns` and rejecting missing/duplicate/extra views (`3/3` unit tests PASS incl. `sample_data` 10-epoch TTA exact parity).
+  3. Added resumable `process_nyu_cpu_shard` (`cpu=2.0, memory=6144`) guarded behind explicit user approval (`stage != "pilot"` raises RuntimeError).
+- **Live Modal Pilot (`ap-8zAp1GZzkNZp4k7tPRSWrT`, `320` imgs = `40` RSNA + `40` NLBS exams):**
+  - Selected `patient_id=71` + `14` GMIC-fallback RSNA cases + all `3` `SIEMENS` NLBS exams + multi-candidate/standard exams (`320/320` valid nonzero `uint16` PNGs; `26` RSNA fallbacks handled cleanly via `native_scale_optimal_window_no_resize`, `0` NLBS fallbacks).
+  - **Parity Verified (`8` full exams / `32` views × `10` TTA draws):** `best_center_mismatches = 0`, `max_image_abs_diff = 0.0`, `max_10tta_tensor_abs_diff = 0.0`.
+  - **CPU Efficiency & Cost Findings:** `4vCPU/4GiB` (`1.940 img/s`, `6.734 GB` RSS, `$0.01013` → `$1.0852` proj) vs `2vCPU/3GiB` (`1.377 img/s`, `5.160 GB` RSS, `$0.00191` → `$0.8198` proj). Sized full shard worker at **`2 vCPU / 6 GiB`** (`~$0.9857` full compute across `34,264` images) to avoid OOM (`>5.16 GB` RSS) while saving CPU cost; `compression=3` saved only `1.24%` storage (`0.9876` ratio) at extra CPU cost, so kept `compression=1`.
+  - **Storage Caveat:** `~4.024 MB/img` implies `~134.65 GB` (`~$12.12/mo` overage above `$25.34/mo` free Starter storage while `159.35 GB` GMIC PNG cache remains on `rsna-mammography-vol`). Stopped awaiting user approval before `--stage build`.
