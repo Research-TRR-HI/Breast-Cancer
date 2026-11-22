@@ -5,6 +5,7 @@ cropping, optimal-center selection, and malignant_pred extraction from:
     https://github.com/nyukat/GMIC (AGPL-3.0)
 """
 
+import importlib
 from pathlib import Path
 import sys
 import types
@@ -24,7 +25,7 @@ def _ensure_gmic_importable(gmic_repo_dir: Path = GMIC_REPO_DEFAULT) -> Any:
     """Temporarily import nyukat/GMIC modules without polluting sys.modules['src']."""
     if "h5py" not in sys.modules:
         try:
-            import h5py  # noqa: F401
+            importlib.import_module("h5py")
         except ImportError:
             sys.modules["h5py"] = types.ModuleType("h5py")
 
@@ -34,10 +35,10 @@ def _ensure_gmic_importable(gmic_repo_dir: Path = GMIC_REPO_DEFAULT) -> Any:
         del sys.modules[k]
     sys.path.insert(0, gmic_str)
     try:
-        from src.cropping import crop_mammogram as g_crop
-        from src.data_loading import loading as g_load
-        from src.modeling import gmic as g_model
-        from src.optimal_centers import calc_optimal_centers as g_coc
+        g_crop = importlib.import_module("src.cropping.crop_mammogram")
+        g_load = importlib.import_module("src.data_loading.loading")
+        g_model = importlib.import_module("src.modeling.gmic")
+        g_coc = importlib.import_module("src.optimal_centers.calc_optimal_centers")
         return {
             "crop_mammogram": g_crop,
             "loading": g_load,
