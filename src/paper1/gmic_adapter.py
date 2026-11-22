@@ -6,6 +6,7 @@ cropping, optimal-center selection, and malignant_pred extraction from:
 """
 
 import importlib
+import os
 from pathlib import Path
 import sys
 import types
@@ -99,6 +100,44 @@ def prepare_dicom_uint16_for_nyukat(
     }
 
 
+def standard_normalize_gmic_uint16(arr_u16: np.ndarray) -> np.ndarray:
+    """Apply exact GMIC z-score standardization to a cached (2944, 1920) uint16 image."""
+    img = np.asarray(arr_u16, dtype=np.float32).copy()
+    img -= np.mean(img)
+    img /= np.maximum(np.std(img), np.float32(1e-5))
+    return img
+
+
+def save_uint16_png_atomic(arr_u16: np.ndarray, target_path: Path, compression: int = 1) -> int:
+    """Atomically write a lossless 16-bit PNG via tmp file + fsync + replace; returns file size."""
+    arr = np.asarray(arr_u16)
+    if arr.dtype != np.uint16 or arr.ndim != 2:
+        raise ValueError(f"Expected 2D uint16 image, got shape={arr.shape}, dtype={arr.dtype}")
+    target_path = Path(target_path)
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    ok, buf = cv2.imencode(".png", arr, [cv2.IMWRITE_PNG_COMPRESSION, int(compression)])
+    if not ok:
+        raise RuntimeError(f"cv2.imencode failed for {target_path}")
+    raw_bytes = buf.tobytes()
+    tmp_path = target_path.with_suffix(".png.tmp")
+    with open(tmp_path, "wb") as f:
+        f.write(raw_bytes)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp_path, target_path)
+    return len(raw_bytes)
+
+
+def _canonical_nyukat_view_slot(view_slot: str) -> str:
+    """Map supplemental RSNA view labels (e.g. L-ML, R-LM, L-AT) to canonical nyukat slots."""
+    side, pos = str(view_slot).strip().upper().split("-", 1)
+    if pos in ("CC", "MLO"):
+        return f"{side}-{pos}"
+    if pos in ("ML", "LM", "LMO", "SIO"):
+        return f"{side}-MLO"
+    return f"{side}-CC"
+
+
 def preprocess_uint16_for_nyukat(
     arr_u16: np.ndarray,
     view_slot: str,
@@ -108,13 +147,15 @@ def preprocess_uint16_for_nyukat(
     rng: Optional[np.random.Generator] = None,
     max_crop_noise: Tuple[int, int] = (0, 0),
     max_crop_size_noise: int = 0,
+    normalize: bool = True,
 ) -> Tuple[np.ndarray, Dict[str, Any]]:
     """Run exact NYU/GMIC connected-component crop, flip, optimal center, window crop, and z-score."""
     g_crop = nyukat_mods["crop_mammogram"]
     g_load = nyukat_mods["loading"]
     g_coc = nyukat_mods["calc_optimal_centers"]
 
-    side = view_slot.split("-")[0]
+    proxy_view = _canonical_nyukat_view_slot(view_slot)
+    side = proxy_view.split("-")[0]
     fallback_used = False
     try:
         cinfo = g_crop.crop_img_from_largest_connected(
@@ -127,8 +168,8 @@ def preprocess_uint16_for_nyukat(
         )
         top, bot, left, right = cinfo[0]
         cropped_u16 = arr_u16[top:bot, left:right]
-        cropped_flip_u16 = g_load.flip_image(cropped_u16, view_slot, "NO")
-        if "MLO" in view_slot:
+        cropped_flip_u16 = g_load.flip_image(cropped_u16, proxy_view, "NO")
+        if "MLO" in proxy_view:
             tlbr = g_coc.get_bottomrightmost_pixel_constraint(
                 rightmost_x=cinfo[1][1],
                 bottommost_y=cinfo[2][0],
@@ -160,7 +201,7 @@ def preprocess_uint16_for_nyukat(
                 max_crop_size_noise=max_crop_size_noise,
                 auxiliary_image=None,
                 best_center=best_center,
-                view=view_slot,
+                view=proxy_view,
             )
         else:
             proc, _ = aug_mod.random_augmentation_best_center(
@@ -171,14 +212,17 @@ def preprocess_uint16_for_nyukat(
                 max_crop_size_noise=0,
                 auxiliary_image=None,
                 best_center=best_center,
-                view=view_slot,
+                view=proxy_view,
             )
         proc = proc.copy()
-        g_load.standard_normalize_single_image(proc)
+        if normalize:
+            g_load.standard_normalize_single_image(proc)
+        else:
+            proc = np.round(np.clip(proc, 0.0, 65535.0)).astype(np.uint16)
     except Exception as exc:
         # Preserve 1:1 physical pixel scale (no cv2.resize); extract/pad target window at native COM
         fallback_used = True
-        cropped_flip_u16 = g_load.flip_image(arr_u16, view_slot, "NO")
+        cropped_flip_u16 = g_load.flip_image(arr_u16, proxy_view, "NO")
         nz_y, nz_x = np.nonzero(cropped_flip_u16 > 0)
         if len(nz_y) > 0:
             com_pt = np.array([int(np.mean(nz_y)), int(np.mean(nz_x))], dtype=np.int64)
@@ -203,18 +247,27 @@ def preprocess_uint16_for_nyukat(
             max_crop_size_noise=0,
             auxiliary_image=None,
             best_center=best_center,
-            view=view_slot,
+            view=proxy_view,
         )
         proc = proc.copy()
-        g_load.standard_normalize_single_image(proc)
+        if normalize:
+            g_load.standard_normalize_single_image(proc)
+        else:
+            proc = np.round(np.clip(proc, 0.0, 65535.0)).astype(np.uint16)
         return proc, {
             "crop_fallback": True,
             "crop_error": str(exc),
             "fallback_strategy": "native_scale_optimal_window_no_resize",
+            "nyukat_proxy_view": proxy_view,
             "best_center": [int(best_center[0]), int(best_center[1])],
         }
 
-    return proc, {"crop_fallback": fallback_used, "crop_error": "", "best_center": [int(best_center[0]), int(best_center[1])]}
+    return proc, {
+        "crop_fallback": fallback_used,
+        "crop_error": "",
+        "nyukat_proxy_view": proxy_view,
+        "best_center": [int(best_center[0]), int(best_center[1])],
+    }
 
 
 def build_gmic_model(
