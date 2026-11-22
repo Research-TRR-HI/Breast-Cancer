@@ -65,6 +65,7 @@ This repository (`https://github.com/Research-TRR-HI/Breast-Cancer`) houses **tw
   - `reports/paper1/stage1_model_readiness.md`: Paper 1 Stage 1 Readiness Audit (**GO**) consolidating Gate 0.2 manifests, model provenance/SHA-256 hashes, `sample_data` parity, L40S benchmarks, and full execution CLI commands.
   - `reports/paper1/stage1_final_corrections.md`: Paper 1 Stage 1 Final Critical Corrections (**GO**) documenting ResNet-50 `scaler.unscale_` + RNG resume, DINOv2 NVMe speedup, NYU `patient_id=71` non-warping fallback root cause, 6-model paired evaluation suite, and recalculated `~$13.15` total run plan.
   - `reports/paper1/gmic_cpu_{bench_200,build_summary,verify_summary}.json` & `reports/paper1/gmic_step1_preprocessing_report.md`: GMIC Step 1 CPU-only preprocessing receipts (`10,982` RSNA + `26,988` NLBS verified `(2944x1920, uint16)` PNGs, `$1.5844` build spend, `0.0` parity diff, Step 2 ready).
+  - `reports/paper1/gmic_step2_gpu_pilot.json` & `reports/paper1/gmic_step2_gpu_pilot_report.md`: GMIC Step 2 L40S `400`-image pilot receipts (`32.52 img/s` e2e, `1.511 GB` VRAM, `$0.771` full-run projection <= `$2` budget, `80` RSNA fallbacks + `5` supplemental views audited clean).
 - **Planned Paper-Specific Folders *(NOT YET CREATED — add when corresponding tracks execute)*:**
   - `studies/anchorshift/`, `reports/anchorshift/` (Paper 2 Stage D UPA, Protocol 3 oracle reference, any candidate adaptation experiments).
 
