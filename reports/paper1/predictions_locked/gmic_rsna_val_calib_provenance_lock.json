@@ -1,0 +1,105 @@
+{
+  "schema_version": "paper1_gmic_step2_lock_v1",
+  "model_id": "gmic_pretrained",
+  "checkpoint_file": "sample_model_1.p",
+  "checkpoint_sha256": "3b792e6de22fdccd34a43b4c1cc87a94f5f4fa8aed42722dce4e4badac347991",
+  "preprocess_version": "paper1_gmic_uint16_v1",
+  "preprocess_manifest_sha256s": [
+    "f950713d2e5b46ada347e6c501284d6006517cae43fee2220a025e17ac94ca35"
+  ],
+  "split_name": "rsna_val_calib",
+  "batch_size": 1,
+  "label_quarantine_enforced": true,
+  "n_unique_images": 10982,
+  "n_unique_cases": 2382,
+  "all_scores_finite": true,
+  "image_malignant_summary_label_free": {
+    "min": 0.000326,
+    "median": 0.032904,
+    "max": 0.99237
+  },
+  "case_malignant_summary_label_free": {
+    "min": 0.004634,
+    "median": 0.084093,
+    "max": 0.99237
+  },
+  "n_fallback_views": 80,
+  "n_cases_with_fallback": 36,
+  "total_estimated_cost_usd": 0.82993,
+  "shards": [
+    {
+      "shard_idx": 0,
+      "num_shards": 4,
+      "n_images": 2746,
+      "n_fallback_views": 15,
+      "elapsed_sec": 296.318,
+      "container_wall_sec": 315.674,
+      "model_load_sec": 2.362,
+      "nvme_stage_sec": 16.636,
+      "decode_norm_sec": 259.114,
+      "gpu_infer_sec": 36.837,
+      "estimated_cost_usd": 0.2071,
+      "peak_vram_gb": 0.292,
+      "host_rss_gb": 5.043,
+      "expected_item_ids_sha256": "c267b986042c6b73cdf5c4eeab060ebb5a897a587fca0982f7c2ab01d29d794d",
+      "resumed_from_cache": false
+    },
+    {
+      "shard_idx": 1,
+      "num_shards": 4,
+      "n_images": 2746,
+      "n_fallback_views": 20,
+      "elapsed_sec": 301.784,
+      "container_wall_sec": 321.886,
+      "model_load_sec": 2.183,
+      "nvme_stage_sec": 17.55,
+      "decode_norm_sec": 263.389,
+      "gpu_infer_sec": 37.941,
+      "estimated_cost_usd": 0.21118,
+      "peak_vram_gb": 0.292,
+      "host_rss_gb": 5.052,
+      "expected_item_ids_sha256": "0d9cf53c3c40e3f82eb43cf22042a2a0099a372c62c4d132eae18566e89f9ed9",
+      "resumed_from_cache": false
+    },
+    {
+      "shard_idx": 2,
+      "num_shards": 4,
+      "n_images": 2745,
+      "n_fallback_views": 24,
+      "elapsed_sec": 291.744,
+      "container_wall_sec": 312.316,
+      "model_load_sec": 2.295,
+      "nvme_stage_sec": 17.96,
+      "decode_norm_sec": 256.909,
+      "gpu_infer_sec": 34.479,
+      "estimated_cost_usd": 0.2049,
+      "peak_vram_gb": 0.292,
+      "host_rss_gb": 5.052,
+      "expected_item_ids_sha256": "806476738eeffff7c65aa51167021a8eadf5f7ec314d2402cf4754b87ee5ba1f",
+      "resumed_from_cache": false
+    },
+    {
+      "shard_idx": 3,
+      "num_shards": 4,
+      "n_images": 2745,
+      "n_fallback_views": 21,
+      "elapsed_sec": 294.584,
+      "container_wall_sec": 315.141,
+      "model_load_sec": 2.339,
+      "nvme_stage_sec": 17.782,
+      "decode_norm_sec": 257.971,
+      "gpu_infer_sec": 36.231,
+      "estimated_cost_usd": 0.20675,
+      "peak_vram_gb": 0.292,
+      "host_rss_gb": 5.053,
+      "expected_item_ids_sha256": "faaec5f00588cf3bf9d36768170e7f5e4c0830ec84b1d3335b579ea701ebcf1a",
+      "resumed_from_cache": false
+    }
+  ],
+  "locked_files_sha256": {
+    "gmic_rsna_val_calib_image_scores.json": "a5f80bd496edc4338005c2c692f5ed43ee91c4132adf5be8a676ca28eed4dcfa",
+    "gmic_rsna_val_calib_image_scores.csv": "e8601950bdceed0e83cf67bbdd9c2695af74d353b6954716e35a829c098670b6",
+    "gmic_rsna_val_calib_case_scores.csv": "b6a9e44a119238d1ebf2d7c7e31126e8897bb0610d01e73bb4d81f076fe96354",
+    "gmic_rsna_val_calib_fallback_log.json": "591742a5203994efd3e1e1b41f91095e110d4d0548200e0233903e3332bfd190"
+  }
+}
