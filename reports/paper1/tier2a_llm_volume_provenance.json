@@ -1,0 +1,2334 @@
+{
+  "tier2a_volumes": {
+    "mistral-nemo-12b-volume": {
+      "repo_id": "mistralai/Mistral-Nemo-Instruct-2407",
+      "revision": "04d8a90549d23fc6bd7f642064003592df51e9b3",
+      "gated": false,
+      "private": false,
+      "license": "apache-2.0",
+      "access_req": "Public (no token required)",
+      "total_gib": 45.6545,
+      "n_files": 57,
+      "verified_exact_hf_tree_match": true,
+      "files": [
+        {
+          "path": "mistral-nemo-12b-it/.cache/huggingface/.gitignore",
+          "bytes": 1,
+          "mtime": 1793274389
+        },
+        {
+          "path": "mistral-nemo-12b-it/.cache/huggingface/CACHEDIR.TAG",
+          "bytes": 191,
+          "mtime": 1793274389
+        },
+        {
+          "path": "mistral-nemo-12b-it/.cache/huggingface/download/.gitattributes.lock",
+          "bytes": 0,
+          "mtime": 1793274389
+        },
+        {
+          "path": "mistral-nemo-12b-it/.cache/huggingface/download/.gitattributes.metadata",
+          "bytes": 101,
+          "mtime": 1793274389
+        },
+        {
+          "path": "mistral-nemo-12b-it/.cache/huggingface/download/README.md.lock",
+          "bytes": 0,
+          "mtime": 1793274389
+        },
+        {
+          "path": "mistral-nemo-12b-it/.cache/huggingface/download/README.md.metadata",
+          "bytes": 100,
+          "mtime": 1793274389
+        },
+        {
+          "path": "mistral-nemo-12b-it/.cache/huggingface/download/config.json.lock",
+          "bytes": 0,
+          "mtime": 1793274389
+        },
+        {
+          "path": "mistral-nemo-12b-it/.cache/huggingface/download/config.json.metadata",
+          "bytes": 101,
+          "mtime": 1793274389
+        },
+        {
+          "path": "mistral-nemo-12b-it/.cache/huggingface/download/consolidated.safetensors.lock",
+          "bytes": 0,
+          "mtime": 1793274389
+        },
+        {
+          "path": "mistral-nemo-12b-it/.cache/huggingface/download/consolidated.safetensors.metadata",
+          "bytes": 125,
+          "mtime": 1793274478
+        },
+        {
+          "path": "mistral-nemo-12b-it/.cache/huggingface/download/generation_config.json.lock",
+          "bytes": 0,
+          "mtime": 1793274389
+        },
+        {
+          "path": "mistral-nemo-12b-it/.cache/huggingface/download/generation_config.json.metadata",
+          "bytes": 101,
+          "mtime": 1793274389
+        },
+        {
+          "path": "mistral-nemo-12b-it/.cache/huggingface/download/merges.txt.lock",
+          "bytes": 0,
+          "mtime": 1793274389
+        },
+        {
+          "path": "mistral-nemo-12b-it/.cache/huggingface/download/merges.txt.metadata",
+          "bytes": 101,
+          "mtime": 1793274390
+        },
+        {
+          "path": "mistral-nemo-12b-it/.cache/huggingface/download/model-00001-of-00005.safetensors.lock",
+          "bytes": 0,
+          "mtime": 1793274389
+        },
+        {
+          "path": "mistral-nemo-12b-it/.cache/huggingface/download/model-00001-of-00005.safetensors.metadata",
+          "bytes": 125,
+          "mtime": 1793274410
+        },
+        {
+          "path": "mistral-nemo-12b-it/.cache/huggingface/download/model-00002-of-00005.safetensors.lock",
+          "bytes": 0,
+          "mtime": 1793274389
+        },
+        {
+          "path": "mistral-nemo-12b-it/.cache/huggingface/download/model-00002-of-00005.safetensors.metadata",
+          "bytes": 125,
+          "mtime": 1793274417
+        },
+        {
+          "path": "mistral-nemo-12b-it/.cache/huggingface/download/model-00003-of-00005.safetensors.lock",
+          "bytes": 0,
+          "mtime": 1793274389
+        },
+        {
+          "path": "mistral-nemo-12b-it/.cache/huggingface/download/model-00003-of-00005.safetensors.metadata",
+          "bytes": 125,
+          "mtime": 1793274455
+        },
+        {
+          "path": "mistral-nemo-12b-it/.cache/huggingface/download/model-00004-of-00005.safetensors.lock",
+          "bytes": 0,
+          "mtime": 1793274389
+        },
+        {
+          "path": "mistral-nemo-12b-it/.cache/huggingface/download/model-00004-of-00005.safetensors.metadata",
+          "bytes": 125,
+          "mtime": 1793274423
+        },
+        {
+          "path": "mistral-nemo-12b-it/.cache/huggingface/download/model-00005-of-00005.safetensors.lock",
+          "bytes": 0,
+          "mtime": 1793274389
+        },
+        {
+          "path": "mistral-nemo-12b-it/.cache/huggingface/download/model-00005-of-00005.safetensors.metadata",
+          "bytes": 125,
+          "mtime": 1793274453
+        },
+        {
+          "path": "mistral-nemo-12b-it/.cache/huggingface/download/model.safetensors.index.json.lock",
+          "bytes": 0,
+          "mtime": 1793274389
+        },
+        {
+          "path": "mistral-nemo-12b-it/.cache/huggingface/download/model.safetensors.index.json.metadata",
+          "bytes": 101,
+          "mtime": 1793274390
+        },
+        {
+          "path": "mistral-nemo-12b-it/.cache/huggingface/download/params.json.lock",
+          "bytes": 0,
+          "mtime": 1793274390
+        },
+        {
+          "path": "mistral-nemo-12b-it/.cache/huggingface/download/params.json.metadata",
+          "bytes": 101,
+          "mtime": 1793274390
+        },
+        {
+          "path": "mistral-nemo-12b-it/.cache/huggingface/download/special_tokens_map.json.lock",
+          "bytes": 0,
+          "mtime": 1793274390
+        },
+        {
+          "path": "mistral-nemo-12b-it/.cache/huggingface/download/special_tokens_map.json.metadata",
+          "bytes": 101,
+          "mtime": 1793274390
+        },
+        {
+          "path": "mistral-nemo-12b-it/.cache/huggingface/download/tekken.json.lock",
+          "bytes": 0,
+          "mtime": 1793274390
+        },
+        {
+          "path": "mistral-nemo-12b-it/.cache/huggingface/download/tekken.json.metadata",
+          "bytes": 125,
+          "mtime": 1793274404
+        },
+        {
+          "path": "mistral-nemo-12b-it/.cache/huggingface/download/tokenizer.json.lock",
+          "bytes": 0,
+          "mtime": 1793274390
+        },
+        {
+          "path": "mistral-nemo-12b-it/.cache/huggingface/download/tokenizer.json.metadata",
+          "bytes": 101,
+          "mtime": 1793274391
+        },
+        {
+          "path": "mistral-nemo-12b-it/.cache/huggingface/download/tokenizer_config.json.lock",
+          "bytes": 0,
+          "mtime": 1793274391
+        },
+        {
+          "path": "mistral-nemo-12b-it/.cache/huggingface/download/tokenizer_config.json.metadata",
+          "bytes": 101,
+          "mtime": 1793274391
+        },
+        {
+          "path": "mistral-nemo-12b-it/.cache/huggingface/download/vocab.json.lock",
+          "bytes": 0,
+          "mtime": 1793274391
+        },
+        {
+          "path": "mistral-nemo-12b-it/.cache/huggingface/download/vocab.json.metadata",
+          "bytes": 101,
+          "mtime": 1793274392
+        },
+        {
+          "path": "mistral-nemo-12b-it/.cache/huggingface/trees/04d8a90549d23fc6bd7f642064003592df51e9b3.json",
+          "bytes": 3387,
+          "mtime": 1793274389
+        },
+        {
+          "path": "mistral-nemo-12b-it/.gitattributes",
+          "bytes": 1567,
+          "mtime": 1793274389
+        },
+        {
+          "path": "mistral-nemo-12b-it/README.md",
+          "bytes": 10518,
+          "mtime": 1793274389
+        },
+        {
+          "path": "mistral-nemo-12b-it/config.json",
+          "bytes": 622,
+          "mtime": 1793274389
+        },
+        {
+          "path": "mistral-nemo-12b-it/consolidated.safetensors",
+          "bytes": 24495604224,
+          "mtime": 1793274478
+        },
+        {
+          "path": "mistral-nemo-12b-it/generation_config.json",
+          "bytes": 116,
+          "mtime": 1793274389
+        },
+        {
+          "path": "mistral-nemo-12b-it/merges.txt",
+          "bytes": 3127378,
+          "mtime": 1793274390
+        },
+        {
+          "path": "mistral-nemo-12b-it/model-00001-of-00005.safetensors",
+          "bytes": 4865522496,
+          "mtime": 1793274410
+        },
+        {
+          "path": "mistral-nemo-12b-it/model-00002-of-00005.safetensors",
+          "bytes": 4907529424,
+          "mtime": 1793274416
+        },
+        {
+          "path": "mistral-nemo-12b-it/model-00003-of-00005.safetensors",
+          "bytes": 4907529456,
+          "mtime": 1793274455
+        },
+        {
+          "path": "mistral-nemo-12b-it/model-00004-of-00005.safetensors",
+          "bytes": 4907529456,
+          "mtime": 1793274423
+        },
+        {
+          "path": "mistral-nemo-12b-it/model-00005-of-00005.safetensors",
+          "bytes": 4907496272,
+          "mtime": 1793274452
+        },
+        {
+          "path": "mistral-nemo-12b-it/model.safetensors.index.json",
+          "bytes": 29894,
+          "mtime": 1793274390
+        },
+        {
+          "path": "mistral-nemo-12b-it/params.json",
+          "bytes": 243,
+          "mtime": 1793274390
+        },
+        {
+          "path": "mistral-nemo-12b-it/special_tokens_map.json",
+          "bytes": 414,
+          "mtime": 1793274390
+        },
+        {
+          "path": "mistral-nemo-12b-it/tekken.json",
+          "bytes": 14801223,
+          "mtime": 1793274404
+        },
+        {
+          "path": "mistral-nemo-12b-it/tokenizer.json",
+          "bytes": 9264445,
+          "mtime": 1793274391
+        },
+        {
+          "path": "mistral-nemo-12b-it/tokenizer_config.json",
+          "bytes": 181297,
+          "mtime": 1793274391
+        },
+        {
+          "path": "mistral-nemo-12b-it/vocab.json",
+          "bytes": 2472536,
+          "mtime": 1793274392
+        }
+      ]
+    },
+    "llama-3.1-8b-volume": {
+      "repo_id": "meta-llama/Llama-3.1-8B-Instruct",
+      "revision": "0e9e39f249a16976918f6564b8830bc894c89659",
+      "gated": "manual",
+      "private": false,
+      "license": "llama3.1",
+      "access_req": "Gated manual (HF_TOKEN + accepted Meta Llama 3.1 license)",
+      "total_gib": 29.9258,
+      "n_files": 54,
+      "verified_exact_hf_tree_match": true,
+      "files": [
+        {
+          "path": "llama-3.1-8b-it/.cache/huggingface/.gitignore",
+          "bytes": 1,
+          "mtime": 1793267858
+        },
+        {
+          "path": "llama-3.1-8b-it/.cache/huggingface/CACHEDIR.TAG",
+          "bytes": 191,
+          "mtime": 1793267858
+        },
+        {
+          "path": "llama-3.1-8b-it/.cache/huggingface/download/.gitattributes.lock",
+          "bytes": 0,
+          "mtime": 1793267858
+        },
+        {
+          "path": "llama-3.1-8b-it/.cache/huggingface/download/.gitattributes.metadata",
+          "bytes": 99,
+          "mtime": 1793269298
+        },
+        {
+          "path": "llama-3.1-8b-it/.cache/huggingface/download/LICENSE.lock",
+          "bytes": 0,
+          "mtime": 1793267858
+        },
+        {
+          "path": "llama-3.1-8b-it/.cache/huggingface/download/LICENSE.metadata",
+          "bytes": 101,
+          "mtime": 1793267858
+        },
+        {
+          "path": "llama-3.1-8b-it/.cache/huggingface/download/README.md.lock",
+          "bytes": 0,
+          "mtime": 1793267858
+        },
+        {
+          "path": "llama-3.1-8b-it/.cache/huggingface/download/README.md.metadata",
+          "bytes": 101,
+          "mtime": 1793267858
+        },
+        {
+          "path": "llama-3.1-8b-it/.cache/huggingface/download/USE_POLICY.md.lock",
+          "bytes": 0,
+          "mtime": 1793267858
+        },
+        {
+          "path": "llama-3.1-8b-it/.cache/huggingface/download/USE_POLICY.md.metadata",
+          "bytes": 101,
+          "mtime": 1793269298
+        },
+        {
+          "path": "llama-3.1-8b-it/.cache/huggingface/download/config.json.lock",
+          "bytes": 0,
+          "mtime": 1793267858
+        },
+        {
+          "path": "llama-3.1-8b-it/.cache/huggingface/download/config.json.metadata",
+          "bytes": 101,
+          "mtime": 1793269298
+        },
+        {
+          "path": "llama-3.1-8b-it/.cache/huggingface/download/generation_config.json.lock",
+          "bytes": 0,
+          "mtime": 1793267858
+        },
+        {
+          "path": "llama-3.1-8b-it/.cache/huggingface/download/generation_config.json.metadata",
+          "bytes": 100,
+          "mtime": 1793269298
+        },
+        {
+          "path": "llama-3.1-8b-it/.cache/huggingface/download/model-00001-of-00004.safetensors.lock",
+          "bytes": 0,
+          "mtime": 1793267858
+        },
+        {
+          "path": "llama-3.1-8b-it/.cache/huggingface/download/model-00001-of-00004.safetensors.metadata",
+          "bytes": 124,
+          "mtime": 1793269390
+        },
+        {
+          "path": "llama-3.1-8b-it/.cache/huggingface/download/model-00002-of-00004.safetensors.lock",
+          "bytes": 0,
+          "mtime": 1793267858
+        },
+        {
+          "path": "llama-3.1-8b-it/.cache/huggingface/download/model-00002-of-00004.safetensors.metadata",
+          "bytes": 124,
+          "mtime": 1793269336
+        },
+        {
+          "path": "llama-3.1-8b-it/.cache/huggingface/download/model-00003-of-00004.safetensors.lock",
+          "bytes": 0,
+          "mtime": 1793267858
+        },
+        {
+          "path": "llama-3.1-8b-it/.cache/huggingface/download/model-00003-of-00004.safetensors.metadata",
+          "bytes": 125,
+          "mtime": 1793269348
+        },
+        {
+          "path": "llama-3.1-8b-it/.cache/huggingface/download/model-00004-of-00004.safetensors.lock",
+          "bytes": 0,
+          "mtime": 1793269298
+        },
+        {
+          "path": "llama-3.1-8b-it/.cache/huggingface/download/model-00004-of-00004.safetensors.metadata",
+          "bytes": 125,
+          "mtime": 1793269313
+        },
+        {
+          "path": "llama-3.1-8b-it/.cache/huggingface/download/model.safetensors.index.json.lock",
+          "bytes": 0,
+          "mtime": 1793269298
+        },
+        {
+          "path": "llama-3.1-8b-it/.cache/huggingface/download/model.safetensors.index.json.metadata",
+          "bytes": 100,
+          "mtime": 1793269299
+        },
+        {
+          "path": "llama-3.1-8b-it/.cache/huggingface/download/original/consolidated.00.pth.lock",
+          "bytes": 0,
+          "mtime": 1793269298
+        },
+        {
+          "path": "llama-3.1-8b-it/.cache/huggingface/download/original/consolidated.00.pth.metadata",
+          "bytes": 125,
+          "mtime": 1793269400
+        },
+        {
+          "path": "llama-3.1-8b-it/.cache/huggingface/download/original/params.json.lock",
+          "bytes": 0,
+          "mtime": 1793269298
+        },
+        {
+          "path": "llama-3.1-8b-it/.cache/huggingface/download/original/params.json.metadata",
+          "bytes": 101,
+          "mtime": 1793269299
+        },
+        {
+          "path": "llama-3.1-8b-it/.cache/huggingface/download/original/tokenizer.model.lock",
+          "bytes": 0,
+          "mtime": 1793269298
+        },
+        {
+          "path": "llama-3.1-8b-it/.cache/huggingface/download/original/tokenizer.model.metadata",
+          "bytes": 125,
+          "mtime": 1793269299
+        },
+        {
+          "path": "llama-3.1-8b-it/.cache/huggingface/download/special_tokens_map.json.lock",
+          "bytes": 0,
+          "mtime": 1793269299
+        },
+        {
+          "path": "llama-3.1-8b-it/.cache/huggingface/download/special_tokens_map.json.metadata",
+          "bytes": 101,
+          "mtime": 1793269299
+        },
+        {
+          "path": "llama-3.1-8b-it/.cache/huggingface/download/tokenizer.json.lock",
+          "bytes": 0,
+          "mtime": 1793269299
+        },
+        {
+          "path": "llama-3.1-8b-it/.cache/huggingface/download/tokenizer.json.metadata",
+          "bytes": 101,
+          "mtime": 1793269299
+        },
+        {
+          "path": "llama-3.1-8b-it/.cache/huggingface/download/tokenizer_config.json.lock",
+          "bytes": 0,
+          "mtime": 1793269299
+        },
+        {
+          "path": "llama-3.1-8b-it/.cache/huggingface/download/tokenizer_config.json.metadata",
+          "bytes": 100,
+          "mtime": 1793269299
+        },
+        {
+          "path": "llama-3.1-8b-it/.cache/huggingface/trees/0e9e39f249a16976918f6564b8830bc894c89659.json",
+          "bytes": 3084,
+          "mtime": 1793269298
+        },
+        {
+          "path": "llama-3.1-8b-it/.gitattributes",
+          "bytes": 1519,
+          "mtime": 1793269298
+        },
+        {
+          "path": "llama-3.1-8b-it/LICENSE",
+          "bytes": 7627,
+          "mtime": 1793267858
+        },
+        {
+          "path": "llama-3.1-8b-it/README.md",
+          "bytes": 44044,
+          "mtime": 1793267858
+        },
+        {
+          "path": "llama-3.1-8b-it/USE_POLICY.md",
+          "bytes": 4691,
+          "mtime": 1793269298
+        },
+        {
+          "path": "llama-3.1-8b-it/config.json",
+          "bytes": 855,
+          "mtime": 1793269298
+        },
+        {
+          "path": "llama-3.1-8b-it/generation_config.json",
+          "bytes": 184,
+          "mtime": 1793269298
+        },
+        {
+          "path": "llama-3.1-8b-it/model-00001-of-00004.safetensors",
+          "bytes": 4976698672,
+          "mtime": 1793269390
+        },
+        {
+          "path": "llama-3.1-8b-it/model-00002-of-00004.safetensors",
+          "bytes": 4999802720,
+          "mtime": 1793269336
+        },
+        {
+          "path": "llama-3.1-8b-it/model-00003-of-00004.safetensors",
+          "bytes": 4915916176,
+          "mtime": 1793269348
+        },
+        {
+          "path": "llama-3.1-8b-it/model-00004-of-00004.safetensors",
+          "bytes": 1168138808,
+          "mtime": 1793269313
+        },
+        {
+          "path": "llama-3.1-8b-it/model.safetensors.index.json",
+          "bytes": 23950,
+          "mtime": 1793269299
+        },
+        {
+          "path": "llama-3.1-8b-it/original/consolidated.00.pth",
+          "bytes": 16060617592,
+          "mtime": 1793269400
+        },
+        {
+          "path": "llama-3.1-8b-it/original/params.json",
+          "bytes": 199,
+          "mtime": 1793269299
+        },
+        {
+          "path": "llama-3.1-8b-it/original/tokenizer.model",
+          "bytes": 2183982,
+          "mtime": 1793269299
+        },
+        {
+          "path": "llama-3.1-8b-it/special_tokens_map.json",
+          "bytes": 296,
+          "mtime": 1793269299
+        },
+        {
+          "path": "llama-3.1-8b-it/tokenizer.json",
+          "bytes": 9085657,
+          "mtime": 1793269299
+        },
+        {
+          "path": "llama-3.1-8b-it/tokenizer_config.json",
+          "bytes": 55351,
+          "mtime": 1793269299
+        }
+      ]
+    },
+    "ministral-8b-volume": {
+      "repo_id": "mistralai/Ministral-8B-Instruct-2410",
+      "revision": "2f494a194c5b980dfb9772cb92d26cbb671fce5a",
+      "gated": false,
+      "private": false,
+      "license": "mrl-0.1",
+      "access_req": "Public HF download (MRL-0.1 license in card)",
+      "total_gib": 29.9065,
+      "n_files": 51,
+      "verified_exact_hf_tree_match": true,
+      "files": [
+        {
+          "path": "ministral-8b-it/.cache/huggingface/.gitignore",
+          "bytes": 1,
+          "mtime": 1793272352
+        },
+        {
+          "path": "ministral-8b-it/.cache/huggingface/CACHEDIR.TAG",
+          "bytes": 191,
+          "mtime": 1793272352
+        },
+        {
+          "path": "ministral-8b-it/.cache/huggingface/download/.gitattributes.lock",
+          "bytes": 0,
+          "mtime": 1793272352
+        },
+        {
+          "path": "ministral-8b-it/.cache/huggingface/download/.gitattributes.metadata",
+          "bytes": 101,
+          "mtime": 1793272352
+        },
+        {
+          "path": "ministral-8b-it/.cache/huggingface/download/README.md.lock",
+          "bytes": 0,
+          "mtime": 1793272352
+        },
+        {
+          "path": "ministral-8b-it/.cache/huggingface/download/README.md.metadata",
+          "bytes": 101,
+          "mtime": 1793272352
+        },
+        {
+          "path": "ministral-8b-it/.cache/huggingface/download/config.json.lock",
+          "bytes": 0,
+          "mtime": 1793272352
+        },
+        {
+          "path": "ministral-8b-it/.cache/huggingface/download/config.json.metadata",
+          "bytes": 101,
+          "mtime": 1793272352
+        },
+        {
+          "path": "ministral-8b-it/.cache/huggingface/download/consolidated.safetensors.lock",
+          "bytes": 0,
+          "mtime": 1793272352
+        },
+        {
+          "path": "ministral-8b-it/.cache/huggingface/download/consolidated.safetensors.metadata",
+          "bytes": 125,
+          "mtime": 1793272451
+        },
+        {
+          "path": "ministral-8b-it/.cache/huggingface/download/generation_config.json.lock",
+          "bytes": 0,
+          "mtime": 1793272352
+        },
+        {
+          "path": "ministral-8b-it/.cache/huggingface/download/generation_config.json.metadata",
+          "bytes": 99,
+          "mtime": 1793272352
+        },
+        {
+          "path": "ministral-8b-it/.cache/huggingface/download/model-00001-of-00004.safetensors.lock",
+          "bytes": 0,
+          "mtime": 1793272352
+        },
+        {
+          "path": "ministral-8b-it/.cache/huggingface/download/model-00001-of-00004.safetensors.metadata",
+          "bytes": 125,
+          "mtime": 1793272449
+        },
+        {
+          "path": "ministral-8b-it/.cache/huggingface/download/model-00002-of-00004.safetensors.lock",
+          "bytes": 0,
+          "mtime": 1793272352
+        },
+        {
+          "path": "ministral-8b-it/.cache/huggingface/download/model-00002-of-00004.safetensors.metadata",
+          "bytes": 125,
+          "mtime": 1793272411
+        },
+        {
+          "path": "ministral-8b-it/.cache/huggingface/download/model-00003-of-00004.safetensors.lock",
+          "bytes": 0,
+          "mtime": 1793272352
+        },
+        {
+          "path": "ministral-8b-it/.cache/huggingface/download/model-00003-of-00004.safetensors.metadata",
+          "bytes": 123,
+          "mtime": 1793272423
+        },
+        {
+          "path": "ministral-8b-it/.cache/huggingface/download/model-00004-of-00004.safetensors.lock",
+          "bytes": 0,
+          "mtime": 1793272352
+        },
+        {
+          "path": "ministral-8b-it/.cache/huggingface/download/model-00004-of-00004.safetensors.metadata",
+          "bytes": 125,
+          "mtime": 1793272369
+        },
+        {
+          "path": "ministral-8b-it/.cache/huggingface/download/model.safetensors.index.json.lock",
+          "bytes": 0,
+          "mtime": 1793272352
+        },
+        {
+          "path": "ministral-8b-it/.cache/huggingface/download/model.safetensors.index.json.metadata",
+          "bytes": 101,
+          "mtime": 1793272353
+        },
+        {
+          "path": "ministral-8b-it/.cache/huggingface/download/params.json.lock",
+          "bytes": 0,
+          "mtime": 1793272352
+        },
+        {
+          "path": "ministral-8b-it/.cache/huggingface/download/params.json.metadata",
+          "bytes": 101,
+          "mtime": 1793272353
+        },
+        {
+          "path": "ministral-8b-it/.cache/huggingface/download/passkey_example.json.lock",
+          "bytes": 0,
+          "mtime": 1793272352
+        },
+        {
+          "path": "ministral-8b-it/.cache/huggingface/download/passkey_example.json.metadata",
+          "bytes": 101,
+          "mtime": 1793272353
+        },
+        {
+          "path": "ministral-8b-it/.cache/huggingface/download/special_tokens_map.json.lock",
+          "bytes": 0,
+          "mtime": 1793272353
+        },
+        {
+          "path": "ministral-8b-it/.cache/huggingface/download/special_tokens_map.json.metadata",
+          "bytes": 101,
+          "mtime": 1793272353
+        },
+        {
+          "path": "ministral-8b-it/.cache/huggingface/download/tekken.json.lock",
+          "bytes": 0,
+          "mtime": 1793272353
+        },
+        {
+          "path": "ministral-8b-it/.cache/huggingface/download/tekken.json.metadata",
+          "bytes": 125,
+          "mtime": 1793272366
+        },
+        {
+          "path": "ministral-8b-it/.cache/huggingface/download/tokenizer.json.lock",
+          "bytes": 0,
+          "mtime": 1793272353
+        },
+        {
+          "path": "ministral-8b-it/.cache/huggingface/download/tokenizer.json.metadata",
+          "bytes": 125,
+          "mtime": 1793272367
+        },
+        {
+          "path": "ministral-8b-it/.cache/huggingface/download/tokenizer_config.json.lock",
+          "bytes": 0,
+          "mtime": 1793272353
+        },
+        {
+          "path": "ministral-8b-it/.cache/huggingface/download/tokenizer_config.json.metadata",
+          "bytes": 101,
+          "mtime": 1793272353
+        },
+        {
+          "path": "ministral-8b-it/.cache/huggingface/trees/2f494a194c5b980dfb9772cb92d26cbb671fce5a.json",
+          "bytes": 3171,
+          "mtime": 1793272352
+        },
+        {
+          "path": "ministral-8b-it/.gitattributes",
+          "bytes": 1618,
+          "mtime": 1793272352
+        },
+        {
+          "path": "ministral-8b-it/README.md",
+          "bytes": 29359,
+          "mtime": 1793272352
+        },
+        {
+          "path": "ministral-8b-it/config.json",
+          "bytes": 1412,
+          "mtime": 1793272352
+        },
+        {
+          "path": "ministral-8b-it/consolidated.safetensors",
+          "bytes": 16039651824,
+          "mtime": 1793272451
+        },
+        {
+          "path": "ministral-8b-it/generation_config.json",
+          "bytes": 116,
+          "mtime": 1793272352
+        },
+        {
+          "path": "ministral-8b-it/model-00001-of-00004.safetensors",
+          "bytes": 4983007904,
+          "mtime": 1793272449
+        },
+        {
+          "path": "ministral-8b-it/model-00002-of-00004.safetensors",
+          "bytes": 4999836776,
+          "mtime": 1793272411
+        },
+        {
+          "path": "ministral-8b-it/model-00003-of-00004.safetensors",
+          "bytes": 4983067960,
+          "mtime": 1793272423
+        },
+        {
+          "path": "ministral-8b-it/model-00004-of-00004.safetensors",
+          "bytes": 1073741952,
+          "mtime": 1793272368
+        },
+        {
+          "path": "ministral-8b-it/model.safetensors.index.json",
+          "bytes": 26922,
+          "mtime": 1793272353
+        },
+        {
+          "path": "ministral-8b-it/params.json",
+          "bytes": 296,
+          "mtime": 1793272353
+        },
+        {
+          "path": "ministral-8b-it/passkey_example.json",
+          "bytes": 406397,
+          "mtime": 1793272353
+        },
+        {
+          "path": "ministral-8b-it/special_tokens_map.json",
+          "bytes": 414,
+          "mtime": 1793272353
+        },
+        {
+          "path": "ministral-8b-it/tekken.json",
+          "bytes": 14801223,
+          "mtime": 1793272366
+        },
+        {
+          "path": "ministral-8b-it/tokenizer.json",
+          "bytes": 17078136,
+          "mtime": 1793272366
+        },
+        {
+          "path": "ministral-8b-it/tokenizer_config.json",
+          "bytes": 181258,
+          "mtime": 1793272353
+        }
+      ]
+    },
+    "gemma-2-9b-volume": {
+      "repo_id": "google/gemma-2-9b-it",
+      "revision": "11c9b309abf73637e4b6f9a3fa1e92e615547819",
+      "gated": "manual",
+      "private": false,
+      "license": "gemma",
+      "access_req": "Gated manual (HF_TOKEN + accepted Google Gemma license)",
+      "total_gib": 17.243,
+      "n_files": 45,
+      "verified_exact_hf_tree_match": true,
+      "files": [
+        {
+          "path": "gemma-2-9b-it/.cache/huggingface/.gitignore",
+          "bytes": 1,
+          "mtime": 1793267599
+        },
+        {
+          "path": "gemma-2-9b-it/.cache/huggingface/CACHEDIR.TAG",
+          "bytes": 191,
+          "mtime": 1793267599
+        },
+        {
+          "path": "gemma-2-9b-it/.cache/huggingface/download/.gitattributes.lock",
+          "bytes": 0,
+          "mtime": 1793267599
+        },
+        {
+          "path": "gemma-2-9b-it/.cache/huggingface/download/.gitattributes.metadata",
+          "bytes": 101,
+          "mtime": 1793267693
+        },
+        {
+          "path": "gemma-2-9b-it/.cache/huggingface/download/README.md.lock",
+          "bytes": 0,
+          "mtime": 1793267599
+        },
+        {
+          "path": "gemma-2-9b-it/.cache/huggingface/download/README.md.metadata",
+          "bytes": 101,
+          "mtime": 1793267599
+        },
+        {
+          "path": "gemma-2-9b-it/.cache/huggingface/download/config.json.lock",
+          "bytes": 0,
+          "mtime": 1793267599
+        },
+        {
+          "path": "gemma-2-9b-it/.cache/huggingface/download/config.json.metadata",
+          "bytes": 101,
+          "mtime": 1793267693
+        },
+        {
+          "path": "gemma-2-9b-it/.cache/huggingface/download/generation_config.json.lock",
+          "bytes": 0,
+          "mtime": 1793267599
+        },
+        {
+          "path": "gemma-2-9b-it/.cache/huggingface/download/generation_config.json.metadata",
+          "bytes": 101,
+          "mtime": 1793267693
+        },
+        {
+          "path": "gemma-2-9b-it/.cache/huggingface/download/model-00001-of-00004.safetensors.lock",
+          "bytes": 0,
+          "mtime": 1793267599
+        },
+        {
+          "path": "gemma-2-9b-it/.cache/huggingface/download/model-00001-of-00004.safetensors.metadata",
+          "bytes": 125,
+          "mtime": 1793267728
+        },
+        {
+          "path": "gemma-2-9b-it/.cache/huggingface/download/model-00002-of-00004.safetensors.lock",
+          "bytes": 0,
+          "mtime": 1793267599
+        },
+        {
+          "path": "gemma-2-9b-it/.cache/huggingface/download/model-00002-of-00004.safetensors.metadata",
+          "bytes": 123,
+          "mtime": 1793267744
+        },
+        {
+          "path": "gemma-2-9b-it/.cache/huggingface/download/model-00003-of-00004.safetensors.lock",
+          "bytes": 0,
+          "mtime": 1793267599
+        },
+        {
+          "path": "gemma-2-9b-it/.cache/huggingface/download/model-00003-of-00004.safetensors.metadata",
+          "bytes": 125,
+          "mtime": 1793267750
+        },
+        {
+          "path": "gemma-2-9b-it/.cache/huggingface/download/model-00004-of-00004.safetensors.lock",
+          "bytes": 0,
+          "mtime": 1793267599
+        },
+        {
+          "path": "gemma-2-9b-it/.cache/huggingface/download/model-00004-of-00004.safetensors.metadata",
+          "bytes": 125,
+          "mtime": 1793267733
+        },
+        {
+          "path": "gemma-2-9b-it/.cache/huggingface/download/model.safetensors.index.json.lock",
+          "bytes": 0,
+          "mtime": 1793267599
+        },
+        {
+          "path": "gemma-2-9b-it/.cache/huggingface/download/model.safetensors.index.json.metadata",
+          "bytes": 101,
+          "mtime": 1793267693
+        },
+        {
+          "path": "gemma-2-9b-it/.cache/huggingface/download/special_tokens_map.json.lock",
+          "bytes": 0,
+          "mtime": 1793267693
+        },
+        {
+          "path": "gemma-2-9b-it/.cache/huggingface/download/special_tokens_map.json.metadata",
+          "bytes": 100,
+          "mtime": 1793267693
+        },
+        {
+          "path": "gemma-2-9b-it/.cache/huggingface/download/tokenizer.json.lock",
+          "bytes": 0,
+          "mtime": 1793267693
+        },
+        {
+          "path": "gemma-2-9b-it/.cache/huggingface/download/tokenizer.json.metadata",
+          "bytes": 125,
+          "mtime": 1793267694
+        },
+        {
+          "path": "gemma-2-9b-it/.cache/huggingface/download/tokenizer.model.lock",
+          "bytes": 0,
+          "mtime": 1793267693
+        },
+        {
+          "path": "gemma-2-9b-it/.cache/huggingface/download/tokenizer.model.metadata",
+          "bytes": 124,
+          "mtime": 1793267694
+        },
+        {
+          "path": "gemma-2-9b-it/.cache/huggingface/download/tokenizer_config.json.lock",
+          "bytes": 0,
+          "mtime": 1793267693
+        },
+        {
+          "path": "gemma-2-9b-it/.cache/huggingface/download/tokenizer_config.json.metadata",
+          "bytes": 101,
+          "mtime": 1793267693
+        },
+        {
+          "path": "gemma-2-9b-it/.cache/huggingface/download/transformers/transformers-4.42.0.dev0-py3-none-any.whl.lock",
+          "bytes": 0,
+          "mtime": 1793267693
+        },
+        {
+          "path": "gemma-2-9b-it/.cache/huggingface/download/transformers/transformers-4.42.0.dev0-py3-none-any.whl.metadata",
+          "bytes": 125,
+          "mtime": 1793267694
+        },
+        {
+          "path": "gemma-2-9b-it/.cache/huggingface/trees/11c9b309abf73637e4b6f9a3fa1e92e615547819.json",
+          "bytes": 2987,
+          "mtime": 1793267693
+        },
+        {
+          "path": "gemma-2-9b-it/.gitattributes",
+          "bytes": 1661,
+          "mtime": 1793267693
+        },
+        {
+          "path": "gemma-2-9b-it/README.md",
+          "bytes": 25789,
+          "mtime": 1793267599
+        },
+        {
+          "path": "gemma-2-9b-it/config.json",
+          "bytes": 857,
+          "mtime": 1793267693
+        },
+        {
+          "path": "gemma-2-9b-it/generation_config.json",
+          "bytes": 173,
+          "mtime": 1793267693
+        },
+        {
+          "path": "gemma-2-9b-it/model-00001-of-00004.safetensors",
+          "bytes": 4903351912,
+          "mtime": 1793267728
+        },
+        {
+          "path": "gemma-2-9b-it/model-00002-of-00004.safetensors",
+          "bytes": 4947570872,
+          "mtime": 1793267744
+        },
+        {
+          "path": "gemma-2-9b-it/model-00003-of-00004.safetensors",
+          "bytes": 4962221464,
+          "mtime": 1793267750
+        },
+        {
+          "path": "gemma-2-9b-it/model-00004-of-00004.safetensors",
+          "bytes": 3670322200,
+          "mtime": 1793267733
+        },
+        {
+          "path": "gemma-2-9b-it/model.safetensors.index.json",
+          "bytes": 39072,
+          "mtime": 1793267693
+        },
+        {
+          "path": "gemma-2-9b-it/special_tokens_map.json",
+          "bytes": 636,
+          "mtime": 1793267693
+        },
+        {
+          "path": "gemma-2-9b-it/tokenizer.json",
+          "bytes": 17525357,
+          "mtime": 1793267694
+        },
+        {
+          "path": "gemma-2-9b-it/tokenizer.model",
+          "bytes": 4241003,
+          "mtime": 1793267694
+        },
+        {
+          "path": "gemma-2-9b-it/tokenizer_config.json",
+          "bytes": 46996,
+          "mtime": 1793267693
+        },
+        {
+          "path": "gemma-2-9b-it/transformers/transformers-4.42.0.dev0-py3-none-any.whl",
+          "bytes": 9205686,
+          "mtime": 1793267694
+        }
+      ]
+    },
+    "qwen-7b-volume": {
+      "repo_id": "Qwen/Qwen2.5-7B-Instruct",
+      "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+      "gated": false,
+      "private": false,
+      "license": "apache-2.0",
+      "access_req": "Public (no token required)",
+      "total_gib": 14.196,
+      "n_files": 45,
+      "verified_exact_hf_tree_match": true,
+      "files": [
+        {
+          "path": "qwen-7b-it/.cache/huggingface/.gitignore",
+          "bytes": 1,
+          "mtime": 1793274742
+        },
+        {
+          "path": "qwen-7b-it/.cache/huggingface/CACHEDIR.TAG",
+          "bytes": 191,
+          "mtime": 1793274741
+        },
+        {
+          "path": "qwen-7b-it/.cache/huggingface/download/.gitattributes.lock",
+          "bytes": 0,
+          "mtime": 1793274742
+        },
+        {
+          "path": "qwen-7b-it/.cache/huggingface/download/.gitattributes.metadata",
+          "bytes": 101,
+          "mtime": 1793274742
+        },
+        {
+          "path": "qwen-7b-it/.cache/huggingface/download/LICENSE.lock",
+          "bytes": 0,
+          "mtime": 1793274742
+        },
+        {
+          "path": "qwen-7b-it/.cache/huggingface/download/LICENSE.metadata",
+          "bytes": 101,
+          "mtime": 1793274742
+        },
+        {
+          "path": "qwen-7b-it/.cache/huggingface/download/README.md.lock",
+          "bytes": 0,
+          "mtime": 1793274741
+        },
+        {
+          "path": "qwen-7b-it/.cache/huggingface/download/README.md.metadata",
+          "bytes": 100,
+          "mtime": 1793274742
+        },
+        {
+          "path": "qwen-7b-it/.cache/huggingface/download/config.json.lock",
+          "bytes": 0,
+          "mtime": 1793274741
+        },
+        {
+          "path": "qwen-7b-it/.cache/huggingface/download/config.json.metadata",
+          "bytes": 101,
+          "mtime": 1793274742
+        },
+        {
+          "path": "qwen-7b-it/.cache/huggingface/download/generation_config.json.lock",
+          "bytes": 0,
+          "mtime": 1793274742
+        },
+        {
+          "path": "qwen-7b-it/.cache/huggingface/download/generation_config.json.metadata",
+          "bytes": 101,
+          "mtime": 1793274742
+        },
+        {
+          "path": "qwen-7b-it/.cache/huggingface/download/merges.txt.lock",
+          "bytes": 0,
+          "mtime": 1793274742
+        },
+        {
+          "path": "qwen-7b-it/.cache/huggingface/download/merges.txt.metadata",
+          "bytes": 100,
+          "mtime": 1793274742
+        },
+        {
+          "path": "qwen-7b-it/.cache/huggingface/download/model-00001-of-00004.safetensors.lock",
+          "bytes": 0,
+          "mtime": 1793274741
+        },
+        {
+          "path": "qwen-7b-it/.cache/huggingface/download/model-00001-of-00004.safetensors.metadata",
+          "bytes": 125,
+          "mtime": 1793274800
+        },
+        {
+          "path": "qwen-7b-it/.cache/huggingface/download/model-00002-of-00004.safetensors.lock",
+          "bytes": 0,
+          "mtime": 1793274741
+        },
+        {
+          "path": "qwen-7b-it/.cache/huggingface/download/model-00002-of-00004.safetensors.metadata",
+          "bytes": 124,
+          "mtime": 1793274791
+        },
+        {
+          "path": "qwen-7b-it/.cache/huggingface/download/model-00003-of-00004.safetensors.lock",
+          "bytes": 0,
+          "mtime": 1793274742
+        },
+        {
+          "path": "qwen-7b-it/.cache/huggingface/download/model-00003-of-00004.safetensors.metadata",
+          "bytes": 125,
+          "mtime": 1793274772
+        },
+        {
+          "path": "qwen-7b-it/.cache/huggingface/download/model-00004-of-00004.safetensors.lock",
+          "bytes": 0,
+          "mtime": 1793274742
+        },
+        {
+          "path": "qwen-7b-it/.cache/huggingface/download/model-00004-of-00004.safetensors.metadata",
+          "bytes": 125,
+          "mtime": 1793274803
+        },
+        {
+          "path": "qwen-7b-it/.cache/huggingface/download/model.safetensors.index.json.lock",
+          "bytes": 0,
+          "mtime": 1793274742
+        },
+        {
+          "path": "qwen-7b-it/.cache/huggingface/download/model.safetensors.index.json.metadata",
+          "bytes": 100,
+          "mtime": 1793274742
+        },
+        {
+          "path": "qwen-7b-it/.cache/huggingface/download/tokenizer.json.lock",
+          "bytes": 0,
+          "mtime": 1793274742
+        },
+        {
+          "path": "qwen-7b-it/.cache/huggingface/download/tokenizer.json.metadata",
+          "bytes": 101,
+          "mtime": 1793274742
+        },
+        {
+          "path": "qwen-7b-it/.cache/huggingface/download/tokenizer_config.json.lock",
+          "bytes": 0,
+          "mtime": 1793274742
+        },
+        {
+          "path": "qwen-7b-it/.cache/huggingface/download/tokenizer_config.json.metadata",
+          "bytes": 101,
+          "mtime": 1793274742
+        },
+        {
+          "path": "qwen-7b-it/.cache/huggingface/download/vocab.json.lock",
+          "bytes": 0,
+          "mtime": 1793274742
+        },
+        {
+          "path": "qwen-7b-it/.cache/huggingface/download/vocab.json.metadata",
+          "bytes": 101,
+          "mtime": 1793274742
+        },
+        {
+          "path": "qwen-7b-it/.cache/huggingface/trees/a09a35458c702b33eeacc393d103063234e8bc28.json",
+          "bytes": 2344,
+          "mtime": 1793274741
+        },
+        {
+          "path": "qwen-7b-it/.gitattributes",
+          "bytes": 1519,
+          "mtime": 1793274742
+        },
+        {
+          "path": "qwen-7b-it/LICENSE",
+          "bytes": 11343,
+          "mtime": 1793274742
+        },
+        {
+          "path": "qwen-7b-it/README.md",
+          "bytes": 6240,
+          "mtime": 1793274742
+        },
+        {
+          "path": "qwen-7b-it/config.json",
+          "bytes": 663,
+          "mtime": 1793274742
+        },
+        {
+          "path": "qwen-7b-it/generation_config.json",
+          "bytes": 243,
+          "mtime": 1793274742
+        },
+        {
+          "path": "qwen-7b-it/merges.txt",
+          "bytes": 1671839,
+          "mtime": 1793274742
+        },
+        {
+          "path": "qwen-7b-it/model-00001-of-00004.safetensors",
+          "bytes": 3945441440,
+          "mtime": 1793274800
+        },
+        {
+          "path": "qwen-7b-it/model-00002-of-00004.safetensors",
+          "bytes": 3864726352,
+          "mtime": 1793274791
+        },
+        {
+          "path": "qwen-7b-it/model-00003-of-00004.safetensors",
+          "bytes": 3864726424,
+          "mtime": 1793274770
+        },
+        {
+          "path": "qwen-7b-it/model-00004-of-00004.safetensors",
+          "bytes": 3556377672,
+          "mtime": 1793274803
+        },
+        {
+          "path": "qwen-7b-it/model.safetensors.index.json",
+          "bytes": 27752,
+          "mtime": 1793274742
+        },
+        {
+          "path": "qwen-7b-it/tokenizer.json",
+          "bytes": 7031645,
+          "mtime": 1793274742
+        },
+        {
+          "path": "qwen-7b-it/tokenizer_config.json",
+          "bytes": 7305,
+          "mtime": 1793274742
+        },
+        {
+          "path": "qwen-7b-it/vocab.json",
+          "bytes": 2776833,
+          "mtime": 1793274742
+        }
+      ]
+    },
+    "banglallm-qwen-3b-volume": {
+      "repo_id": "BanglaLLM/Bangla-s1k-qwen-2.5-3B-Instruct",
+      "revision": "c82816421594d2cbd8ff2246941c593382cab4b6",
+      "gated": false,
+      "private": false,
+      "license": "other",
+      "access_req": "Public (no token required)",
+      "total_gib": 12.6702,
+      "n_files": 51,
+      "verified_exact_hf_tree_match": true,
+      "files": [
+        {
+          "path": "banglallm-qwen-3b-it/.cache/huggingface/.gitignore",
+          "bytes": 1,
+          "mtime": 1793295698
+        },
+        {
+          "path": "banglallm-qwen-3b-it/.cache/huggingface/CACHEDIR.TAG",
+          "bytes": 191,
+          "mtime": 1793295698
+        },
+        {
+          "path": "banglallm-qwen-3b-it/.cache/huggingface/download/.gitattributes.lock",
+          "bytes": 0,
+          "mtime": 1793295698
+        },
+        {
+          "path": "banglallm-qwen-3b-it/.cache/huggingface/download/.gitattributes.metadata",
+          "bytes": 100,
+          "mtime": 1793295699
+        },
+        {
+          "path": "banglallm-qwen-3b-it/.cache/huggingface/download/README.md.lock",
+          "bytes": 0,
+          "mtime": 1793295698
+        },
+        {
+          "path": "banglallm-qwen-3b-it/.cache/huggingface/download/README.md.metadata",
+          "bytes": 101,
+          "mtime": 1793295698
+        },
+        {
+          "path": "banglallm-qwen-3b-it/.cache/huggingface/download/added_tokens.json.lock",
+          "bytes": 0,
+          "mtime": 1793295698
+        },
+        {
+          "path": "banglallm-qwen-3b-it/.cache/huggingface/download/added_tokens.json.metadata",
+          "bytes": 101,
+          "mtime": 1793295698
+        },
+        {
+          "path": "banglallm-qwen-3b-it/.cache/huggingface/download/config.json.lock",
+          "bytes": 0,
+          "mtime": 1793295698
+        },
+        {
+          "path": "banglallm-qwen-3b-it/.cache/huggingface/download/config.json.metadata",
+          "bytes": 101,
+          "mtime": 1793295698
+        },
+        {
+          "path": "banglallm-qwen-3b-it/.cache/huggingface/download/generation_config.json.lock",
+          "bytes": 0,
+          "mtime": 1793295698
+        },
+        {
+          "path": "banglallm-qwen-3b-it/.cache/huggingface/download/generation_config.json.metadata",
+          "bytes": 101,
+          "mtime": 1793295698
+        },
+        {
+          "path": "banglallm-qwen-3b-it/.cache/huggingface/download/merges.txt.lock",
+          "bytes": 0,
+          "mtime": 1793295698
+        },
+        {
+          "path": "banglallm-qwen-3b-it/.cache/huggingface/download/merges.txt.metadata",
+          "bytes": 101,
+          "mtime": 1793295698
+        },
+        {
+          "path": "banglallm-qwen-3b-it/.cache/huggingface/download/model-00001-of-00003.safetensors.lock",
+          "bytes": 0,
+          "mtime": 1793295698
+        },
+        {
+          "path": "banglallm-qwen-3b-it/.cache/huggingface/download/model-00001-of-00003.safetensors.metadata",
+          "bytes": 124,
+          "mtime": 1793295739
+        },
+        {
+          "path": "banglallm-qwen-3b-it/.cache/huggingface/download/model-00002-of-00003.safetensors.lock",
+          "bytes": 0,
+          "mtime": 1793295698
+        },
+        {
+          "path": "banglallm-qwen-3b-it/.cache/huggingface/download/model-00002-of-00003.safetensors.metadata",
+          "bytes": 125,
+          "mtime": 1793295738
+        },
+        {
+          "path": "banglallm-qwen-3b-it/.cache/huggingface/download/model-00003-of-00003.safetensors.lock",
+          "bytes": 0,
+          "mtime": 1793295698
+        },
+        {
+          "path": "banglallm-qwen-3b-it/.cache/huggingface/download/model-00003-of-00003.safetensors.metadata",
+          "bytes": 125,
+          "mtime": 1793295736
+        },
+        {
+          "path": "banglallm-qwen-3b-it/.cache/huggingface/download/model.safetensors.index.json.lock",
+          "bytes": 0,
+          "mtime": 1793295698
+        },
+        {
+          "path": "banglallm-qwen-3b-it/.cache/huggingface/download/model.safetensors.index.json.metadata",
+          "bytes": 101,
+          "mtime": 1793295699
+        },
+        {
+          "path": "banglallm-qwen-3b-it/.cache/huggingface/download/runs/Mar08_17-42-05_23561d02a991/events.out.tfevents.1741455770.23561d02a991.15302.0.lock",
+          "bytes": 0,
+          "mtime": 1793295698
+        },
+        {
+          "path": "banglallm-qwen-3b-it/.cache/huggingface/download/runs/Mar08_17-42-05_23561d02a991/events.out.tfevents.1741455770.23561d02a991.15302.0.metadata",
+          "bytes": 125,
+          "mtime": 1793295699
+        },
+        {
+          "path": "banglallm-qwen-3b-it/.cache/huggingface/download/special_tokens_map.json.lock",
+          "bytes": 0,
+          "mtime": 1793295698
+        },
+        {
+          "path": "banglallm-qwen-3b-it/.cache/huggingface/download/special_tokens_map.json.metadata",
+          "bytes": 101,
+          "mtime": 1793295699
+        },
+        {
+          "path": "banglallm-qwen-3b-it/.cache/huggingface/download/tokenizer.json.lock",
+          "bytes": 0,
+          "mtime": 1793295698
+        },
+        {
+          "path": "banglallm-qwen-3b-it/.cache/huggingface/download/tokenizer.json.metadata",
+          "bytes": 125,
+          "mtime": 1793295703
+        },
+        {
+          "path": "banglallm-qwen-3b-it/.cache/huggingface/download/tokenizer_config.json.lock",
+          "bytes": 0,
+          "mtime": 1793295699
+        },
+        {
+          "path": "banglallm-qwen-3b-it/.cache/huggingface/download/tokenizer_config.json.metadata",
+          "bytes": 100,
+          "mtime": 1793295699
+        },
+        {
+          "path": "banglallm-qwen-3b-it/.cache/huggingface/download/training_args.bin.lock",
+          "bytes": 0,
+          "mtime": 1793295699
+        },
+        {
+          "path": "banglallm-qwen-3b-it/.cache/huggingface/download/training_args.bin.metadata",
+          "bytes": 125,
+          "mtime": 1793295699
+        },
+        {
+          "path": "banglallm-qwen-3b-it/.cache/huggingface/download/vocab.json.lock",
+          "bytes": 0,
+          "mtime": 1793295699
+        },
+        {
+          "path": "banglallm-qwen-3b-it/.cache/huggingface/download/vocab.json.metadata",
+          "bytes": 101,
+          "mtime": 1793295699
+        },
+        {
+          "path": "banglallm-qwen-3b-it/.cache/huggingface/trees/c82816421594d2cbd8ff2246941c593382cab4b6.json",
+          "bytes": 2992,
+          "mtime": 1793295698
+        },
+        {
+          "path": "banglallm-qwen-3b-it/.gitattributes",
+          "bytes": 1570,
+          "mtime": 1793295698
+        },
+        {
+          "path": "banglallm-qwen-3b-it/README.md",
+          "bytes": 1819,
+          "mtime": 1793295698
+        },
+        {
+          "path": "banglallm-qwen-3b-it/added_tokens.json",
+          "bytes": 605,
+          "mtime": 1793295698
+        },
+        {
+          "path": "banglallm-qwen-3b-it/config.json",
+          "bytes": 730,
+          "mtime": 1793295698
+        },
+        {
+          "path": "banglallm-qwen-3b-it/generation_config.json",
+          "bytes": 243,
+          "mtime": 1793295698
+        },
+        {
+          "path": "banglallm-qwen-3b-it/merges.txt",
+          "bytes": 1671853,
+          "mtime": 1793295698
+        },
+        {
+          "path": "banglallm-qwen-3b-it/model-00001-of-00003.safetensors",
+          "bytes": 4982131536,
+          "mtime": 1793295739
+        },
+        {
+          "path": "banglallm-qwen-3b-it/model-00002-of-00003.safetensors",
+          "bytes": 4932949336,
+          "mtime": 1793295738
+        },
+        {
+          "path": "banglallm-qwen-3b-it/model-00003-of-00003.safetensors",
+          "bytes": 3673383040,
+          "mtime": 1793295736
+        },
+        {
+          "path": "banglallm-qwen-3b-it/model.safetensors.index.json",
+          "bytes": 35640,
+          "mtime": 1793295698
+        },
+        {
+          "path": "banglallm-qwen-3b-it/runs/Mar08_17-42-05_23561d02a991/events.out.tfevents.1741455770.23561d02a991.15302.0",
+          "bytes": 137255,
+          "mtime": 1793295699
+        },
+        {
+          "path": "banglallm-qwen-3b-it/special_tokens_map.json",
+          "bytes": 613,
+          "mtime": 1793295699
+        },
+        {
+          "path": "banglallm-qwen-3b-it/tokenizer.json",
+          "bytes": 11421996,
+          "mtime": 1793295703
+        },
+        {
+          "path": "banglallm-qwen-3b-it/tokenizer_config.json",
+          "bytes": 7306,
+          "mtime": 1793295699
+        },
+        {
+          "path": "banglallm-qwen-3b-it/training_args.bin",
+          "bytes": 5688,
+          "mtime": 1793295699
+        },
+        {
+          "path": "banglallm-qwen-3b-it/vocab.json",
+          "bytes": 2776833,
+          "mtime": 1793295699
+        }
+      ]
+    },
+    "ministral-3b-volume": {
+      "repo_id": "mistralai/Ministral-3-3B-Instruct-2512",
+      "revision": "b35d4dfe56c142746f54dbd64f579faab2744308",
+      "gated": false,
+      "private": false,
+      "license": "apache-2.0",
+      "access_req": "Public (no token required)",
+      "total_gib": 8.734,
+      "n_files": 42,
+      "verified_exact_hf_tree_match": true,
+      "files": [
+        {
+          "path": "ministral-3b-it/.cache/huggingface/.gitignore",
+          "bytes": 1,
+          "mtime": 1793272344
+        },
+        {
+          "path": "ministral-3b-it/.cache/huggingface/CACHEDIR.TAG",
+          "bytes": 191,
+          "mtime": 1793272344
+        },
+        {
+          "path": "ministral-3b-it/.cache/huggingface/download/.gitattributes.lock",
+          "bytes": 0,
+          "mtime": 1793272344
+        },
+        {
+          "path": "ministral-3b-it/.cache/huggingface/download/.gitattributes.metadata",
+          "bytes": 101,
+          "mtime": 1793272344
+        },
+        {
+          "path": "ministral-3b-it/.cache/huggingface/download/README.md.lock",
+          "bytes": 0,
+          "mtime": 1793272344
+        },
+        {
+          "path": "ministral-3b-it/.cache/huggingface/download/README.md.metadata",
+          "bytes": 101,
+          "mtime": 1793272344
+        },
+        {
+          "path": "ministral-3b-it/.cache/huggingface/download/SYSTEM_PROMPT.txt.lock",
+          "bytes": 0,
+          "mtime": 1793272344
+        },
+        {
+          "path": "ministral-3b-it/.cache/huggingface/download/SYSTEM_PROMPT.txt.metadata",
+          "bytes": 100,
+          "mtime": 1793272344
+        },
+        {
+          "path": "ministral-3b-it/.cache/huggingface/download/chat_template.jinja.lock",
+          "bytes": 0,
+          "mtime": 1793272344
+        },
+        {
+          "path": "ministral-3b-it/.cache/huggingface/download/chat_template.jinja.metadata",
+          "bytes": 101,
+          "mtime": 1793272344
+        },
+        {
+          "path": "ministral-3b-it/.cache/huggingface/download/config.json.lock",
+          "bytes": 0,
+          "mtime": 1793272344
+        },
+        {
+          "path": "ministral-3b-it/.cache/huggingface/download/config.json.metadata",
+          "bytes": 101,
+          "mtime": 1793272344
+        },
+        {
+          "path": "ministral-3b-it/.cache/huggingface/download/consolidated.safetensors.lock",
+          "bytes": 0,
+          "mtime": 1793272344
+        },
+        {
+          "path": "ministral-3b-it/.cache/huggingface/download/consolidated.safetensors.metadata",
+          "bytes": 125,
+          "mtime": 1793272387
+        },
+        {
+          "path": "ministral-3b-it/.cache/huggingface/download/generation_config.json.lock",
+          "bytes": 0,
+          "mtime": 1793272344
+        },
+        {
+          "path": "ministral-3b-it/.cache/huggingface/download/generation_config.json.metadata",
+          "bytes": 101,
+          "mtime": 1793272344
+        },
+        {
+          "path": "ministral-3b-it/.cache/huggingface/download/model.safetensors.lock",
+          "bytes": 0,
+          "mtime": 1793272344
+        },
+        {
+          "path": "ministral-3b-it/.cache/huggingface/download/model.safetensors.metadata",
+          "bytes": 125,
+          "mtime": 1793272389
+        },
+        {
+          "path": "ministral-3b-it/.cache/huggingface/download/params.json.lock",
+          "bytes": 0,
+          "mtime": 1793272344
+        },
+        {
+          "path": "ministral-3b-it/.cache/huggingface/download/params.json.metadata",
+          "bytes": 100,
+          "mtime": 1793272344
+        },
+        {
+          "path": "ministral-3b-it/.cache/huggingface/download/processor_config.json.lock",
+          "bytes": 0,
+          "mtime": 1793272344
+        },
+        {
+          "path": "ministral-3b-it/.cache/huggingface/download/processor_config.json.metadata",
+          "bytes": 101,
+          "mtime": 1793272344
+        },
+        {
+          "path": "ministral-3b-it/.cache/huggingface/download/tekken.json.lock",
+          "bytes": 0,
+          "mtime": 1793272344
+        },
+        {
+          "path": "ministral-3b-it/.cache/huggingface/download/tekken.json.metadata",
+          "bytes": 124,
+          "mtime": 1793272345
+        },
+        {
+          "path": "ministral-3b-it/.cache/huggingface/download/tokenizer.json.lock",
+          "bytes": 0,
+          "mtime": 1793272344
+        },
+        {
+          "path": "ministral-3b-it/.cache/huggingface/download/tokenizer.json.metadata",
+          "bytes": 125,
+          "mtime": 1793272345
+        },
+        {
+          "path": "ministral-3b-it/.cache/huggingface/download/tokenizer_config.json.lock",
+          "bytes": 0,
+          "mtime": 1793272344
+        },
+        {
+          "path": "ministral-3b-it/.cache/huggingface/download/tokenizer_config.json.metadata",
+          "bytes": 101,
+          "mtime": 1793272344
+        },
+        {
+          "path": "ministral-3b-it/.cache/huggingface/trees/b35d4dfe56c142746f54dbd64f579faab2744308.json",
+          "bytes": 2178,
+          "mtime": 1793272344
+        },
+        {
+          "path": "ministral-3b-it/.gitattributes",
+          "bytes": 1618,
+          "mtime": 1793272344
+        },
+        {
+          "path": "ministral-3b-it/README.md",
+          "bytes": 20363,
+          "mtime": 1793272344
+        },
+        {
+          "path": "ministral-3b-it/SYSTEM_PROMPT.txt",
+          "bytes": 2361,
+          "mtime": 1793272344
+        },
+        {
+          "path": "ministral-3b-it/chat_template.jinja",
+          "bytes": 11912,
+          "mtime": 1793272344
+        },
+        {
+          "path": "ministral-3b-it/config.json",
+          "bytes": 1903,
+          "mtime": 1793272344
+        },
+        {
+          "path": "ministral-3b-it/consolidated.safetensors",
+          "bytes": 4672089108,
+          "mtime": 1793272386
+        },
+        {
+          "path": "ministral-3b-it/generation_config.json",
+          "bytes": 131,
+          "mtime": 1793272344
+        },
+        {
+          "path": "ministral-3b-it/model.safetensors",
+          "bytes": 4672099184,
+          "mtime": 1793272389
+        },
+        {
+          "path": "ministral-3b-it/params.json",
+          "bytes": 1183,
+          "mtime": 1793272344
+        },
+        {
+          "path": "ministral-3b-it/processor_config.json",
+          "bytes": 976,
+          "mtime": 1793272344
+        },
+        {
+          "path": "ministral-3b-it/tekken.json",
+          "bytes": 16753784,
+          "mtime": 1793272345
+        },
+        {
+          "path": "ministral-3b-it/tokenizer.json",
+          "bytes": 17077420,
+          "mtime": 1793272345
+        },
+        {
+          "path": "ministral-3b-it/tokenizer_config.json",
+          "bytes": 21177,
+          "mtime": 1793272344
+        }
+      ]
+    },
+    "titulm-3b-volume": {
+      "repo_id": "hishab/titulm-llama-3.2-3b-v2.0-Instruct-v1.0",
+      "revision": "6a9600483daf9a3af7494e7fa91f2e72e2799b96",
+      "gated": false,
+      "private": false,
+      "license": "unknown (HF public)",
+      "access_req": "Public (no token required)",
+      "total_gib": 6.2535,
+      "n_files": 39,
+      "verified_exact_hf_tree_match": true,
+      "files": [
+        {
+          "path": "titulm-3b-it/.cache/huggingface/.gitignore",
+          "bytes": 1,
+          "mtime": 1793295643
+        },
+        {
+          "path": "titulm-3b-it/.cache/huggingface/CACHEDIR.TAG",
+          "bytes": 191,
+          "mtime": 1793295643
+        },
+        {
+          "path": "titulm-3b-it/.cache/huggingface/download/.gitattributes.lock",
+          "bytes": 0,
+          "mtime": 1793295643
+        },
+        {
+          "path": "titulm-3b-it/.cache/huggingface/download/.gitattributes.metadata",
+          "bytes": 101,
+          "mtime": 1793295643
+        },
+        {
+          "path": "titulm-3b-it/.cache/huggingface/download/README.md.lock",
+          "bytes": 0,
+          "mtime": 1793295643
+        },
+        {
+          "path": "titulm-3b-it/.cache/huggingface/download/README.md.metadata",
+          "bytes": 101,
+          "mtime": 1793295643
+        },
+        {
+          "path": "titulm-3b-it/.cache/huggingface/download/config.json.lock",
+          "bytes": 0,
+          "mtime": 1793295643
+        },
+        {
+          "path": "titulm-3b-it/.cache/huggingface/download/config.json.metadata",
+          "bytes": 100,
+          "mtime": 1793295643
+        },
+        {
+          "path": "titulm-3b-it/.cache/huggingface/download/generation_config.json.lock",
+          "bytes": 0,
+          "mtime": 1793295643
+        },
+        {
+          "path": "titulm-3b-it/.cache/huggingface/download/generation_config.json.metadata",
+          "bytes": 101,
+          "mtime": 1793295643
+        },
+        {
+          "path": "titulm-3b-it/.cache/huggingface/download/model-00001-of-00002.safetensors.lock",
+          "bytes": 0,
+          "mtime": 1793295643
+        },
+        {
+          "path": "titulm-3b-it/.cache/huggingface/download/model-00001-of-00002.safetensors.metadata",
+          "bytes": 125,
+          "mtime": 1793295677
+        },
+        {
+          "path": "titulm-3b-it/.cache/huggingface/download/model-00002-of-00002.safetensors.lock",
+          "bytes": 0,
+          "mtime": 1793295643
+        },
+        {
+          "path": "titulm-3b-it/.cache/huggingface/download/model-00002-of-00002.safetensors.metadata",
+          "bytes": 125,
+          "mtime": 1793295666
+        },
+        {
+          "path": "titulm-3b-it/.cache/huggingface/download/model.safetensors.index.json.lock",
+          "bytes": 0,
+          "mtime": 1793295643
+        },
+        {
+          "path": "titulm-3b-it/.cache/huggingface/download/model.safetensors.index.json.metadata",
+          "bytes": 100,
+          "mtime": 1793295643
+        },
+        {
+          "path": "titulm-3b-it/.cache/huggingface/download/special_tokens_map.json.lock",
+          "bytes": 0,
+          "mtime": 1793295643
+        },
+        {
+          "path": "titulm-3b-it/.cache/huggingface/download/special_tokens_map.json.metadata",
+          "bytes": 99,
+          "mtime": 1793295643
+        },
+        {
+          "path": "titulm-3b-it/.cache/huggingface/download/tokenizer.json.lock",
+          "bytes": 0,
+          "mtime": 1793295643
+        },
+        {
+          "path": "titulm-3b-it/.cache/huggingface/download/tokenizer.json.metadata",
+          "bytes": 125,
+          "mtime": 1793295644
+        },
+        {
+          "path": "titulm-3b-it/.cache/huggingface/download/tokenizer_config.json.lock",
+          "bytes": 0,
+          "mtime": 1793295643
+        },
+        {
+          "path": "titulm-3b-it/.cache/huggingface/download/tokenizer_config.json.metadata",
+          "bytes": 101,
+          "mtime": 1793295643
+        },
+        {
+          "path": "titulm-3b-it/.cache/huggingface/download/trainer_log.jsonl.lock",
+          "bytes": 0,
+          "mtime": 1793295643
+        },
+        {
+          "path": "titulm-3b-it/.cache/huggingface/download/trainer_log.jsonl.metadata",
+          "bytes": 100,
+          "mtime": 1793295643
+        },
+        {
+          "path": "titulm-3b-it/.cache/huggingface/download/training_args.bin.lock",
+          "bytes": 0,
+          "mtime": 1793295643
+        },
+        {
+          "path": "titulm-3b-it/.cache/huggingface/download/training_args.bin.metadata",
+          "bytes": 125,
+          "mtime": 1793295644
+        },
+        {
+          "path": "titulm-3b-it/.cache/huggingface/trees/6a9600483daf9a3af7494e7fa91f2e72e2799b96.json",
+          "bytes": 2111,
+          "mtime": 1793295643
+        },
+        {
+          "path": "titulm-3b-it/.gitattributes",
+          "bytes": 1570,
+          "mtime": 1793295643
+        },
+        {
+          "path": "titulm-3b-it/README.md",
+          "bytes": 1283,
+          "mtime": 1793295643
+        },
+        {
+          "path": "titulm-3b-it/config.json",
+          "bytes": 925,
+          "mtime": 1793295643
+        },
+        {
+          "path": "titulm-3b-it/generation_config.json",
+          "bytes": 143,
+          "mtime": 1793295643
+        },
+        {
+          "path": "titulm-3b-it/model-00001-of-00002.safetensors",
+          "bytes": 4973656136,
+          "mtime": 1793295677
+        },
+        {
+          "path": "titulm-3b-it/model-00002-of-00002.safetensors",
+          "bytes": 1711401640,
+          "mtime": 1793295666
+        },
+        {
+          "path": "titulm-3b-it/model.safetensors.index.json",
+          "bytes": 20919,
+          "mtime": 1793295643
+        },
+        {
+          "path": "titulm-3b-it/special_tokens_map.json",
+          "bytes": 439,
+          "mtime": 1793295643
+        },
+        {
+          "path": "titulm-3b-it/tokenizer.json",
+          "bytes": 29364254,
+          "mtime": 1793295644
+        },
+        {
+          "path": "titulm-3b-it/tokenizer_config.json",
+          "bytes": 51287,
+          "mtime": 1793295643
+        },
+        {
+          "path": "titulm-3b-it/trainer_log.jsonl",
+          "bytes": 84227,
+          "mtime": 1793295643
+        },
+        {
+          "path": "titulm-3b-it/training_args.bin",
+          "bytes": 7416,
+          "mtime": 1793295643
+        }
+      ]
+    },
+    "qwen-3b-volume": {
+      "repo_id": "Qwen/Qwen2.5-3B-Instruct",
+      "revision": "aa8e72537993ba99e69dfaafa59ed015b17504d1",
+      "gated": false,
+      "private": false,
+      "license": "qwen-research",
+      "access_req": "Public (no token required)",
+      "total_gib": 5.7588,
+      "n_files": 39,
+      "verified_exact_hf_tree_match": true,
+      "files": [
+        {
+          "path": "qwen-3b-it/.cache/huggingface/.gitignore",
+          "bytes": 1,
+          "mtime": 1793274737
+        },
+        {
+          "path": "qwen-3b-it/.cache/huggingface/CACHEDIR.TAG",
+          "bytes": 191,
+          "mtime": 1793274737
+        },
+        {
+          "path": "qwen-3b-it/.cache/huggingface/download/.gitattributes.lock",
+          "bytes": 0,
+          "mtime": 1793274737
+        },
+        {
+          "path": "qwen-3b-it/.cache/huggingface/download/.gitattributes.metadata",
+          "bytes": 101,
+          "mtime": 1793274737
+        },
+        {
+          "path": "qwen-3b-it/.cache/huggingface/download/LICENSE.lock",
+          "bytes": 0,
+          "mtime": 1793274737
+        },
+        {
+          "path": "qwen-3b-it/.cache/huggingface/download/LICENSE.metadata",
+          "bytes": 101,
+          "mtime": 1793274737
+        },
+        {
+          "path": "qwen-3b-it/.cache/huggingface/download/README.md.lock",
+          "bytes": 0,
+          "mtime": 1793274737
+        },
+        {
+          "path": "qwen-3b-it/.cache/huggingface/download/README.md.metadata",
+          "bytes": 100,
+          "mtime": 1793274737
+        },
+        {
+          "path": "qwen-3b-it/.cache/huggingface/download/config.json.lock",
+          "bytes": 0,
+          "mtime": 1793274737
+        },
+        {
+          "path": "qwen-3b-it/.cache/huggingface/download/config.json.metadata",
+          "bytes": 100,
+          "mtime": 1793274737
+        },
+        {
+          "path": "qwen-3b-it/.cache/huggingface/download/generation_config.json.lock",
+          "bytes": 0,
+          "mtime": 1793274737
+        },
+        {
+          "path": "qwen-3b-it/.cache/huggingface/download/generation_config.json.metadata",
+          "bytes": 101,
+          "mtime": 1793274737
+        },
+        {
+          "path": "qwen-3b-it/.cache/huggingface/download/merges.txt.lock",
+          "bytes": 0,
+          "mtime": 1793274737
+        },
+        {
+          "path": "qwen-3b-it/.cache/huggingface/download/merges.txt.metadata",
+          "bytes": 101,
+          "mtime": 1793274737
+        },
+        {
+          "path": "qwen-3b-it/.cache/huggingface/download/model-00001-of-00002.safetensors.lock",
+          "bytes": 0,
+          "mtime": 1793274737
+        },
+        {
+          "path": "qwen-3b-it/.cache/huggingface/download/model-00001-of-00002.safetensors.metadata",
+          "bytes": 124,
+          "mtime": 1793274768
+        },
+        {
+          "path": "qwen-3b-it/.cache/huggingface/download/model-00002-of-00002.safetensors.lock",
+          "bytes": 0,
+          "mtime": 1793274737
+        },
+        {
+          "path": "qwen-3b-it/.cache/huggingface/download/model-00002-of-00002.safetensors.metadata",
+          "bytes": 125,
+          "mtime": 1793274769
+        },
+        {
+          "path": "qwen-3b-it/.cache/huggingface/download/model.safetensors.index.json.lock",
+          "bytes": 0,
+          "mtime": 1793274737
+        },
+        {
+          "path": "qwen-3b-it/.cache/huggingface/download/model.safetensors.index.json.metadata",
+          "bytes": 100,
+          "mtime": 1793274737
+        },
+        {
+          "path": "qwen-3b-it/.cache/huggingface/download/tokenizer.json.lock",
+          "bytes": 0,
+          "mtime": 1793274737
+        },
+        {
+          "path": "qwen-3b-it/.cache/huggingface/download/tokenizer.json.metadata",
+          "bytes": 101,
+          "mtime": 1793274737
+        },
+        {
+          "path": "qwen-3b-it/.cache/huggingface/download/tokenizer_config.json.lock",
+          "bytes": 0,
+          "mtime": 1793274737
+        },
+        {
+          "path": "qwen-3b-it/.cache/huggingface/download/tokenizer_config.json.metadata",
+          "bytes": 100,
+          "mtime": 1793274737
+        },
+        {
+          "path": "qwen-3b-it/.cache/huggingface/download/vocab.json.lock",
+          "bytes": 0,
+          "mtime": 1793274737
+        },
+        {
+          "path": "qwen-3b-it/.cache/huggingface/download/vocab.json.metadata",
+          "bytes": 99,
+          "mtime": 1793274737
+        },
+        {
+          "path": "qwen-3b-it/.cache/huggingface/trees/aa8e72537993ba99e69dfaafa59ed015b17504d1.json",
+          "bytes": 1703,
+          "mtime": 1793274737
+        },
+        {
+          "path": "qwen-3b-it/.gitattributes",
+          "bytes": 1519,
+          "mtime": 1793274737
+        },
+        {
+          "path": "qwen-3b-it/LICENSE",
+          "bytes": 7388,
+          "mtime": 1793274737
+        },
+        {
+          "path": "qwen-3b-it/README.md",
+          "bytes": 4930,
+          "mtime": 1793274737
+        },
+        {
+          "path": "qwen-3b-it/config.json",
+          "bytes": 661,
+          "mtime": 1793274737
+        },
+        {
+          "path": "qwen-3b-it/generation_config.json",
+          "bytes": 242,
+          "mtime": 1793274737
+        },
+        {
+          "path": "qwen-3b-it/merges.txt",
+          "bytes": 1671839,
+          "mtime": 1793274737
+        },
+        {
+          "path": "qwen-3b-it/model-00001-of-00002.safetensors",
+          "bytes": 3968658944,
+          "mtime": 1793274768
+        },
+        {
+          "path": "qwen-3b-it/model-00002-of-00002.safetensors",
+          "bytes": 2203268048,
+          "mtime": 1793274769
+        },
+        {
+          "path": "qwen-3b-it/model.safetensors.index.json",
+          "bytes": 35581,
+          "mtime": 1793274737
+        },
+        {
+          "path": "qwen-3b-it/tokenizer.json",
+          "bytes": 7031645,
+          "mtime": 1793274737
+        },
+        {
+          "path": "qwen-3b-it/tokenizer_config.json",
+          "bytes": 7305,
+          "mtime": 1793274737
+        },
+        {
+          "path": "qwen-3b-it/vocab.json",
+          "bytes": 2776833,
+          "mtime": 1793274737
+        }
+      ]
+    }
+  },
+  "tier1_rsna_dirs": {
+    "cache/paper1_nyu_uint16_v1_bench_40ex_c4_z1": {
+      "n_files": 321,
+      "total_gib": 1.2577,
+      "sample_files": [
+        "cache/paper1_nyu_uint16_v1_bench_40ex_c4_z1/nlbs_4view/png/nlbs_img_00000.png",
+        "cache/paper1_nyu_uint16_v1_bench_40ex_c4_z1/nlbs_4view/png/nlbs_img_00001.png",
+        "cache/paper1_nyu_uint16_v1_bench_40ex_c4_z1/nlbs_4view/png/nlbs_img_00002.png",
+        "cache/paper1_nyu_uint16_v1_bench_40ex_c4_z1/nlbs_4view/png/nlbs_img_00004.png",
+        "cache/paper1_nyu_uint16_v1_bench_40ex_c4_z1/nlbs_4view/png/nlbs_img_00009.png",
+        "cache/paper1_nyu_uint16_v1_bench_40ex_c4_z1/nlbs_4view/png/nlbs_img_00010.png",
+        "cache/paper1_nyu_uint16_v1_bench_40ex_c4_z1/nlbs_4view/png/nlbs_img_00011.png",
+        "cache/paper1_nyu_uint16_v1_bench_40ex_c4_z1/nlbs_4view/png/nlbs_img_00012.png",
+        "cache/paper1_nyu_uint16_v1_bench_40ex_c4_z1/nlbs_4view/png/nlbs_img_00013.png",
+        "cache/paper1_nyu_uint16_v1_bench_40ex_c4_z1/nlbs_4view/png/nlbs_img_00014.png"
+      ]
+    },
+    "cache/paper1_gmic_uint16_v1_bench200": {
+      "n_files": 200,
+      "total_gib": 0.8969,
+      "sample_files": [
+        "cache/paper1_gmic_uint16_v1_bench200/nlbs/png_2944x1920/nlbs_img_00000.png",
+        "cache/paper1_gmic_uint16_v1_bench200/nlbs/png_2944x1920/nlbs_img_00001.png",
+        "cache/paper1_gmic_uint16_v1_bench200/nlbs/png_2944x1920/nlbs_img_00002.png",
+        "cache/paper1_gmic_uint16_v1_bench200/nlbs/png_2944x1920/nlbs_img_00003.png",
+        "cache/paper1_gmic_uint16_v1_bench200/nlbs/png_2944x1920/nlbs_img_00004.png",
+        "cache/paper1_gmic_uint16_v1_bench200/nlbs/png_2944x1920/nlbs_img_00005.png",
+        "cache/paper1_gmic_uint16_v1_bench200/nlbs/png_2944x1920/nlbs_img_00006.png",
+        "cache/paper1_gmic_uint16_v1_bench200/nlbs/png_2944x1920/nlbs_img_00007.png",
+        "cache/paper1_gmic_uint16_v1_bench200/nlbs/png_2944x1920/nlbs_img_00008.png",
+        "cache/paper1_gmic_uint16_v1_bench200/nlbs/png_2944x1920/nlbs_img_00009.png"
+      ]
+    },
+    "cache/paper1_nyu_uint16_v1_validate_2c8g": {
+      "n_files": 161,
+      "total_gib": 0.5437,
+      "sample_files": [
+        "cache/paper1_nyu_uint16_v1_validate_2c8g/png/1009635466.png",
+        "cache/paper1_nyu_uint16_v1_validate_2c8g/png/1013647383.png",
+        "cache/paper1_nyu_uint16_v1_validate_2c8g/png/1043327287.png",
+        "cache/paper1_nyu_uint16_v1_validate_2c8g/png/1099170190.png",
+        "cache/paper1_nyu_uint16_v1_validate_2c8g/png/1099568643.png",
+        "cache/paper1_nyu_uint16_v1_validate_2c8g/png/110927770.png",
+        "cache/paper1_nyu_uint16_v1_validate_2c8g/png/1161539227.png",
+        "cache/paper1_nyu_uint16_v1_validate_2c8g/png/11913693.png",
+        "cache/paper1_nyu_uint16_v1_validate_2c8g/png/1212754999.png",
+        "cache/paper1_nyu_uint16_v1_validate_2c8g/png/1236208576.png"
+      ]
+    },
+    "cache/paper1_nyu_uint16_v1_bench_5ex_c2_z1": {
+      "n_files": 81,
+      "total_gib": 0.156,
+      "sample_files": [
+        "cache/paper1_nyu_uint16_v1_bench_5ex_c2_z1/nlbs_4view/png/nlbs_img_00000.png",
+        "cache/paper1_nyu_uint16_v1_bench_5ex_c2_z1/nlbs_4view/png/nlbs_img_00001.png",
+        "cache/paper1_nyu_uint16_v1_bench_5ex_c2_z1/nlbs_4view/png/nlbs_img_00002.png",
+        "cache/paper1_nyu_uint16_v1_bench_5ex_c2_z1/nlbs_4view/png/nlbs_img_00004.png",
+        "cache/paper1_nyu_uint16_v1_bench_5ex_c2_z1/nlbs_4view/png/nlbs_img_00009.png",
+        "cache/paper1_nyu_uint16_v1_bench_5ex_c2_z1/nlbs_4view/png/nlbs_img_00010.png",
+        "cache/paper1_nyu_uint16_v1_bench_5ex_c2_z1/nlbs_4view/png/nlbs_img_00011.png",
+        "cache/paper1_nyu_uint16_v1_bench_5ex_c2_z1/nlbs_4view/png/nlbs_img_00012.png",
+        "cache/paper1_nyu_uint16_v1_bench_5ex_c2_z1/nlbs_4view/png/nlbs_img_00029.png",
+        "cache/paper1_nyu_uint16_v1_bench_5ex_c2_z1/nlbs_4view/png/nlbs_img_00031.png"
+      ]
+    },
+    "cache/parity_pilot_1200": {
+      "n_files": 43,
+      "total_gib": 0.1539,
+      "sample_files": [
+        "cache/parity_pilot_1200/amp/cache_manifest.json",
+        "cache/parity_pilot_1200/amp/eval_train_calib_fp32.pt",
+        "cache/parity_pilot_1200/amp/eval_val_calib_fp32.pt",
+        "cache/parity_pilot_1200/amp/train_epoch_01_shard_000.pt",
+        "cache/parity_pilot_1200/amp/train_epoch_01_shard_001.pt",
+        "cache/parity_pilot_1200/amp/train_epoch_02_shard_000.pt",
+        "cache/parity_pilot_1200/amp/train_epoch_02_shard_001.pt",
+        "cache/parity_pilot_1200/amp/train_epoch_03_shard_000.pt",
+        "cache/parity_pilot_1200/amp/train_epoch_03_shard_001.pt",
+        "cache/parity_pilot_1200/amp/train_epoch_04_shard_000.pt"
+      ]
+    },
+    "cache/bench_1000": {
+      "n_files": 2,
+      "total_gib": 0.0115,
+      "sample_files": [
+        "cache/bench_1000/rsna_bench1000_features_fp16.pt",
+        "cache/bench_1000/rsna_bench1000_features_fp32.pt"
+      ]
+    },
+    "cache/paper1_dinov2_vits14_bench": {
+      "n_files": 2,
+      "total_gib": 0.0015,
+      "sample_files": [
+        "cache/paper1_dinov2_vits14_bench/chunks/rsna/chunk_000.pt",
+        "cache/paper1_dinov2_vits14_bench/rsna_embeddings_fp32.pt"
+      ]
+    }
+  }
+}
