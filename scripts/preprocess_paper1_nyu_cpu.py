@@ -637,7 +637,7 @@ def process_nyu_cpu_shard(
     volumes={str(RSNA_MOUNT): RSNA_VOL},
     cpu=1.0,
     memory=2048,
-    timeout=1800,
+    timeout=3600,
 )
 def verify_nyu_cpu_shard(split_name: str, shard_idx: int, num_shards: int = 12) -> Dict[str, Any]:
     """Verify 100% PNG SHA-256 checksums for one shard in parallel on Modal Volume."""
