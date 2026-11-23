@@ -1,8 +1,8 @@
 # state.md — Unified Two-Paper Workspace State
 
 **Last Updated:** 2026-11-23  
-**Verified Repo Head (Prior):** `f8f7594` (`main`)  
-**Current Decision Across Both Papers:** Paper 1 **NYU Step 1 RSNA `val_calib` (`9,528` imgs / `2,382` exams) = 100% BUILT & SHA-256 VERIFIED (`69.779 GiB`, `66` fallbacks, `$0.6086` gross compute, `0` GPUs)**; **`nlbs_4view` (`24,736` imgs) PAUSED AT COST/STORAGE STOP GATE** (`RSNA storage 3.58x estimate` -> `~187–250 GiB` projected, `~USD 2.03` compute, `USD 9.34` Starter credits left until Dec 1 — awaiting user decision); GMIC Steps 1–3 COMPLETE & LOCKED (`0.8541` AUROC, `97.35%` @98%); Paper 2 AnchorShift Stage D pending (`MODIFY / INVESTIGATE`)
+**Verified Repo Head (Prior):** `9f24e01` (`main`)  
+**Current Decision Across Both Papers:** Paper 1 **NYU Step 1 RSNA `val_calib` (`9,528` imgs / `2,382` exams) = 100% VERIFIED (`69.779 GiB`, `$0.5488` net)**; **18-Volume Storage & Budget Audit COMPLETE (`1,271.340 GiB`, `USD 8.66` credits left, resets `2026-12-01`, true overage rate `USD 0.0030/GiB-day` / `$0.090/GiB-mo` > `1,024 GiB` continuous free tier)**; `verify_nyu_cpu_shard` bumped to `3600s` (`5/5` PASS); awaiting cleanup (`3.02 GiB` pilots + optional `170.34 GiB` HF LLMs) + NLBS (`~USD 1.42`) go-ahead; GMIC Steps 1–3 LOCKED; Paper 2 Stage D pending
 
 ---
 
@@ -46,7 +46,8 @@
   - [x] **NYU Step 1 CPU Pilot (`hasinishrak2015`, `ap-8zAp1GZzkNZp4k7tPRSWrT`, `0` GPU):** Separated CPU caching (`preprocess_paper1_nyu_cpu.py`), ran `320`-img pilot (`40` RSNA incl. `pid=71` + `40` NLBS incl. `3` SIEMENS): **`0.0` 10-TTA parity diff**, `26` fallbacks handled cleanly (`reports/paper1/nyu_step1_cpu_pilot_report.md`).
   - [x] **NYU Step 1 Pre-Build Validation (`hasinishrak2015`, `ap-p0FrhTarpdGuiJaUUYKJ6Q`, `0` GPU):** Validated `2vCPU/8GiB` on `160` imgs (`1.80 img/s`, `5.117 GB` RSS, `$0.00392`), added & tamper-tested SHA-256 resume + guarded `--stage build` CLI (`5/5` tests), audited `968.214 GiB` Paper 1 + 16 legacy vols vs Modal `1 TiB` free tier: **`~$0.869` compute + `137.00 GiB` (`~$0.41/day` / `$12.33/mo` over 1 TiB)** (`reports/paper1/nyu_step1_config_validation_report.md`; awaiting approval).
   - [x] **NYU Step 1 RSNA `val_calib` CPU Build & Parallel SHA-256 Verify (`hasinishrak2015`, `ap-1dMjmBD…` + `ap-yaZkL5T…`, `0` GPU):** Processed & verified `9,528 / 9,528` RSNA PNGs (`2,382 / 2,382` 4-view exams, `0` rejected, `101` pixel checks, `66` fallbacks, `69.779 GiB`, `$0.6086` gross / `~$0.546` net) via 12 parallel shards + new `verify_nyu_cpu_shard`. Paused before `nlbs_4view` per cost/storage stop gate (`reports/paper1/nyu_step1_rsna_checkpoint_report.md`).
-  - [ ] **Stage 2 — Execute Remaining Paper 1 Runs:** `NYU Step 1 NLBS (held at stop gate) -> NYU Step 2 Infer -> DINOv2 -> ResNet-50 -> evaluate_paper1_six_models.py` on `hasinishrak2015`.
+  - [x] **18-Volume Storage Audit & `3600s` Verify Timeout Fix (`$0.00` compute, `0` deletions, `reports/paper1/nyu_step1_storage_and_budget_audit.md`):** Audited all `18` `hasinishrak2015` volumes (`1,271.340 GiB`), verified `2026-12-01` credit reset (`USD 8.66` left) & `USD 0.0030/GiB-day` overage rate above `1,024 GiB` continuous free tier; cataloged `3.022 GiB` Paper 1 pilots + `170.341 GiB` HF LLMs + `61.733 GiB` thesis cleanup options; bumped `verify_nyu_cpu_shard` to `timeout=3600` (`5/5` tests PASS).
+  - [ ] **Stage 2 — Execute Remaining Paper 1 Runs:** `Cleanup approval -> NYU Step 1 NLBS (24,736 imgs, ~USD 1.42) -> NYU Step 2 Infer -> DINOv2 -> ResNet-50 -> evaluate_paper1_six_models.py` on `hasinishrak2015`.
   - [ ] **Blocker 3 (Manuscript Gate) — Adversarial Literature Matrix:** Formal *MEDINFO 2025/2026 Meta-Repository* & *Sensors (June 2026)* comparison before manuscript drafting.
 
 ---
