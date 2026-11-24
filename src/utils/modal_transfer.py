@@ -225,6 +225,38 @@ def get_bundle_specs(bundle_name: str) -> List[SourceSpec]:
                     ),
                 ]
             )
+    elif bundle_name == "nyu_nlbs_failover":
+        specs.extend(
+            [
+                SourceSpec(
+                    src_profile="hasinishrak2015",
+                    src_volume="rsna-mammography-vol",
+                    src_prefix="cache/paper1_nyu_uint16_v1/nlbs_4view",
+                    dst_volume="rsna-mammography-vol",
+                    dst_prefix="cache/paper1_nyu_uint16_v1/nlbs_4view",
+                    description="Verified 24,736 NLBS four-view PNG cache",
+                ),
+                SourceSpec(
+                    src_profile="hasinishrak2015",
+                    src_volume="rsna-mammography-vol",
+                    src_prefix="models/paper1/sample_image_model.p",
+                    dst_volume="rsna-mammography-vol",
+                    dst_prefix="models/paper1/sample_image_model.p",
+                    description="Official NYU image-only four-view pretrained checkpoint",
+                ),
+            ]
+        )
+    elif bundle_name == "dryousuf_rsna_raw":
+        specs.append(
+            SourceSpec(
+                src_profile="hasinishrak2015",
+                src_volume="rsna-mammography-vol",
+                src_prefix="rsna/raw",
+                dst_volume="rsna-mammography-vol",
+                dst_prefix="rsna/raw",
+                description="RSNA raw DICOM archive for native GMIC/NYU fine-tuning",
+            )
+        )
     else:
         raise ValueError(f"Unknown transfer bundle '{bundle_name}'")
 
