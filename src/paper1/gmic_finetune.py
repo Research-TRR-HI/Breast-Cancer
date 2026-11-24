@@ -16,6 +16,7 @@ Key scientific & numerical safeguards:
 """
 
 from pathlib import Path
+import math
 import os
 import random
 from typing import Any, Dict, List, Optional, Sequence, Tuple
@@ -24,7 +25,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from src.evaluation.stage_c_eval import compute_sha256_file
+from src.paper1.gmic_adapter import GMIC_PERCENT_T_MAP, GMIC_REPO_DEFAULT, _ensure_gmic_importable
+
 GMIC_FINETUNE_STRATEGIES = ("head_only", "partial", "full")
+GMIC_FINETUNED_MODEL_ID = "gmic_rsna_finetuned"
+GMIC_FINETUNED_CKPT_SCHEMA = "paper1_gmic_finetune_ckpt_v1"
 
 
 def configure_gmic_trainable_params(
@@ -258,3 +264,141 @@ def validate_gmic_finetune_cli_guard(
         raise RuntimeError("BLOCKED: `--stage train` requires `--approve-full-train`.")
     if stage == "eval" and not approve_eval:
         raise RuntimeError("BLOCKED: `--stage eval` requires `--approve-eval`.")
+
+
+def set_gmic_backbone_eval_mode(model: nn.Module, strategy: str) -> None:
+    """Put trainable modules in `.train()` while keeping frozen BatchNorm modules in `.eval()`."""
+    model.train()
+    if strategy == "full":
+        return
+    for mod in model.modules():
+        if isinstance(mod, (nn.BatchNorm1d, nn.BatchNorm2d, nn.BatchNorm3d, nn.SyncBatchNorm)):
+            params = list(mod.parameters())
+            if params and all(not p.requires_grad for p in params):
+                mod.eval()
+
+
+def compute_gmic_schedule_stats(
+    n_pos_imgs: int,
+    n_neg_imgs: int,
+    batch_size: int,
+    steps_per_epoch: int,
+    epochs: int,
+) -> Dict[str, float]:
+    """Compute exact expected sample coverage under BalancedBatchSampler(paper_independent)."""
+    n_pos_batch = max(2, int(batch_size) // 4)
+    n_neg_batch = max(1, int(batch_size) - n_pos_batch)
+    pos_draws_ep = int(steps_per_epoch) * n_pos_batch
+    neg_draws_ep = int(steps_per_epoch) * n_neg_batch
+    total_pos_draws = pos_draws_ep * int(epochs)
+    total_neg_draws = neg_draws_ep * int(epochs)
+
+    p_pos_1ep = 1.0 - (max(0.0, 1.0 - n_pos_batch / max(n_pos_imgs, 1)) ** int(steps_per_epoch))
+    p_neg_1ep = 1.0 - (max(0.0, 1.0 - n_neg_batch / max(n_neg_imgs, 1)) ** int(steps_per_epoch))
+    p_pos_all = 1.0 - (max(0.0, 1.0 - n_pos_batch / max(n_pos_imgs, 1)) ** (int(steps_per_epoch) * int(epochs)))
+    p_neg_all = 1.0 - (max(0.0, 1.0 - n_neg_batch / max(n_neg_imgs, 1)) ** (int(steps_per_epoch) * int(epochs)))
+    return {
+        "n_pos_per_batch": float(n_pos_batch),
+        "n_neg_per_batch": float(n_neg_batch),
+        "draws_per_epoch": float(int(steps_per_epoch) * int(batch_size)),
+        "total_draws": float(int(epochs) * int(steps_per_epoch) * int(batch_size)),
+        "avg_pos_exposure_per_epoch": pos_draws_ep / max(n_pos_imgs, 1),
+        "avg_pos_exposure_total": total_pos_draws / max(n_pos_imgs, 1),
+        "avg_neg_exposure_per_epoch": neg_draws_ep / max(n_neg_imgs, 1),
+        "avg_neg_exposure_total": total_neg_draws / max(n_neg_imgs, 1),
+        "expected_unique_pos_frac_1ep": float(p_pos_1ep),
+        "expected_unique_neg_frac_1ep": float(p_neg_1ep),
+        "expected_unique_pos_frac_total": float(p_pos_all),
+        "expected_unique_neg_frac_total": float(p_neg_all),
+    }
+
+
+def validate_gmic_eval_cli_args(
+    *,
+    split: str,
+    batch_size: int,
+    num_shards: int,
+    checkpoint_path: str,
+    approve_eval: bool,
+    max_spend_usd: float,
+) -> None:
+    """Validate CLI args for evaluation-only GMIC execution."""
+    validate_gmic_finetune_cli_guard(
+        stage="eval",
+        approve_full_train=False,
+        approve_eval=approve_eval,
+        max_spend_usd=max_spend_usd,
+    )
+    if split not in ("rsna_val_calib", "nlbs"):
+        raise ValueError(f"Unsupported GMIC eval --split={split!r}; expected 'rsna_val_calib' or 'nlbs'")
+    if int(batch_size) < 1:
+        raise ValueError(f"--batch-size must be >= 1, got {batch_size}")
+    if int(num_shards) < 1:
+        raise ValueError(f"--num-shards must be >= 1, got {num_shards}")
+    if not str(checkpoint_path).strip():
+        raise ValueError("--checkpoint-path must be non-empty for --stage eval")
+
+
+def load_gmic_finetuned_model_for_eval(
+    checkpoint_path: Path,
+    *,
+    expected_sha256: Optional[str] = None,
+    model_index: str = "1",
+    device: Optional[torch.device] = None,
+    gmic_repo_dir: Path = GMIC_REPO_DEFAULT,
+    model_override: Optional[nn.Module] = None,
+) -> Tuple[nn.Module, Dict[str, Any], Dict[str, Any]]:
+    """Load fine-tuned GMIC checkpoint with independent SHA-256 verification and zero-grad eval guarantee."""
+    ckpt_path = Path(checkpoint_path)
+    if not ckpt_path.exists():
+        raise FileNotFoundError(f"Missing fine-tuned GMIC checkpoint: {ckpt_path}")
+    actual_sha = compute_sha256_file(ckpt_path).lower()
+    if expected_sha256 and actual_sha != str(expected_sha256).strip().lower():
+        raise RuntimeError(
+            f"Fine-tuned GMIC checkpoint SHA-256 mismatch: got {actual_sha}, expected {expected_sha256}"
+        )
+
+    ckpt = torch.load(str(ckpt_path), map_location="cpu", weights_only=False)
+    if ckpt.get("schema_version") != GMIC_FINETUNED_CKPT_SCHEMA:
+        raise RuntimeError(f"Unsupported fine-tuned GMIC checkpoint schema: {ckpt.get('schema_version')}")
+
+    if device is None:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    if model_override is not None:
+        model = model_override
+        mods: Dict[str, Any] = {}
+    else:
+        mods = _ensure_gmic_importable(gmic_repo_dir)
+        params = {
+            "device_type": "gpu" if device.type == "cuda" else "cpu",
+            "gpu_number": device.index or 0,
+            "max_crop_noise": (100, 100),
+            "max_crop_size_noise": 100,
+            "cam_size": (46, 30),
+            "K": 6,
+            "crop_shape": (256, 256),
+            "post_processing_dim": 256,
+            "num_classes": 2,
+            "use_v1_global": False,
+            "percent_t": GMIC_PERCENT_T_MAP[str(model_index)],
+        }
+        model = mods["gmic"].GMIC(params)
+
+    model.load_state_dict(ckpt["model"], strict=True)
+    model = model.to(device)
+    model.eval()
+    for p in model.parameters():
+        p.requires_grad_(False)
+
+    meta = {
+        "model_id": GMIC_FINETUNED_MODEL_ID,
+        "checkpoint_file": ckpt_path.name,
+        "checkpoint_sha256": actual_sha,
+        "strategy": ckpt.get("strategy"),
+        "epoch": int(ckpt["epoch"]),
+        "best_epoch": int(ckpt["best_epoch"]),
+        "best_train_calib_auroc": float(ckpt["best_auroc"]),
+        "seed": int(ckpt.get("seed", 42)),
+    }
+    return model, mods, meta
