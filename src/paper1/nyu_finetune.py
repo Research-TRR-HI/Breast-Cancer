@@ -18,7 +18,8 @@ Key scientific & numerical safeguards:
 from pathlib import Path
 import os
 import random
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+import time
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 import numpy as np
 import pandas as pd
 import torch
@@ -514,3 +515,227 @@ def train_nyu_head_from_cached_features(
         "best_checkpoint_sha256": compute_sha256_file(best_pt),
         "history": history,
     }
+
+
+def parse_nyu_batch_sizes(raw: str) -> List[int]:
+    """Parse comma-separated positive exam batch sizes."""
+    vals = [int(x.strip()) for x in str(raw).split(",") if x.strip()]
+    if not vals or any(v < 1 for v in vals):
+        raise ValueError(f"Expected positive comma-separated exam batch sizes, got {raw!r}")
+    return vals
+
+
+def run_progressive_nyu_batch_benchmark(
+    model: nn.Module,
+    exam_batch_loader: Callable[[int, int], Dict[str, np.ndarray]],
+    device: torch.device,
+    *,
+    batch_sizes: Sequence[int] = (2, 4, 8, 16),
+    mode: str = "extract",
+    warmup_steps: int = 1,
+    bench_steps: int = 3,
+    draws_per_exam: int = 1,
+    stop_on_throughput_drop: bool = True,
+    drop_tolerance: float = 0.90,
+) -> Dict[str, Any]:
+    """Progressively benchmark NYU exam batch sizes (`2, 4, 8, 16`) for extraction/evaluation."""
+    if mode not in ("extract", "eval"):
+        raise ValueError(f"Unsupported NYU benchmark mode={mode!r}; expected 'extract' or 'eval'")
+    sorted_bs = sorted({int(b) for b in batch_sizes if int(b) >= 1})
+    model = model.to(device)
+    model.eval()
+    results: List[Dict[str, Any]] = []
+    best_eps = -1.0
+
+    with torch.no_grad():
+        for bs_idx, bs in enumerate(sorted_bs):
+            if device.type == "cuda":
+                torch.cuda.empty_cache()
+                torch.cuda.reset_peak_memory_stats(device)
+            data_load_sec = 0.0
+            h2d_sec = 0.0
+            fwd_sec = 0.0
+            completed = 0
+            status = "ok"
+            stopped_reason = ""
+            try:
+                total_steps = int(warmup_steps) + int(bench_steps)
+                for step in range(total_steps):
+                    t_d0 = time.perf_counter()
+                    host_dict = exam_batch_loader(bs, step)
+                    t_d1 = time.perf_counter()
+
+                    host_t = {}
+                    for v in NYU_VIEWS:
+                        arr = torch.from_numpy(np.ascontiguousarray(host_dict[v], dtype=np.float32))
+                        host_t[v] = arr.pin_memory() if device.type == "cuda" else arr
+                    t_h0 = time.perf_counter()
+                    tbatch = {v: host_t[v].to(device, non_blocking=True) for v in NYU_VIEWS}
+                    if device.type == "cuda":
+                        torch.cuda.synchronize(device)
+                    t_h1 = time.perf_counter()
+
+                    t_f0 = time.perf_counter()
+                    if mode == "extract":
+                        _ = extract_nyu_backbone_features(model, tbatch)
+                    else:
+                        _ = model(tbatch)
+                    if device.type == "cuda":
+                        torch.cuda.synchronize(device)
+                    t_f1 = time.perf_counter()
+
+                    if step >= warmup_steps:
+                        data_load_sec += t_d1 - t_d0
+                        h2d_sec += t_h1 - t_h0
+                        fwd_sec += t_f1 - t_f0
+                        completed += 1
+            except Exception as exc:
+                msg = str(exc).lower()
+                if isinstance(exc, torch.cuda.OutOfMemoryError) or "out of memory" in msg:
+                    status = "oom"
+                    stopped_reason = str(exc)
+                    if device.type == "cuda":
+                        torch.cuda.empty_cache()
+                else:
+                    raise
+
+            total_sec = max(data_load_sec + h2d_sec + fwd_sec, 1e-9)
+            n_exams = completed * bs
+            exams_per_sec = float(n_exams / total_sec) if completed > 0 else 0.0
+            imgs_per_sec = float((n_exams * 4 * int(draws_per_exam)) / total_sec) if completed > 0 else 0.0
+            peak_alloc = float(torch.cuda.max_memory_allocated(device) / (1024**3)) if device.type == "cuda" else 0.0
+            peak_res = float(torch.cuda.max_memory_reserved(device) / (1024**3)) if device.type == "cuda" else 0.0
+            row = {
+                "mode": mode,
+                "batch_exams": bs,
+                "draws_per_exam": int(draws_per_exam),
+                "status": status,
+                "stopped_reason": stopped_reason,
+                "exams_per_sec": round(exams_per_sec, 4),
+                "imgs_per_sec": round(imgs_per_sec, 3),
+                "peak_allocated_vram_gb": round(peak_alloc, 4),
+                "peak_reserved_vram_gb": round(peak_res, 4),
+                "data_load_sec": round(data_load_sec, 4),
+                "h2d_sec": round(h2d_sec, 4),
+                "fwd_sec": round(fwd_sec, 4),
+                "pin_memory": device.type == "cuda",
+                "non_blocking": True,
+            }
+            if status == "ok":
+                if exams_per_sec > best_eps:
+                    best_eps = exams_per_sec
+                elif stop_on_throughput_drop and bs_idx >= 1 and exams_per_sec < best_eps * float(drop_tolerance):
+                    row["stopped_reason"] = f"throughput_drop ({exams_per_sec:.3f} < {best_eps * drop_tolerance:.3f})"
+                    results.append(row)
+                    break
+            results.append(row)
+            if status == "oom":
+                break
+
+    valid = [r for r in results if r["status"] == "ok"]
+    best_row = max(valid, key=lambda r: r["exams_per_sec"]) if valid else None
+    return {"mode": mode, "sweep_results": results, "recommended": best_row}
+
+
+def verify_nyu_multidraw_feature_equivalence(
+    model: nn.Module,
+    exam_draws: Dict[str, np.ndarray],
+    *,
+    num_draws: int,
+    atol: float = 1e-6,
+) -> Dict[str, Any]:
+    """Verify exact equivalence between multi-draw cached features and online SplitBreastModel forward.
+
+    Mathematical basis:
+    1. `AllViewsGaussianNoise(0.01)` only adds noise when `self.training == True`; both
+       frozen-backbone feature extraction (`model.eval()`) and `head_only` training
+       (`set_nyu_backbone_eval_mode(model, "head_only")`) hold it in `.eval()` (identity map).
+    2. All `BatchNorm2d` layers reside inside `four_view_resnet.{cc,mlo}` and stay in
+       `.eval()` mode, freezing `running_mean` and `running_var`.
+    3. Random crops/flips (`augment_and_normalize_image`) happen upstream of the backbone,
+       so evaluating `head(backbone(aug(x, seed_k)))` over `k=0..K-1` draws is identical
+       to precomputing `h_k = backbone(aug(x, seed_k))` and calling `head(h_k)`.
+    """
+    device = next(model.parameters()).device
+    set_nyu_backbone_eval_mode(model, "head_only")
+
+    bn_means_before = {
+        name: mod.running_mean.detach().clone()
+        for name, mod in model.named_modules()
+        if isinstance(mod, nn.BatchNorm2d)
+    }
+
+    t_in = {
+        v: torch.from_numpy(np.ascontiguousarray(exam_draws[v], dtype=np.float32)).to(device)
+        for v in NYU_VIEWS
+    }
+    n_total = int(t_in["L-CC"].shape[0])
+    if n_total % int(num_draws) != 0:
+        raise ValueError(f"Expected first dim ({n_total}) divisible by num_draws ({num_draws})")
+    n_exams = n_total // int(num_draws)
+
+    # Path A: Multi-draw cached features -> score_nyu_head_from_tta_features
+    h_cc_multi, h_mlo_multi = extract_nyu_backbone_features(model, t_in)
+    h_cc_shaped = h_cc_multi.reshape(n_exams, num_draws, -1)
+    h_mlo_shaped = h_mlo_multi.reshape(n_exams, num_draws, -1)
+    cached_multi_scores = score_nyu_head_from_tta_features(model, h_cc_shaped, h_mlo_shaped)
+
+    # Path B: Single-draw feature extraction draw-by-draw -> averaged post-softmax
+    h_cc_single = torch.empty_like(h_cc_shaped)
+    h_mlo_single = torch.empty_like(h_mlo_shaped)
+    with torch.no_grad():
+        for ex_i in range(n_exams):
+            for k in range(num_draws):
+                idx = ex_i * num_draws + k
+                one = {v: t_in[v][idx : idx + 1] for v in NYU_VIEWS}
+                hc, hm = extract_nyu_backbone_features(model, one)
+                h_cc_single[ex_i, k] = hc[0]
+                h_mlo_single[ex_i, k] = hm[0]
+    cached_single_scores = score_nyu_head_from_tta_features(model, h_cc_single, h_mlo_single)
+
+    # Path C: Full end-to-end SplitBreastModel forward in .eval()
+    model.eval()
+    with torch.no_grad():
+        out_full = model(t_in)
+        probs_cc = torch.exp(out_full["CC"].float()).reshape(n_exams, num_draws, 4, 2)[:, :, :, 1]
+        probs_mlo = torch.exp(out_full["MLO"].float()).reshape(n_exams, num_draws, 4, 2)[:, :, :, 1]
+        full_mean_4 = (0.5 * (probs_cc + probs_mlo)).mean(dim=1).cpu().numpy()
+
+    max_feat_diff = max(
+        float(torch.max(torch.abs(h_cc_shaped - h_cc_single)).item()),
+        float(torch.max(torch.abs(h_mlo_shaped - h_mlo_single)).item()),
+    )
+    max_score_diff_vs_full = max(
+        abs(cached_multi_scores[i]["exam_score"] - max(float(full_mean_4[i, 2]), float(full_mean_4[i, 3])))
+        for i in range(n_exams)
+    )
+    max_score_diff_vs_single = max(
+        abs(cached_multi_scores[i]["exam_score"] - cached_single_scores[i]["exam_score"])
+        for i in range(n_exams)
+    )
+
+    bn_unchanged = all(
+        torch.equal(bn_means_before[name], mod.running_mean)
+        for name, mod in model.named_modules()
+        if isinstance(mod, nn.BatchNorm2d)
+    )
+    gn_active_flags = [
+        bool(mod.training)
+        for mod in model.modules()
+        if "gaussiannoise" in type(mod).__name__.lower()
+    ]
+    if max_feat_diff > atol or max_score_diff_vs_full > atol or max_score_diff_vs_single > atol or not bn_unchanged:
+        raise AssertionError(
+            f"NYU multi-draw equivalence check failed: max_feat_diff={max_feat_diff}, "
+            f"max_score_diff_vs_full={max_score_diff_vs_full}, bn_unchanged={bn_unchanged}"
+        )
+    return {
+        "n_exams": n_exams,
+        "num_draws": int(num_draws),
+        "max_feature_abs_diff": max_feat_diff,
+        "max_score_abs_diff_vs_full_eval": max_score_diff_vs_full,
+        "max_score_abs_diff_vs_single_draw": max_score_diff_vs_single,
+        "batchnorm_running_stats_frozen": bn_unchanged,
+        "gaussian_noise_modules_training_flags": gn_active_flags,
+    }
+
