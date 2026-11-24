@@ -32,7 +32,7 @@ from src.utils.env_metadata import PINNED_MODAL_PIP_PACKAGES, PINNED_MODAL_PYTHO
 
 APP_NAME = "paper1-nyu-fourview-inference"
 RSNA_VOL = modal.Volume.from_name("rsna-mammography-vol")
-NLBS_VOL = modal.Volume.from_name("nlbs-mammography-vol")
+NLBS_VOL = modal.Volume.from_name("nlbs-mammography-vol", create_if_missing=True)
 
 RSNA_MOUNT = Path("/rsna_vol")
 NLBS_MOUNT = Path("/nlbs_vol")
@@ -567,6 +567,7 @@ def infer_nyu_shard(
         NYU_TTA_SEED_OFFICIAL,
         build_nyu_fourview_model,
         compute_nyu_case_ids_sha256,
+        compute_text_lf_sha256,
         validate_and_load_nyu_4view_manifest,
         validate_nyu_shard_payload,
         verify_nyu_step1_against_frozen_source,
@@ -588,7 +589,7 @@ def infer_nyu_shard(
     man_csv = cache_root / "manifest.csv"
     if not man_csv.exists():
         raise FileNotFoundError(f"Step 1 NYU manifest missing: {man_csv}")
-    step1_manifest_sha = compute_sha256_file(man_csv)
+    step1_manifest_sha = compute_text_lf_sha256(man_csv)
     expected_frozen_sha = NYU_STEP1_MANIFEST_SHA256[split_name]
     if step1_manifest_sha.lower() != expected_frozen_sha.lower():
         raise RuntimeError(f"{split_name}: Volume Step 1 manifest SHA mismatch {step1_manifest_sha} != {expected_frozen_sha}")
@@ -751,6 +752,7 @@ def main(
     from src.paper1.nyu_fourview_adapter import (
         NYU_STEP1_MANIFEST_SHA256,
         check_nyu_aggregate_spend_guard,
+        compute_text_lf_sha256,
         finalize_and_lock_nyu_predictions,
         validate_and_load_nyu_4view_manifest,
         validate_nyu_step2_cli_and_guard,
@@ -798,7 +800,7 @@ def main(
     step1_local_csv = Path(f"reports/paper1/nyu_step1_{split}_manifest.csv")
     if not step1_local_csv.exists():
         raise FileNotFoundError(f"Expected Step 1 local manifest CSV: {step1_local_csv}")
-    local_sha = compute_sha256_file(step1_local_csv)
+    local_sha = compute_text_lf_sha256(step1_local_csv)
     expected_sha = NYU_STEP1_MANIFEST_SHA256[split]
     step1_df = pd.read_csv(step1_local_csv, dtype={"item_id": str, "case_id": str})
     src_csv = Path(
