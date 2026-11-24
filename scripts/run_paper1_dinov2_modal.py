@@ -171,7 +171,12 @@ def extract_dinov2_embeddings(
 
             if not is_benchmark and resume and c_path.exists():
                 ck = torch.load(str(c_path), map_location="cpu", weights_only=False)
-                if ck.get("image_ids") == c_ids and tuple(ck["embeddings"].shape) == (len(c_ids), 384) and bool(torch.isfinite(ck["embeddings"]).all()):
+                if (
+                    ck.get("backbone_sha256") == DINOV2_VITS14_SHA256
+                    and ck.get("image_ids") == c_ids
+                    and tuple(ck["embeddings"].shape) == (len(c_ids), 384)
+                    and bool(torch.isfinite(ck["embeddings"]).all())
+                ):
                     continue
 
             c_embs = []
@@ -230,20 +235,24 @@ def extract_dinov2_embeddings(
         "peak_vram_gb": round(peak_vram_gb, 3),
         "out_pt": str(out_pt),
         "sha256": compute_sha256_file(out_pt),
-        "download_cmd": f"modal --profile hasinishrak2015 volume get rsna-mammography-vol {str(out_pt).replace('/rsna_vol', '')} reports/paper1/dinov2_cache/",
+        "download_cmd": f"modal volume get --profile tigerwood693 rsna-mammography-vol {str(out_pt).replace('/rsna_vol', '')} reports/paper1/dinov2_cache/",
     }
 
 
 @app.local_entrypoint()
 def main(stage: str = "extract", benchmark_n: int = 512) -> None:
+    profile = os.environ.get("MODAL_PROFILE", "tigerwood693")
     if stage == "benchmark":
         res = extract_dinov2_embeddings.remote("rsna", limit_n=benchmark_n, resume=False)
+        res["download_cmd"] = f"modal volume get --profile {profile} rsna-mammography-vol {str(res['out_pt']).replace('/rsna_vol', '')} reports/paper1/dinov2_cache/"
         out_p = Path("reports/paper1/dinov2_nvme_benchmark.json")
         out_p.parent.mkdir(parents=True, exist_ok=True)
         out_p.write_text(json.dumps(res, indent=2), encoding="utf-8")
         print(json.dumps(res, indent=2))
     elif stage == "extract":
         for ds in ("rsna", "nlbs"):
-            print(json.dumps(extract_dinov2_embeddings.remote(ds, limit_n=0, resume=True), indent=2))
+            res = extract_dinov2_embeddings.remote(ds, limit_n=0, resume=True)
+            res["download_cmd"] = f"modal volume get --profile {profile} rsna-mammography-vol {str(res['out_pt']).replace('/rsna_vol', '')} reports/paper1/dinov2_cache/"
+            print(json.dumps(res, indent=2))
     else:
         raise ValueError("Use --stage benchmark or --stage extract (head training runs locally via scripts/train_paper1_dinov2_head.py).")

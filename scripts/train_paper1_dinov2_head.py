@@ -238,12 +238,16 @@ def train_and_lock_dinov2_head(
 
     if nlbs_emb_pt is not None and nlbs_emb_pt.exists():
         nlbs_pack = torch.load(str(nlbs_emb_pt), map_location="cpu", weights_only=False)
+        if str(nlbs_pack.get("backbone_sha256", "")).lower() != DINOV2_VITS14_SHA256:
+            raise RuntimeError(f"Unexpected DINOv2 backbone_sha256 in {nlbs_emb_pt}")
         nlbs_manifest = load_label_free_inference_manifest(nlbs_manifest_csv)
         assert_no_forbidden_columns(nlbs_manifest.columns, str(nlbs_manifest_csv))
         n_map = {str(uid): i for i, uid in enumerate(nlbs_pack["image_ids"])}
         nlbs_manifest["image_uid"] = nlbs_manifest["image_uid"].astype(str)
-        nlbs_manifest = nlbs_manifest[nlbs_manifest["image_uid"].isin(n_map)].copy()
-        x_nlbs = nlbs_pack["embeddings"][nlbs_manifest["emb_idx"].values if "emb_idx" in nlbs_manifest else nlbs_manifest["image_uid"].map(n_map).values].float()
+        missing_nlbs = set(nlbs_manifest["image_uid"]) - set(n_map.keys())
+        if missing_nlbs:
+            raise RuntimeError(f"Missing {len(missing_nlbs)} NLBS image_uids in {nlbs_emb_pt}")
+        x_nlbs = nlbs_pack["embeddings"][nlbs_manifest["image_uid"].map(n_map).values].float()
         with torch.no_grad():
             n_probs = torch.sigmoid(head(x_nlbs).squeeze(1)).numpy()
         nlbs_manifest["prob_cancer"] = n_probs
