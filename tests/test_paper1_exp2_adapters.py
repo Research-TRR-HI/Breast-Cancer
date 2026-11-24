@@ -13,8 +13,9 @@ import torch
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "scripts"))
 
-from scripts.run_paper1_exp2_modal import build_unit_work_items, validate_exp2_cli_and_guard
+from run_paper1_exp2_modal import build_unit_work_items, validate_exp2_cli_and_guard
 from src.evaluation.stage_c_eval import compute_sha256_file
 from src.paper1.exp2_adapters import (
     EXP2_END2END_INPUT_SIZE,
