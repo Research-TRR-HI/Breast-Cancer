@@ -1,0 +1,168 @@
+{
+  "ce_b5": {
+    "dataset_id": "cmmd",
+    "model_id": "ce_b5",
+    "pilot_limit": 200,
+    "total_dataset_images": 5202,
+    "recommended_batch_size": 32,
+    "img_per_sec": 30.1,
+    "peak_vram_gb": 10.032,
+    "max_abs_diff": 0.000244140625,
+    "all_candidates": [
+      {
+        "batch_size": 16,
+        "n_images": 200,
+        "elapsed_sec": 7.138,
+        "img_per_sec": 28.02,
+        "peak_vram_gb": 5.073,
+        "max_abs_diff": 0.0,
+        "projected_full_dataset_sec": 185.7,
+        "projected_full_dataset_usd": 0.1218
+      },
+      {
+        "batch_size": 32,
+        "n_images": 200,
+        "elapsed_sec": 6.644,
+        "img_per_sec": 30.1,
+        "peak_vram_gb": 10.032,
+        "max_abs_diff": 0.000244140625,
+        "projected_full_dataset_sec": 172.8,
+        "projected_full_dataset_usd": 0.1134
+      },
+      {
+        "batch_size": 64,
+        "n_images": 200,
+        "status": "stopped_limit",
+        "error": "Expected canUse32BitIndexMath(input) && canUse32BitIndexMath(output) to be true, but got false.  (Could this error message be improved?  If so, please report an enhancement request to PyTorch.)",
+        "img_per_sec": 0.0,
+        "peak_vram_gb": 19.94633197784424,
+        "max_abs_diff": 0.0
+      }
+    ]
+  },
+  "trust_b5": {
+    "dataset_id": "cmmd",
+    "model_id": "trust_b5",
+    "pilot_limit": 200,
+    "total_dataset_images": 5202,
+    "recommended_batch_size": 32,
+    "img_per_sec": 30.56,
+    "peak_vram_gb": 10.031,
+    "max_abs_diff": 0.000244140625,
+    "all_candidates": [
+      {
+        "batch_size": 16,
+        "n_images": 200,
+        "elapsed_sec": 6.629,
+        "img_per_sec": 30.17,
+        "peak_vram_gb": 5.073,
+        "max_abs_diff": 0.0,
+        "projected_full_dataset_sec": 172.4,
+        "projected_full_dataset_usd": 0.1131
+      },
+      {
+        "batch_size": 32,
+        "n_images": 200,
+        "elapsed_sec": 6.544,
+        "img_per_sec": 30.56,
+        "peak_vram_gb": 10.031,
+        "max_abs_diff": 0.000244140625,
+        "projected_full_dataset_sec": 170.2,
+        "projected_full_dataset_usd": 0.1117
+      },
+      {
+        "batch_size": 64,
+        "n_images": 200,
+        "status": "stopped_limit",
+        "error": "Expected canUse32BitIndexMath(input) && canUse32BitIndexMath(output) to be true, but got false.  (Could this error message be improved?  If so, please report an enhancement request to PyTorch.)",
+        "img_per_sec": 0.0,
+        "peak_vram_gb": 19.94620990753174,
+        "max_abs_diff": 0.0
+      }
+    ]
+  },
+  "dinov2_rsna": {
+    "dataset_id": "cmmd",
+    "model_id": "dinov2_rsna",
+    "pilot_limit": 200,
+    "total_dataset_images": 5202,
+    "recommended_batch_size": 32,
+    "img_per_sec": 163.45,
+    "peak_vram_gb": 0.625,
+    "max_abs_diff": 0.0,
+    "all_candidates": [
+      {
+        "batch_size": 32,
+        "n_images": 200,
+        "elapsed_sec": 1.224,
+        "img_per_sec": 163.45,
+        "peak_vram_gb": 0.625,
+        "max_abs_diff": 0.0,
+        "projected_full_dataset_sec": 31.8,
+        "projected_full_dataset_usd": 0.0209
+      },
+      {
+        "batch_size": 64,
+        "n_images": 200,
+        "elapsed_sec": 1.262,
+        "img_per_sec": 158.49,
+        "peak_vram_gb": 1.16,
+        "max_abs_diff": 0.0,
+        "projected_full_dataset_sec": 32.8,
+        "projected_full_dataset_usd": 0.0215
+      },
+      {
+        "batch_size": 128,
+        "n_images": 200,
+        "elapsed_sec": 1.274,
+        "img_per_sec": 157.0,
+        "peak_vram_gb": 2.23,
+        "max_abs_diff": 0.0,
+        "projected_full_dataset_sec": 33.1,
+        "projected_full_dataset_usd": 0.0217
+      }
+    ]
+  },
+  "resnet50_rsna": {
+    "dataset_id": "cmmd",
+    "model_id": "resnet50_rsna",
+    "pilot_limit": 200,
+    "total_dataset_images": 5202,
+    "recommended_batch_size": 32,
+    "img_per_sec": 139.76,
+    "peak_vram_gb": 1.611,
+    "max_abs_diff": 0.0,
+    "all_candidates": [
+      {
+        "batch_size": 32,
+        "n_images": 200,
+        "elapsed_sec": 1.431,
+        "img_per_sec": 139.76,
+        "peak_vram_gb": 1.611,
+        "max_abs_diff": 0.0,
+        "projected_full_dataset_sec": 37.2,
+        "projected_full_dataset_usd": 0.0244
+      },
+      {
+        "batch_size": 64,
+        "n_images": 200,
+        "elapsed_sec": 1.474,
+        "img_per_sec": 135.73,
+        "peak_vram_gb": 3.126,
+        "max_abs_diff": 0.001953125,
+        "projected_full_dataset_sec": 38.3,
+        "projected_full_dataset_usd": 0.0251
+      },
+      {
+        "batch_size": 128,
+        "n_images": 200,
+        "elapsed_sec": 1.464,
+        "img_per_sec": 136.59,
+        "peak_vram_gb": 6.155,
+        "max_abs_diff": 0.001953125,
+        "projected_full_dataset_sec": 38.1,
+        "projected_full_dataset_usd": 0.025
+      }
+    ]
+  }
+}
