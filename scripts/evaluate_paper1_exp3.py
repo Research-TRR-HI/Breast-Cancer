@@ -36,6 +36,7 @@ def main() -> None:
     parser.add_argument("--out-dir", type=Path, default=Path("reports/paper1/expanded/exp3/eval"))
     parser.add_argument("--reuse-nlbs-from", type=Path, default=None, help="Optional six_model_final/locked_nlbs dir to verify & import NLBS predictions.")
     parser.add_argument("--nlbs-exam-manifest", type=Path, default=Path("datasets/nlbs/exam_manifest.csv"))
+    parser.add_argument("--cohort-mode", default="all", choices=["all", "full", "common_4view"])
     parser.add_argument("--n-boot", type=int, default=2000)
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
@@ -54,12 +55,14 @@ def main() -> None:
         c4v_df, _ = select_common_4view_cohort(inf_df)
         c4v_ids = sorted(c4v_df["exam_id"].unique().tolist())
         models = ds_cfg.get("models", list(RSNA_SUPERVISED_MODELS))
+        ds_cohort_mode = ds_cfg.get("cohort_mode", args.cohort_mode)
         per_ds[ds_id] = evaluate_external_dataset(
             dataset_id=ds_id,
             lock_dir=args.lock_dir,
             outcome_manifest_csv=Path(ds_cfg["outcome_manifest"]),
             model_ids=models,
             common_4view_exam_ids=c4v_ids,
+            cohort_mode=ds_cohort_mode,
             n_boot=args.n_boot,
             seed=args.seed,
         )
