@@ -1,0 +1,32 @@
+{
+  "ce_b5": {
+    "rsna_case_csv": "reports\\paper1\\six_model_final\\inputs\\ce_b5_rsna.csv",
+    "nlbs_exam_csv": "reports\\paper1\\six_model_final\\inputs\\ce_b5_nlbs.csv",
+    "model_sha256": "adf1443455ee1b507485ee4b7f64932d5cf6f59bb6afcf11b9f415c634372d22"
+  },
+  "trust_b5": {
+    "rsna_case_csv": "reports\\paper1\\six_model_final\\inputs\\trust_b5_rsna.csv",
+    "nlbs_exam_csv": "reports\\paper1\\six_model_final\\inputs\\trust_b5_nlbs.csv",
+    "model_sha256": "63388d790ce9cf8a8287adc7724358ced392a69b332ce1a5e46972750faa51cb"
+  },
+  "dinov2_rsna": {
+    "rsna_case_csv": "reports\\paper1\\six_model_final\\inputs\\dinov2_rsna_rsna.csv",
+    "nlbs_exam_csv": "reports\\paper1\\six_model_final\\inputs\\dinov2_rsna_nlbs.csv",
+    "model_sha256": "b141c2631ca8e54e5d233239823aafaf18fa3f5d8c62c755339888f41f67d5f5"
+  },
+  "resnet50_rsna": {
+    "rsna_case_csv": "reports\\paper1\\six_model_final\\inputs\\resnet50_rsna_rsna.csv",
+    "nlbs_exam_csv": "reports/paper1/resnet50_preds/nlbs_case_scores.csv",
+    "model_sha256": "ed620c61e38ce47ceac99d73fb1b02c2dae4946552e4469f5395f19b2a0c9d32"
+  },
+  "gmic_pretrained": {
+    "rsna_case_csv": "reports\\paper1\\six_model_final\\inputs\\gmic_pretrained_rsna.csv",
+    "nlbs_exam_csv": "reports/paper1/predictions_locked/gmic_nlbs_case_scores.csv",
+    "model_sha256": "3b792e6de22fdccd34a43b4c1cc87a94f5f4fa8aed42722dce4e4badac347991"
+  },
+  "nyu_fourview_pretrained": {
+    "rsna_case_csv": "reports\\paper1\\six_model_final\\inputs\\nyu_fourview_pretrained_rsna.csv",
+    "nlbs_exam_csv": "reports/paper1/predictions_locked/nyu_nlbs_4view_case_scores.csv",
+    "model_sha256": "9a1d97f93493ea2007c00e6c1805dfa634cbc321ecdeba2c2adecd351e86b014"
+  }
+}
