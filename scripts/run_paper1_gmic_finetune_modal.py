@@ -406,8 +406,11 @@ def run_gmic_finetune_l40s(
                     probs = model(bx)[:, 1].float().cpu().numpy().tolist()
                 tc_scores.extend(float(p) for p in probs)
 
-        _, c_scores = aggregate_case_scores(tc_pids, tc_scores)
-        _, c_lbls = aggregate_case_labels(tc_pids, tc_lbls)
+        score_map = aggregate_case_scores(tc_scores, tc_pids)
+        label_map = aggregate_case_labels(tc_lbls, tc_pids)
+        ordered_pids = sorted(label_map.keys())
+        c_scores = [score_map[p] for p in ordered_pids]
+        c_lbls = [label_map[p] for p in ordered_pids]
         auroc = float(compute_auroc(np.asarray(c_lbls), np.asarray(c_scores)))
         if auroc > best_auroc:
             best_auroc, best_epoch = auroc, ep
