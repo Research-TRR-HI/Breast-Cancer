@@ -29,7 +29,7 @@ from src.utils.env_metadata import PINNED_MODAL_PIP_PACKAGES, PINNED_MODAL_PYTHO
 
 APP_NAME = "paper1-nyu-cpu-preprocess"
 RSNA_VOL = modal.Volume.from_name("rsna-mammography-vol")
-NLBS_VOL = modal.Volume.from_name("nlbs-mammography-vol")
+NLBS_VOL = modal.Volume.from_name("nlbs-mammography-vol", create_if_missing=True)
 
 RSNA_MOUNT = Path("/rsna_vol")
 NLBS_MOUNT = Path("/nlbs_vol")
@@ -52,6 +52,10 @@ image = (
         remote_path="/root/external/breast_cancer_classifier/src",
     )
     .add_local_file(
+        "datasets/rsna/splits_seed42.csv",
+        remote_path="/root/datasets/rsna/splits_seed42.csv",
+    )
+    .add_local_file(
         "datasets/paper1/rsna_val_calib_4view_selection.csv",
         remote_path="/root/datasets/paper1/rsna_val_calib_4view_selection.csv",
     )
@@ -71,9 +75,38 @@ def _compute_cpu_cost_usd(wall_sec: float, cpus: float, mem_gib: float) -> float
 
 
 def _load_split_rows(split_name: str, local_root: Optional[Path] = None) -> List[Dict[str, str]]:
-    from src.paper1.nyu_fourview_adapter import validate_and_load_nyu_4view_manifest
+    import pandas as pd
+    from src.paper1.nyu_finetune import select_rsna_4view_split_exams
+    from src.paper1.nyu_fourview_adapter import NYU_VIEWS, validate_and_load_nyu_4view_manifest
 
     base = Path("/root") if local_root is None else Path(local_root)
+    if split_name in ("rsna_train", "rsna_train_calib"):
+        rsna_split = split_name.replace("rsna_", "", 1)
+        splits_df = pd.read_csv(base / "datasets/rsna/splits_seed42.csv")
+        picked_df, _ = select_rsna_4view_split_exams(splits_df, rsna_split)
+        # Compute n_candidates_in_slot deterministically without leaking `cancer` into preprocessing rows
+        sub = splits_df[splits_df["split"] == rsna_split].copy()
+        sub["view_slot"] = (
+            sub["laterality"].astype(str).str.strip().str.upper()
+            + "-"
+            + sub["view"].astype(str).str.strip().str.upper()
+        )
+        sub = sub[sub["view_slot"].isin(NYU_VIEWS)]
+        cand_counts = sub.groupby(["patient_id", "view_slot"])["image_id"].count().to_dict()
+        return [
+            {
+                "split_name": split_name,
+                "case_id": str(r.patient_id),
+                "item_id": str(r.image_id),
+                "view_slot": str(r.view_slot),
+                "dcm_path": str(RSNA_MOUNT / "rsna" / "raw" / r.rel_path),
+                "rel_path": str(r.rel_path),
+                "site_id": str(r.site_id),
+                "machine_id": str(r.machine_id),
+                "n_candidates_in_slot": int(cand_counts.get((r.patient_id, r.view_slot), 1)),
+            }
+            for r in picked_df.itertuples(index=False)
+        ]
     if split_name == "rsna_val_calib":
         df = validate_and_load_nyu_4view_manifest(
             "rsna_val_calib", base / "datasets/paper1/rsna_val_calib_4view_selection.csv"
