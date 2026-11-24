@@ -313,12 +313,12 @@ def validate_nyu_cli_stage_and_guard(
         splits = ["rsna_val_calib", "nlbs_4view"]
     elif split == "train_all":
         splits = ["rsna_train", "rsna_train_calib"]
-    elif split in ("rsna_val_calib", "nlbs_4view", "rsna_train", "rsna_train_calib"):
+    elif split in ("rsna_val_calib", "nlbs_4view", "rsna_train", "rsna_train_calib", "rsna_train_pilot"):
         splits = [split]
     else:
         raise ValueError(
             f"Unsupported --split={split!r}; expected 'rsna_val_calib', 'nlbs_4view', 'rsna_train', "
-            "'rsna_train_calib', 'all', or 'train_all'"
+            "'rsna_train_calib', 'rsna_train_pilot', 'all', or 'train_all'"
         )
 
     if stage == "build" and not approve_full_build:
