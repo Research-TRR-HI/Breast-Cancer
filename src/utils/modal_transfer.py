@@ -155,6 +155,7 @@ def get_bundle_specs(bundle_name: str) -> List[SourceSpec]:
         "dryousuf_gmic_eval_rsna_val_calib",
         "dryousuf_gmic_eval_nlbs",
         "dryousuf_gmic_eval_cache",
+        "glam_nlbs",
     ):
         specs = []
         if bundle_name in ("dryousuf_gmic_eval_rsna_val_calib", "dryousuf_gmic_eval_cache"):
@@ -168,7 +169,7 @@ def get_bundle_specs(bundle_name: str) -> List[SourceSpec]:
                     description="Verified 10,982 RSNA val_calib GMIC (2944x1920) uint16 PNG eval cache (~62.06 GiB)",
                 )
             )
-        if bundle_name in ("dryousuf_gmic_eval_nlbs", "dryousuf_gmic_eval_cache"):
+        if bundle_name in ("dryousuf_gmic_eval_nlbs", "dryousuf_gmic_eval_cache", "glam_nlbs"):
             specs.append(
                 SourceSpec(
                     src_profile="hasinishrak2015",
@@ -176,7 +177,7 @@ def get_bundle_specs(bundle_name: str) -> List[SourceSpec]:
                     src_prefix="cache/paper1_gmic_uint16_v1/nlbs",
                     dst_volume="rsna-mammography-vol",
                     dst_prefix="cache/paper1_gmic_uint16_v1/nlbs",
-                    description="Verified 26,988 label-free NLBS GMIC (2944x1920) uint16 PNG eval cache (~97.31 GiB)",
+                    description="Verified 26,988 label-free NLBS GMIC/GLAM (2944x1920) uint16 PNG cache (~97.31 GiB)",
                 )
             )
         for spec in specs:
