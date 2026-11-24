@@ -80,10 +80,13 @@ def _load_split_rows(split_name: str, local_root: Optional[Path] = None) -> List
     from src.paper1.nyu_fourview_adapter import NYU_VIEWS, validate_and_load_nyu_4view_manifest
 
     base = Path("/root") if local_root is None else Path(local_root)
-    if split_name in ("rsna_train", "rsna_train_calib"):
-        rsna_split = split_name.replace("rsna_", "", 1)
+    if split_name in ("rsna_train", "rsna_train_calib", "rsna_train_pilot"):
+        rsna_split = "train" if split_name == "rsna_train_pilot" else split_name.replace("rsna_", "", 1)
         splits_df = pd.read_csv(base / "datasets/rsna/splits_seed42.csv")
         picked_df, _ = select_rsna_4view_split_exams(splits_df, rsna_split)
+        if split_name == "rsna_train_pilot":
+            pilot_pids = sorted(picked_df["patient_id"].astype(str).unique())[:200]
+            picked_df = picked_df[picked_df["patient_id"].astype(str).isin(pilot_pids)].copy()
         # Compute n_candidates_in_slot deterministically without leaking `cancer` into preprocessing rows
         sub = splits_df[splits_df["split"] == rsna_split].copy()
         sub["view_slot"] = (
