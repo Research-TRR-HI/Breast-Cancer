@@ -1,0 +1,248 @@
+{
+  "aggregate_worker_container_s": 1.071,
+  "all_verified": true,
+  "bundle": "dinov2",
+  "dst_profile": "tigerwood693",
+  "effective_concurrent_workers": 16,
+  "estimated_container_compute_usd": 0.003505,
+  "job_id": "pilot_w16_c8_s2",
+  "num_containers": 8,
+  "num_slices": 3,
+  "skipped_bytes": 536733376,
+  "slice_index": 0,
+  "startup_and_scheduling_overhead_s": 7.929,
+  "streams_per_container": 2,
+  "transfer_results": [
+    {
+      "elapsed_s": 0.16513764600000003,
+      "errors": [],
+      "interrupted": false,
+      "job_id": "pilot_w16_c8_s2",
+      "manifest_rel_path": "_transfer_manifests/pilot_w16_c8_s2/shard_0000.json",
+      "shard_id": 0,
+      "stats": {
+        "commit_calls": 1,
+        "commit_duration_s": 1.269,
+        "commit_retries": 0,
+        "failed_files": 0,
+        "file_retries": 0,
+        "skipped_bytes": 88283115,
+        "skipped_files": 1,
+        "transferred_bytes": 0,
+        "transferred_files": 0
+      }
+    },
+    {
+      "elapsed_s": 0.09672957799999993,
+      "errors": [],
+      "interrupted": false,
+      "job_id": "pilot_w16_c8_s2",
+      "manifest_rel_path": "_transfer_manifests/pilot_w16_c8_s2/shard_0001.json",
+      "shard_id": 1,
+      "stats": {
+        "commit_calls": 1,
+        "commit_duration_s": 0.955,
+        "commit_retries": 0,
+        "failed_files": 0,
+        "file_retries": 0,
+        "skipped_bytes": 64053640,
+        "skipped_files": 106,
+        "transferred_bytes": 0,
+        "transferred_files": 0
+      }
+    },
+    {
+      "elapsed_s": 0.11165507099999994,
+      "errors": [],
+      "interrupted": false,
+      "job_id": "pilot_w16_c8_s2",
+      "manifest_rel_path": "_transfer_manifests/pilot_w16_c8_s2/shard_0002.json",
+      "shard_id": 2,
+      "stats": {
+        "commit_calls": 1,
+        "commit_duration_s": 1.319,
+        "commit_retries": 0,
+        "failed_files": 0,
+        "file_retries": 0,
+        "skipped_bytes": 64058905,
+        "skipped_files": 106,
+        "transferred_bytes": 0,
+        "transferred_files": 0
+      }
+    },
+    {
+      "elapsed_s": 0.22594255200000002,
+      "errors": [],
+      "interrupted": false,
+      "job_id": "pilot_w16_c8_s2",
+      "manifest_rel_path": "_transfer_manifests/pilot_w16_c8_s2/shard_0003.json",
+      "shard_id": 3,
+      "stats": {
+        "commit_calls": 1,
+        "commit_duration_s": 2.044,
+        "commit_retries": 0,
+        "failed_files": 0,
+        "file_retries": 0,
+        "skipped_bytes": 64066773,
+        "skipped_files": 106,
+        "transferred_bytes": 0,
+        "transferred_files": 0
+      }
+    },
+    {
+      "elapsed_s": 0.05406214500000006,
+      "errors": [],
+      "interrupted": false,
+      "job_id": "pilot_w16_c8_s2",
+      "manifest_rel_path": "_transfer_manifests/pilot_w16_c8_s2/shard_0004.json",
+      "shard_id": 4,
+      "stats": {
+        "commit_calls": 1,
+        "commit_duration_s": 0.674,
+        "commit_retries": 0,
+        "failed_files": 0,
+        "file_retries": 0,
+        "skipped_bytes": 64065294,
+        "skipped_files": 107,
+        "transferred_bytes": 0,
+        "transferred_files": 0
+      }
+    },
+    {
+      "elapsed_s": 0.10930297200000005,
+      "errors": [],
+      "interrupted": false,
+      "job_id": "pilot_w16_c8_s2",
+      "manifest_rel_path": "_transfer_manifests/pilot_w16_c8_s2/shard_0005.json",
+      "shard_id": 5,
+      "stats": {
+        "commit_calls": 1,
+        "commit_duration_s": 1.649,
+        "commit_retries": 0,
+        "failed_files": 0,
+        "file_retries": 0,
+        "skipped_bytes": 64072094,
+        "skipped_files": 106,
+        "transferred_bytes": 0,
+        "transferred_files": 0
+      }
+    },
+    {
+      "elapsed_s": 0.0809339389999999,
+      "errors": [],
+      "interrupted": false,
+      "job_id": "pilot_w16_c8_s2",
+      "manifest_rel_path": "_transfer_manifests/pilot_w16_c8_s2/shard_0006.json",
+      "shard_id": 6,
+      "stats": {
+        "commit_calls": 1,
+        "commit_duration_s": 0.635,
+        "commit_retries": 0,
+        "failed_files": 0,
+        "file_retries": 0,
+        "skipped_bytes": 64065674,
+        "skipped_files": 107,
+        "transferred_bytes": 0,
+        "transferred_files": 0
+      }
+    },
+    {
+      "elapsed_s": 0.22693818799999987,
+      "errors": [],
+      "interrupted": false,
+      "job_id": "pilot_w16_c8_s2",
+      "manifest_rel_path": "_transfer_manifests/pilot_w16_c8_s2/shard_0007.json",
+      "shard_id": 7,
+      "stats": {
+        "commit_calls": 1,
+        "commit_duration_s": 1.328,
+        "commit_retries": 0,
+        "failed_files": 0,
+        "file_retries": 0,
+        "skipped_bytes": 64067881,
+        "skipped_files": 106,
+        "transferred_bytes": 0,
+        "transferred_files": 0
+      }
+    }
+  ],
+  "transfer_wall_seconds": 8.156,
+  "transferred_bytes": 0,
+  "verify_results": [
+    {
+      "mismatches": [],
+      "passed": true,
+      "png_failures": [],
+      "png_spot_checked": 0,
+      "shard_id": 0,
+      "total_listed": 1,
+      "verified_ok": 1
+    },
+    {
+      "mismatches": [],
+      "passed": true,
+      "png_failures": [],
+      "png_spot_checked": 8,
+      "shard_id": 1,
+      "total_listed": 106,
+      "verified_ok": 106
+    },
+    {
+      "mismatches": [],
+      "passed": true,
+      "png_failures": [],
+      "png_spot_checked": 8,
+      "shard_id": 2,
+      "total_listed": 106,
+      "verified_ok": 106
+    },
+    {
+      "mismatches": [],
+      "passed": true,
+      "png_failures": [],
+      "png_spot_checked": 8,
+      "shard_id": 3,
+      "total_listed": 106,
+      "verified_ok": 106
+    },
+    {
+      "mismatches": [],
+      "passed": true,
+      "png_failures": [],
+      "png_spot_checked": 8,
+      "shard_id": 4,
+      "total_listed": 107,
+      "verified_ok": 107
+    },
+    {
+      "mismatches": [],
+      "passed": true,
+      "png_failures": [],
+      "png_spot_checked": 8,
+      "shard_id": 5,
+      "total_listed": 106,
+      "verified_ok": 106
+    },
+    {
+      "mismatches": [],
+      "passed": true,
+      "png_failures": [],
+      "png_spot_checked": 8,
+      "shard_id": 6,
+      "total_listed": 107,
+      "verified_ok": 107
+    },
+    {
+      "mismatches": [],
+      "passed": true,
+      "png_failures": [],
+      "png_spot_checked": 8,
+      "shard_id": 7,
+      "total_listed": 106,
+      "verified_ok": 106
+    }
+  ],
+  "verify_wall_seconds": 24.781,
+  "wall_throughput_mb_per_s": 0.0,
+  "worker_throughput_mb_per_s": 0.0
+}
