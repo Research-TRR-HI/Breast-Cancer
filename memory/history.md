@@ -1,3 +1,14 @@
+# Session Summary — 2026-11-25 (Final Phase 2 Readiness Audit)
+- Completed parallel 3-subagent Final Phase 2 Readiness Audit across `dryousufmozumder` (Exp 1), `tigerwood693` (Exp 2), and `tigerwood697` (Exp 3) at `$0.00` cloud spend (`0` running apps across all 3 accounts).
+- Integrated Exp 2 (`4` finalized models; `petrini_twoview_efnb3` hard-blocked `blocked_upstream`; license & Category C audit) and Exp 3 (full sharded `--stage infer` orchestration in `scripts/run_paper1_exp3_modal.py`, NYU-on-LUMINA hard-block, CMMD `826`-exam 4-view restriction, 4 new integration tests) into `main`.
+- Verified Exp 1 GMIC (`bf16, bs=64`, `$1.25`) and NYU (`extract bs=16` `$4.76`, `10-TTA bs=8` `$4.88`) schedules, caught 3 critical NYU CLI flag mismatches (`--max-spend-usd 6.5`, `_cached_` checkpoint path, `--num-shards 4`), and locked sequential `< 1,024 GiB` storage lifecycle gates.
+- Re-ran full test suite (`Ran 92 tests in 175.075s — OK (skipped=2)`), specialist suite (`14/14 OK` in `3.835s`), and Exp 3 `--stage dry_run` (`cmmd` & `lumina`). Authored `reports/paper1/expanded/phase2_execution_plan.md` & `research_logs/2026-11-25_paper1_expanded_phase2_readiness_audit.md`.
+
+# history.md — Conversation Log History
+<!-- IMPORTANT FOR AGENTS: Always prepend new conversation log entries to the top of this list (most recent first). Do not append to the bottom. -->
+- **[2026-11-25] Convo 4ea0ac0d**: Final Phase 2 Readiness Audit complete (`92` full / `14` specialist tests green, Exp 3 `--stage infer` fixed, `$30` budget reconciled at `~$22.74–$23.95` w/o IMDB, awaiting `GO PHASE 2`).
+- **[2026-11-24] Convo 4ea0ac0d**: Wave 2 + Wave 3 complete across Exp 1 (`dryousufmozumder`), Exp 2 (`tigerwood693`), and Exp 3 (`tigerwood697`) (`~$3.59` spend, `88` tests OK, committed & pushed to `main` `465d3d4`).
+
 # Session Summary — 2026-11-24
 - **Completed Paper 1 Expanded Three-Experiment Wave 2 + Wave 3 (`~USD 3.59 <= USD 5.90` cap, Zero Full Phase 2 Launched):**
   - **Exp 1 (`dryousufmozumder`, `~USD 0.58`):** Verified `GMIC train_all` (`43,724` imgs), transferred `rsna_val_calib` (`62.06 GiB`), built `200`-exam NYU `rsna_train_pilot` (`5.913 GiB`), and completed L40S progressive pilots: GMIC won at `bf16` + `bs=64` (`49.001 imgs/sec`, `8.22 GB` VRAM, proj `0.531h` / `USD 1.25`); NYU won at `extract bs=16` (`6.83 exams/sec`) and `10-TTA eval bs=8` (`1.26 exams/sec`, `17.30 GB` VRAM).
