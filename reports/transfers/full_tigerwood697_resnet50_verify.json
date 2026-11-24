@@ -1,0 +1,155 @@
+{
+  "all_verified": true,
+  "bundle": "resnet50",
+  "dst_profile": "tigerwood697",
+  "job_id": "full_tigerwood697_resnet50",
+  "mode": "verify_only",
+  "num_containers": 16,
+  "verify_results": [
+    {
+      "mismatches": [],
+      "passed": true,
+      "png_failures": [],
+      "png_spot_checked": 8,
+      "shard_id": 0,
+      "total_listed": 5063,
+      "verified_ok": 5063
+    },
+    {
+      "mismatches": [],
+      "passed": true,
+      "png_failures": [],
+      "png_spot_checked": 8,
+      "shard_id": 1,
+      "total_listed": 5090,
+      "verified_ok": 5090
+    },
+    {
+      "mismatches": [],
+      "passed": true,
+      "png_failures": [],
+      "png_spot_checked": 8,
+      "shard_id": 2,
+      "total_listed": 5112,
+      "verified_ok": 5112
+    },
+    {
+      "mismatches": [],
+      "passed": true,
+      "png_failures": [],
+      "png_spot_checked": 8,
+      "shard_id": 3,
+      "total_listed": 5113,
+      "verified_ok": 5113
+    },
+    {
+      "mismatches": [],
+      "passed": true,
+      "png_failures": [],
+      "png_spot_checked": 8,
+      "shard_id": 4,
+      "total_listed": 5112,
+      "verified_ok": 5112
+    },
+    {
+      "mismatches": [],
+      "passed": true,
+      "png_failures": [],
+      "png_spot_checked": 8,
+      "shard_id": 5,
+      "total_listed": 5113,
+      "verified_ok": 5113
+    },
+    {
+      "mismatches": [],
+      "passed": true,
+      "png_failures": [],
+      "png_spot_checked": 8,
+      "shard_id": 6,
+      "total_listed": 5112,
+      "verified_ok": 5112
+    },
+    {
+      "mismatches": [],
+      "passed": true,
+      "png_failures": [],
+      "png_spot_checked": 8,
+      "shard_id": 7,
+      "total_listed": 5113,
+      "verified_ok": 5113
+    },
+    {
+      "mismatches": [],
+      "passed": true,
+      "png_failures": [],
+      "png_spot_checked": 8,
+      "shard_id": 8,
+      "total_listed": 5112,
+      "verified_ok": 5112
+    },
+    {
+      "mismatches": [],
+      "passed": true,
+      "png_failures": [],
+      "png_spot_checked": 8,
+      "shard_id": 9,
+      "total_listed": 5113,
+      "verified_ok": 5113
+    },
+    {
+      "mismatches": [],
+      "passed": true,
+      "png_failures": [],
+      "png_spot_checked": 8,
+      "shard_id": 10,
+      "total_listed": 5113,
+      "verified_ok": 5113
+    },
+    {
+      "mismatches": [],
+      "passed": true,
+      "png_failures": [],
+      "png_spot_checked": 8,
+      "shard_id": 11,
+      "total_listed": 5113,
+      "verified_ok": 5113
+    },
+    {
+      "mismatches": [],
+      "passed": true,
+      "png_failures": [],
+      "png_spot_checked": 8,
+      "shard_id": 12,
+      "total_listed": 5113,
+      "verified_ok": 5113
+    },
+    {
+      "mismatches": [],
+      "passed": true,
+      "png_failures": [],
+      "png_spot_checked": 8,
+      "shard_id": 13,
+      "total_listed": 5113,
+      "verified_ok": 5113
+    },
+    {
+      "mismatches": [],
+      "passed": true,
+      "png_failures": [],
+      "png_spot_checked": 8,
+      "shard_id": 14,
+      "total_listed": 5113,
+      "verified_ok": 5113
+    },
+    {
+      "mismatches": [],
+      "passed": true,
+      "png_failures": [],
+      "png_spot_checked": 8,
+      "shard_id": 15,
+      "total_listed": 5113,
+      "verified_ok": 5113
+    }
+  ],
+  "verify_wall_seconds": 176.859
+}
