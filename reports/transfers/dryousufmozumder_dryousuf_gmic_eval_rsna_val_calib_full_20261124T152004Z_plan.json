@@ -1,0 +1,49 @@
+{
+  "bundle": "dryousuf_gmic_eval_rsna_val_calib",
+  "by_source_profile": {
+    "hasinishrak2015": {
+      "bytes": 66640248693,
+      "files": 11001,
+      "gib": 62.0636
+    }
+  },
+  "cost_projections": {
+    "baseline_120mbps": {
+      "container_hours": 2.35381828212738,
+      "estimated_cost_usd": 0.14899669725866316,
+      "per_container_usd_hr": 0.0633,
+      "total_gib": 62.06356798578054,
+      "wall_minutes": 8.826818557977676,
+      "wall_seconds": 529.6091134786606
+    },
+    "conservative_50mbps": {
+      "container_hours": 5.649163877105712,
+      "estimated_cost_usd": 0.3575920734207916,
+      "per_container_usd_hr": 0.0633,
+      "total_gib": 62.06356798578054,
+      "wall_minutes": 21.184364539146422,
+      "wall_seconds": 1271.0618723487853
+    },
+    "fast_250mbps": {
+      "container_hours": 1.1298327754211426,
+      "estimated_cost_usd": 0.07151841468415832,
+      "per_container_usd_hr": 0.0633,
+      "total_gib": 62.06356798578054,
+      "wall_minutes": 4.236872907829285,
+      "wall_seconds": 254.2123744697571
+    }
+  },
+  "dst_profile": "dryousufmozumder",
+  "effective_concurrent_workers": 96,
+  "generated_at_utc": "2026-11-24T15:20:04.395978+00:00",
+  "mode": "full",
+  "num_containers": 16,
+  "num_slices": 1,
+  "per_container_usd_hr": 0.0633,
+  "pilot_max_gib": null,
+  "slice_index": 0,
+  "streams_per_container": 6,
+  "total_bytes": 66640248693,
+  "total_files": 11001,
+  "total_gib": 62.0636
+}
