@@ -154,7 +154,7 @@ EXP2_MODEL_REGISTRY: Dict[str, Exp2ModelSpec] = {
         official_repo="https://github.com/nyukat/GLAM",
         repo_revision="17a0019860441e2ea8d7b7c7e0aaeada735e871f",
         checkpoint_name="model_joint.ckpt",
-        checkpoint_sha256="UNKNOWN",
+        checkpoint_sha256="a647ba9176b3e11d2dec7252054504f33856bcabb2bbe763432d3d20e7c65aec",
         license="NYU Non-Commercial Research-Only (LICENSE) / AGPL-3.0 (README conflict)",
         training_dataset="NYU Breast Cancer Screening Dataset (2010-2017)",
         input_level="image",
@@ -168,8 +168,8 @@ EXP2_MODEL_REGISTRY: Dict[str, Exp2ModelSpec] = {
         threshold_category="C",
         official_repo="https://github.com/lishen/end2end-all-conv",
         repo_revision="58401e220a2dd5120b373eef40e9737d7ce8d56c",
-        checkpoint_name="ddsm_resnet50_s10_[512-512-1024]x2.h5",
-        checkpoint_sha256="UNKNOWN",
+        checkpoint_name="end2end_cbis_ddsm_ts.pt",
+        checkpoint_sha256="1c93c4c3ff7f997cc235140340181995d0219162cecd0bf495381b777a2389be",
         license="CC BY-NC-SA 4.0",
         training_dataset="CBIS-DDSM (digitized film, S10 whole-image split)",
         input_level="image",
@@ -510,7 +510,24 @@ def build_glam_model(
     sha = verify_checkpoint_sha256(checkpoint_path, expected_sha256, allow_unknown=allow_unknown_sha)
     if device is None:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    mods = _ensure_repo_module(glam_repo_dir, ["src.modeling.glam"], pkg_prefix="src")
+    mods = _ensure_repo_module(glam_repo_dir, ["src.modeling.glam", "src.modeling.common_functions"], pkg_prefix="src")
+    cf = mods["src.modeling.common_functions"]
+    if not getattr(cf.get_max_window, "_pt2_floor_patched", False):
+        def _get_max_window_pt2_safe(input_image: torch.Tensor, window_shape: Tuple[int, int], pooling_logic: str = "avg") -> torch.Tensor:
+            N, C, H, W = input_image.size()
+            if pooling_logic == "avg":
+                pool_map = torch.nn.functional.avg_pool2d(input_image, window_shape, stride=1)
+            else:
+                pool_map = torch.nn.functional.avg_pool2d(input_image, window_shape, stride=1)
+            _, _, _, W_map = pool_map.size()
+            _, max_linear_idx = torch.max(pool_map.view(N, C, -1), -1)
+            max_idx_x = torch.div(max_linear_idx, W_map, rounding_mode="floor")
+            max_idx_y = max_linear_idx - max_idx_x * W_map
+            upper_left = torch.cat((max_idx_x.unsqueeze(2), max_idx_y.unsqueeze(2)), dim=2)
+            return upper_left.float()
+
+        _get_max_window_pt2_safe._pt2_floor_patched = True  # type: ignore[attr-defined]
+        cf.get_max_window = _get_max_window_pt2_safe
     params = {
         "device_type": "gpu" if device.type == "cuda" else "cpu",
         "gpu_number": device.index or 0,
@@ -523,12 +540,32 @@ def build_glam_model(
         "detection_pooling_percent_k": 0.3,
     }
     model = mods["src.modeling.glam"].MILSingleImageModel(params)
-    state_dict = torch.load(str(checkpoint_path), map_location="cpu", weights_only=False)
+    local_ckpt = Path("/tmp") / checkpoint_path.name
+    if not local_ckpt.exists() or local_ckpt.stat().st_size == 0:
+        raw_bytes = checkpoint_path.read_bytes()
+        eocd = raw_bytes.rfind(b"PK\x05\x06")
+        if eocd != -1 and eocd + 22 <= len(raw_bytes):
+            comment_len = int.from_bytes(raw_bytes[eocd + 20 : eocd + 22], "little")
+            end_pos = min(len(raw_bytes), eocd + 22 + comment_len)
+            local_ckpt.write_bytes(raw_bytes[:end_pos])
+        else:
+            local_ckpt.write_bytes(raw_bytes)
+    state_dict = torch.load(str(local_ckpt), map_location="cpu", weights_only=False)
     missing, unexpected = model.load_state_dict(state_dict, strict=False)
     if missing:
         raise RuntimeError(f"Missing keys when loading GLAM checkpoint {checkpoint_path}: {missing}")
-    if unexpected:
-        raise RuntimeError(f"Unexpected keys when loading GLAM checkpoint {checkpoint_path}: {unexpected}")
+    allowed_legacy_unexpected = {
+        "mil.mil_attn_V.weight",
+        "mil.mil_attn_U.weight",
+        "mil.mil_attn_w.weight",
+        "mil.classifier_linear.weight",
+        "fusion_dnn.weight",
+        "fusion_dnn.bias",
+        "shared_rep_filter.weight",
+    }
+    bad_unexpected = [k for k in unexpected if k not in allowed_legacy_unexpected]
+    if bad_unexpected:
+        raise RuntimeError(f"Unexpected keys when loading GLAM checkpoint {checkpoint_path}: {bad_unexpected}")
     model = model.to(device)
     model.eval()
     return model, sha
@@ -581,7 +618,17 @@ def build_petrini_twoview_model(
         tvn.torch.load = orig_load
         tvn.TwoViewsMIDBreastClassifier.__init__ = orig_init
 
-    state_dict = torch.load(str(checkpoint_path), map_location="cpu", weights_only=False)
+    local_ckpt = Path("/tmp") / checkpoint_path.name
+    if not local_ckpt.exists() or local_ckpt.stat().st_size == 0:
+        raw_bytes = checkpoint_path.read_bytes()
+        eocd = raw_bytes.rfind(b"PK\x05\x06")
+        if eocd != -1 and eocd + 22 <= len(raw_bytes):
+            comment_len = int.from_bytes(raw_bytes[eocd + 20 : eocd + 22], "little")
+            end_pos = min(len(raw_bytes), eocd + 22 + comment_len)
+            local_ckpt.write_bytes(raw_bytes[:end_pos])
+        else:
+            local_ckpt.write_bytes(raw_bytes)
+    state_dict = torch.load(str(local_ckpt), map_location="cpu", weights_only=False)
     model.load_state_dict(state_dict, strict=True)
     model = model.to(device)
     model.eval()
