@@ -1,0 +1,298 @@
+{
+  "schema_version": "paper1_exp3_phase1_readiness_v1",
+  "generated_at_utc": "2026-11-24T14:20:00Z",
+  "branch": "paper1-exp3-phase1",
+  "phase_status": "PHASE_1_WAVE_1_COMPLETE_CONDITIONAL_GO_FOR_WAVE_2",
+  "modal_audit": {
+    "profile": "tigerwood697",
+    "activated_globally": false,
+    "billing_summary_usd": {
+      "metered_total": 8.54,
+      "ephemeral_apps": 4.52,
+      "volumes_metered": 3.99,
+      "network_egress_metered": 0.04,
+      "credits_applied": -4.52,
+      "free_storage_applied": -3.99,
+      "network_egress_allowance": -0.04,
+      "billed_cost": 0.0,
+      "estimated_monthly_credits_remaining": 25.48
+    },
+    "running_apps": 0,
+    "volumes": [
+      "rsna-mammography-vol",
+      "sciencedb-perception-cache",
+      "reid-checkpoints",
+      "sideview-data",
+      "sciencedb-checkpoints",
+      "sciencedb-data",
+      "mmcows-data"
+    ],
+    "total_storage_gib": 165.26,
+    "free_tier_limit_gib": 1024.0,
+    "storage_overage_usd_per_day": 0.0,
+    "verified_resnet50_assets_on_tigerwood697": {
+      "models/paper1/resnet50-11ad3fa6.pth": {
+        "exists": true,
+        "bytes": 102540417
+      },
+      "models/paper1/checkpoints/resnet50_rsna_seed42_best_train_calib.pt": {
+        "exists": true
+      },
+      "models/paper1/checkpoints/resnet50_rsna_seed42_latest.pt": {
+        "exists": true
+      },
+      "cache/stage1_rsna_uint16/png_1520x912": {
+        "exists": true,
+        "file_count": 54706
+      },
+      "cache/stage1_nlbs_uint16/png_1520x912": {
+        "exists": true,
+        "file_count": 26988
+      },
+      "cache/paper1_resnet50_preds": {
+        "exists": true,
+        "files": [
+          "nlbs_image_scores.csv",
+          "nlbs_case_scores.csv",
+          "rsna_val_calib_image_scores.csv",
+          "rsna_val_calib_case_scores.csv"
+        ]
+      }
+    },
+    "checkpoints_needed_on_tigerwood697": {
+      "ready_to_sync_in_wave2": [
+        "models/paper1/dinov2_vits14_pretrain.pth",
+        "reports/paper1/dinov2_head/dinov2_vits14_head_seed42.pt -> models/paper1/checkpoints/dinov2_vits14_head_seed42.pt",
+        "models/mammo_clip/b5-model-best-epoch-7.tar",
+        "models/checkpoints/stage_b_rsna/ce_rsna_seed42_final_epoch20.pt",
+        "models/checkpoints/stage_b_rsna/trust_rsna_seed42_final_epoch20.pt"
+      ],
+      "pending_agent1_handoff": [
+        "gmic_rsna_finetuned (sample_model_1.p + gmic_rsna_finetuned_best_train_calib.pt + rsna_val_calib thresholds)",
+        "nyu_fourview_rsna_finetuned (sample_image_model.p + nyu_fourview_rsna_finetuned_best_train_calib.pt + rsna_val_calib thresholds)"
+      ]
+    }
+  },
+  "frozen_rsna_thresholds": {
+    "ce_b5": {
+      "target_98": 0.0961934626102447,
+      "target_95": 0.124415136873722,
+      "status": "frozen"
+    },
+    "trust_b5": {
+      "target_98": 0.1795480698347091,
+      "target_95": 0.1954631060361862,
+      "status": "frozen"
+    },
+    "dinov2_rsna": {
+      "target_98": 0.183435708284378,
+      "target_95": 0.2065157741308212,
+      "status": "frozen"
+    },
+    "resnet50_rsna": {
+      "target_98": 0.0009927749633789,
+      "target_95": 0.0069313049316406,
+      "status": "frozen"
+    },
+    "gmic_rsna_finetuned": {
+      "target_98": null,
+      "target_95": null,
+      "status": "pending_agent1_handoff"
+    },
+    "nyu_fourview_rsna_finetuned": {
+      "target_98": null,
+      "target_95": null,
+      "status": "pending_agent1_handoff"
+    }
+  },
+  "datasets": {
+    "nlbs": {
+      "country": "Canada",
+      "eligibility": "ELIGIBLE_COMPLETE_REUSE",
+      "cohort_role": "screening",
+      "population_screening_dismissal_allowed": true,
+      "accessibility": "Already locked locally in reports/paper1/six_model_final/locked_nlbs/",
+      "license": "FRDR Academic Research Use",
+      "counts": {
+        "images": 26988,
+        "full_studies": 6359,
+        "common_4view_studies": 6184,
+        "clusters_4view": 5868,
+        "clusters_full": 5942,
+        "positives": 151
+      },
+      "completed_models_reusable": [
+        "ce_b5",
+        "trust_b5",
+        "dinov2_rsna",
+        "resnet50_rsna"
+      ],
+      "pending_models": [
+        "gmic_rsna_finetuned",
+        "nyu_fourview_rsna_finetuned"
+      ],
+      "estimated_new_storage_gib": 0.0
+    },
+    "imdb": {
+      "country": "India",
+      "eligibility": "ELIGIBLE_WITH_INTERACTIVE_DOWNLOAD_AND_MODALITY_SEPARATION",
+      "cohort_role": "mixed_diagnostic_opportunistic",
+      "population_screening_dismissal_allowed": false,
+      "accessibility": "Open Access on IBIA (MAMOS_1000000004 r1.0, MAMOS_1000000050 r2.0) without registration via web Data button (no public curl/wget REST endpoint); MIDAS mirror on request.",
+      "license": "IBIA Open Access (DBT BIOTECH-PRIDE, comparable to CC BY); MIDAS CC BY 4.0",
+      "doi": "10.59275/j.melba.2026-bd61",
+      "counts": {
+        "r1_patients": 583,
+        "r1_images": 3577,
+        "r1_cancers": 73,
+        "r2_patients": 2636,
+        "r2_images": 9097,
+        "r2_cancers": 315,
+        "combined_patients": 3219,
+        "combined_images": 12674,
+        "combined_cancers": 388,
+        "combined_non_cancers": 2821,
+        "unclassified_or_incomplete_patients": 10
+      },
+      "pitfalls_and_guards": [
+        "Prefix patient/exam IDs with r1_/r2_ to avoid sequential pt_XXX collision across releases.",
+        "Deduplicate DICOM SOPInstanceUID across releases.",
+        "Never substitute BI-RADS for cancer: composite truth uses histopathology for BI-RADS 4/5, follow-up for BI-RADS 3, negative + follow-up for BI-RADS 1/2.",
+        "Mixed FFDM + Synthetic Mammography (SM) on Hologic Selenia (2 gens): separate FFDM-only primary vs SM sensitivity.",
+        "Mixed diagnostic + opportunistic screening (~12.1% cancer): no organized population-screening dismissal claims."
+      ],
+      "native_format": "De-identified DICOM",
+      "estimated_storage_gib": {
+        "raw_dicom_est": 180.0,
+        "stage1_png_cache_est": 15.5,
+        "total_est": 195.5
+      }
+    },
+    "cmmd": {
+      "country": "China",
+      "eligibility": "ELIGIBLE_OPEN_PUBLIC_DIAGNOSTIC_BENCHMARK",
+      "cohort_role": "diagnostic_biopsy_enriched",
+      "population_screening_dismissal_allowed": false,
+      "accessibility": "100% Open Public via TCIA NBIA REST API (zero credentials).",
+      "license": "CC BY 4.0",
+      "doi": "10.7937/tcia.eqde-4b16",
+      "counts": {
+        "patients_studies_series": 1775,
+        "images": 5202,
+        "raw_bytes": 22861926932,
+        "raw_gib": 21.292,
+        "series_4view_bilateral": 826,
+        "images_in_4view_series": 3304,
+        "series_2view_unilateral": 949,
+        "clinical_breast_rows": 1872,
+        "bilateral_clinical_patients": 97,
+        "malignant_breast_rows": 1316,
+        "benign_breast_rows": 556
+      },
+      "pitfalls_and_guards": [
+        "100% biopsy-confirmed diagnostic cohort (~74% malignant, 0 healthy normals): strictly forbid population-screening dismissal claims.",
+        "97 patients have bilateral clinical rows in CMMD_clinicaldata_revision.xlsx: track both exam-level max and breast-level outcomes.",
+        "826/1775 (46.5%) have 4 views for NYU 4-view paired comparison; 949/1775 are 2-view unilateral (never fabricate missing views)."
+      ],
+      "native_format": "DICOM (GE Senographe DS)",
+      "estimated_storage_gib": {
+        "raw_dicom_verified": 21.292,
+        "extracted_plus_stage1_cache_est": 27.5,
+        "total_est": 48.8
+      }
+    },
+    "lumina": {
+      "country": "Turkey",
+      "eligibility": "ELIGIBLE_VIEW_AGNOSTIC_MULTI_VENDOR_STRESS_TEST",
+      "cohort_role": "diagnostic_biopsy_enriched",
+      "population_screening_dismissal_allowed": false,
+      "accessibility": "100% Open Public via OSF Storage API (https://osf.io/b63jc/, direct ZIP links, zero login) & Kaggle.",
+      "license": "CC BY-NC 4.0",
+      "arxiv": "2603.14644v3",
+      "counts": {
+        "patients": 468,
+        "benign_unique_ids": 250,
+        "malign_unique_ids": 218,
+        "images_total": 1824,
+        "benign_images": 960,
+        "malignant_images": 864
+      },
+      "pitfalls_and_guards": [
+        "Namespace case_ids (`lumina_benign_<ID>` vs `lumina_malign_<ID>`) because IDs 1..218 collide across Benign/Malign sheets.",
+        "Use LUMINA_RAW (native 12-14 bit DICOMs across 6+ vendors: IMS Giotto, Metaltronica, Fujifilm, Siemens, Carestream, GE) as primary; optionally compare LUMINA harmonized.",
+        "Contralateral breast discarded in Malign class (only 2/436 malignant rows bilateral): insufficient 4-view malignant exams for NYU; evaluate view-agnostic models only."
+      ],
+      "native_format": "DICOM (LUMINA_RAW, 2364x2964 to 4800x6000, 12-14 bit)",
+      "estimated_storage_gib": {
+        "raw_zips_verified": 8.476,
+        "extracted_plus_stage1_cache_est": 11.0,
+        "total_est": 19.5
+      }
+    }
+  },
+  "excluded_datasets": [
+    "OMAMA-DB",
+    "EMBED",
+    "OPTIMAM",
+    "VinDr-Mammo"
+  ],
+  "checklist_24_items": [
+    {"id": 1, "item": "Branch isolation on paper1-exp3-phase1", "status": "DONE"},
+    {"id": 2, "item": "Read-only Modal tigerwood697 billing & apps audit", "status": "DONE"},
+    {"id": 3, "item": "tigerwood697 storage & 1 TiB free-tier audit (~165.26 GiB)", "status": "DONE"},
+    {"id": 4, "item": "Verify ResNet-50 assets & Stage-1 caches on tigerwood697", "status": "DONE"},
+    {"id": 5, "item": "Identify missing RSNA-supervised checkpoints & frozen thresholds", "status": "DONE"},
+    {"id": 6, "item": "Define Agent 1 fine-tuned GMIC & NYU handoff contract", "status": "DONE"},
+    {"id": 7, "item": "Confirm NLBS reuse (6,184 4-view / 6,359 full) for 4 models", "status": "DONE"},
+    {"id": 8, "item": "Audit IMDB accessibility & IBIA/MIDAS licensing", "status": "DONE"},
+    {"id": 9, "item": "Audit IMDB r1.0 vs r2.0 counts & ID/UID deduplication", "status": "DONE"},
+    {"id": 10, "item": "Audit IMDB label provenance, diagnostic/screening mix, FFDM vs SM", "status": "DONE"},
+    {"id": 11, "item": "Audit CMMD TCIA NBIA accessibility & CC BY 4.0 license", "status": "DONE"},
+    {"id": 12, "item": "Audit CMMD 1,775 pts / 5,202 DICOMs, 4-view subset (826), biopsy caveat", "status": "DONE"},
+    {"id": 13, "item": "Audit LUMINA OSF accessibility & CC BY-NC 4.0 license", "status": "DONE"},
+    {"id": 14, "item": "Audit LUMINA multi-vendor DICOMs, ID collision & unilateral 4-view limit", "status": "DONE"},
+    {"id": 15, "item": "Confirm OMAMA-DB/EMBED/OPTIMAM/VinDr exclusion", "status": "DONE"},
+    {"id": 16, "item": "Implement standardized label-free inference & outcome manifests", "status": "DONE"},
+    {"id": 17, "item": "Implement no-view-fabrication 4-view & sensitivity cohort selectors", "status": "DONE"},
+    {"id": 18, "item": "Implement universal 6-model registry & Agent 1 handoff validator", "status": "DONE"},
+    {"id": 19, "item": "Implement resumable shards & pre-join SHA-256 tamper locking", "status": "DONE"},
+    {"id": 20, "item": "Implement per-dataset cluster-bootstrap CIs & anti-pooling guard", "status": "DONE"},
+    {"id": 21, "item": "Pass local CPU unit test suite (8/8 tests PASS)", "status": "DONE"},
+    {"id": 22, "item": "Specify Wave 2 CPU download/cache/sync commands", "status": "DONE"},
+    {"id": 23, "item": "Specify Wave 3 L40S pilot commands (200-500 imgs/exams)", "status": "DONE"},
+    {"id": 24, "item": "Specify Phase 2 commands & all-inclusive cost/storage budget", "status": "DONE"}
+  ],
+  "budget_and_storage_projections": {
+    "current_tigerwood697_storage_gib": 165.26,
+    "wave2_projected_added_gib": {
+      "checkpoints_sync": 1.85,
+      "lumina_raw_plus_stage1": 19.5,
+      "cmmd_raw_plus_stage1": 48.8,
+      "imdb_raw_plus_stage1": 195.5,
+      "total_added_gib": 265.65
+    },
+    "projected_peak_storage_gib": 430.91,
+    "remains_under_1tib_free_tier": true,
+    "projected_storage_usd_per_day": 0.0,
+    "projected_compute_usd": {
+      "wave2_cpu_download_extract_preprocess": {
+        "lumina": 0.08,
+        "cmmd": 0.25,
+        "imdb": 0.65,
+        "checkpoint_sync": 0.02
+      },
+      "wave3_l40s_pilots_200_to_500": {
+        "per_dataset_model_pilot": 0.03,
+        "all_wave3_pilots_combined": 0.25
+      },
+      "phase2_full_l40s_inference": {
+        "lumina_1824_imgs": 0.25,
+        "cmmd_5202_imgs": 0.65,
+        "imdb_12674_imgs": 1.60,
+        "nlbs_pending_gmic_nyu_finetuned": 1.80
+      },
+      "total_estimated_usd_range": [2.95, 5.55],
+      "tigerwood697_credits_available_usd": 25.48
+    }
+  }
+}
