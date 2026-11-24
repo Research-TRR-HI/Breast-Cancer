@@ -579,13 +579,21 @@ def evaluate_external_dataset(
     outcome_manifest_csv: Path,
     model_ids: Sequence[str],
     common_4view_exam_ids: Optional[Sequence[str]] = None,
+    cohort_mode: str = "all",
     n_boot: int = 2000,
     seed: int = 42,
 ) -> Dict[str, Any]:
     """Verify locked predictions and evaluate one external dataset with clinical-role guardrails."""
     if dataset_id not in DATASET_REGISTRY:
         raise ValueError(f"Unknown dataset_id={dataset_id!r}")
+    if cohort_mode not in ("all", "full", "common_4view"):
+        raise ValueError(f"Unsupported cohort_mode={cohort_mode!r}; expected 'all', 'full', or 'common_4view'")
     ds_info = DATASET_REGISTRY[dataset_id]
+    if cohort_mode == "common_4view" and not ds_info.get("has_4view_paired_cohort", False):
+        raise ValueError(
+            f"SCIENTIFIC ELIGIBILITY BLOCK: cohort_mode='common_4view' is forbidden for {dataset_id!r} "
+            f"({ds_info['notes']})."
+        )
 
     locked_dfs: Dict[str, pd.DataFrame] = {}
     thresholds_map: Dict[str, Dict[str, float]] = {}
@@ -644,17 +652,20 @@ def evaluate_external_dataset(
         }
 
     view_agnostic_models = [m for m in model_ids if not MODEL_HANDOFF_SPECS.get(m, {}).get("requires_4view", False)]
-    full_eval = _eval_subset(None, view_agnostic_models) if view_agnostic_models else None
+    full_eval = _eval_subset(None, view_agnostic_models) if (cohort_mode in ("all", "full") and view_agnostic_models) else None
 
     c4v_eval = None
-    if common_4view_exam_ids is not None and len(common_4view_exam_ids) > 0:
-        c4v_eval = _eval_subset(common_4view_exam_ids, model_ids)
+    if cohort_mode in ("all", "common_4view") and ds_info.get("has_4view_paired_cohort", False):
+        if common_4view_exam_ids is not None and len(common_4view_exam_ids) > 0:
+            c4v_eval = _eval_subset(common_4view_exam_ids, model_ids)
 
     return {
         "dataset_id": dataset_id,
         "country": ds_info["country"],
         "cohort_role": ds_info["cohort_role"],
+        "cohort_mode": cohort_mode,
         "population_screening_dismissal_allowed": ds_info["population_screening_dismissal_allowed"],
+        "selection_bias_caveat": ds_info.get("notes", ""),
         "license": ds_info["license"],
         "full_cohort_view_agnostic": full_eval,
         "common_4view_cohort": c4v_eval,
