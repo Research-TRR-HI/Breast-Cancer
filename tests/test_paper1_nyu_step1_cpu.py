@@ -10,8 +10,9 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "scripts"))
 
-from scripts.preprocess_paper1_nyu_cpu import _load_split_rows
+from preprocess_paper1_nyu_cpu import _load_split_rows
 from src.paper1.gmic_adapter import save_uint16_png_atomic
 from src.paper1.nyu_fourview_adapter import (
     NYU_INPUT_SIZES,
