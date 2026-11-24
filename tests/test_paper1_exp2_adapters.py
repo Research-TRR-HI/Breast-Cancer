@@ -26,6 +26,8 @@ from src.paper1 import exp2_adapters as ea
 from src.paper1.exp2_adapters import (
     EXP2_ELIGIBLE_MODELS,
     EXP2_END2END_INPUT_SIZE,
+    EXP2_MODEL_REGISTRY,
+    EXP2_NEW_INFER_MODELS,
     EXP2_NLBS_CACHE_OPTIONS,
     EXP2_PETRINI_INPUT_SIZE,
     aggregate_exp2_exam_scores,
@@ -46,7 +48,7 @@ from src.paper1.exp2_adapters import (
 
 
 class TestPaper1Exp2Adapters(unittest.TestCase):
-    def test_1_locked_5_models_and_blocked_disqualified_rejected(self):
+    def test_1_locked_4_models_and_blocked_upstream_disqualified_rejected(self):
         self.assertEqual(
             EXP2_ELIGIBLE_MODELS,
             (
@@ -54,14 +56,21 @@ class TestPaper1Exp2Adapters(unittest.TestCase):
                 "nyu_fourview_pretrained",
                 "glam_pretrained",
                 "end2end_cbis_ddsm",
-                "petrini_twoview_efnb3",
             ),
         )
+        self.assertEqual(EXP2_NEW_INFER_MODELS, ("glam_pretrained", "end2end_cbis_ddsm"))
         for mid in EXP2_ELIGIBLE_MODELS:
             spec = assert_model_eligible(mid)
             self.assertEqual(spec.threshold_category, "C")
 
-        for blocked in ("frcnn_cad", "mammoscreen_r1", "petrini_vindr_r2", "mammo_clip_zeroshot"):
+        self.assertEqual(EXP2_MODEL_REGISTRY["petrini_twoview_efnb3"].eligibility, "blocked_upstream")
+        for blocked in (
+            "petrini_twoview_efnb3",
+            "frcnn_cad",
+            "mammoscreen_r1",
+            "petrini_vindr_r2",
+            "mammo_clip_zeroshot",
+        ):
             with self.assertRaises(RuntimeError):
                 assert_model_eligible(blocked)
 
@@ -70,7 +79,7 @@ class TestPaper1Exp2Adapters(unittest.TestCase):
     def test_2_real_nlbs_manifests_quarantine_and_petrini_pairing(self):
         df_4v = load_exp2_nlbs_manifest(
             ROOT / "datasets/paper1/nlbs_4view_common_cohort_label_free.csv",
-            model_id="petrini_twoview_efnb3",
+            model_id="nyu_fourview_pretrained",
         )
         self.assertEqual(len(df_4v), 6184 * 4)
         pairs = build_petrini_breast_pairs(df_4v)
@@ -80,6 +89,9 @@ class TestPaper1Exp2Adapters(unittest.TestCase):
         items, studies = build_unit_work_items("glam_pretrained", "nlbs_full", root=ROOT)
         self.assertEqual(len(items), 26988)
         self.assertEqual(len(studies), 6359)
+        e2e_items, e2e_studies = build_unit_work_items("end2end_cbis_ddsm", "nlbs_full", root=ROOT)
+        self.assertEqual(len(e2e_items), 26988)
+        self.assertEqual(len(e2e_studies), 6359)
 
     def test_3_manifest_rejects_forbidden_labels_and_duplicate_ids(self):
         with tempfile.TemporaryDirectory() as td:
@@ -170,8 +182,27 @@ class TestPaper1Exp2Adapters(unittest.TestCase):
                 {"StudyInstanceUID": "s2", "laterality": "R", "score": 0.006},
             ]
         )
-        exam_br = aggregate_exp2_exam_scores(br_df, "petrini_twoview_efnb3")
-        self.assertAlmostEqual(float(exam_br.set_index("StudyInstanceUID").loc["s1", "score"]), 0.02)
+        with self.assertRaises(RuntimeError):
+            aggregate_exp2_exam_scores(br_df, "petrini_twoview_efnb3")
+
+        mock_br_spec = ea.Exp2ModelSpec(
+            model_id="mock_br_2view",
+            display_name="Mock Breast 2-View",
+            eligibility="eligible_new_inference",
+            threshold_category="C",
+            official_repo="https://example.org",
+            repo_revision="main",
+            checkpoint_name="mock.pt",
+            checkpoint_sha256="a" * 64,
+            license="MIT",
+            training_dataset="CBIS-DDSM",
+            input_level="breast_2view",
+            nlbs_cache_source="uncropped_1152x896",
+            aggregation_rule="max",
+        )
+        with patch.dict(ea.EXP2_MODEL_REGISTRY, {"mock_br_2view": mock_br_spec}):
+            exam_br = aggregate_exp2_exam_scores(br_df, "mock_br_2view")
+            self.assertAlmostEqual(float(exam_br.set_index("StudyInstanceUID").loc["s1", "score"]), 0.02)
 
         # Category C primary AUROC/AUPRC only; RSNA calibration rejected
         c_df, c_meta = apply_threshold_policy(exam_img, "glam_pretrained")
@@ -227,26 +258,26 @@ class TestPaper1Exp2Adapters(unittest.TestCase):
             self.assertTrue(bool(b_df.set_index("StudyInstanceUID").loc["s2", "dismissed_98"]))
 
     def test_7_shard_resume_validation_and_prediction_locking(self):
-        unit_ids = ["s1_L", "s1_R", "s2_L", "s2_R"]
+        unit_ids = ["i1", "i2", "i3", "i4"]
         sha = "a" * 64
         payload = {
             "schema_version": "paper1_exp2_shard_v1",
-            "model_id": "petrini_twoview_efnb3",
+            "model_id": "end2end_cbis_ddsm",
             "checkpoint_sha256": sha,
             "split_name": "nlbs_4view",
             "shard_idx": 0,
             "num_shards": 1,
             "expected_unit_ids_sha256": compute_unit_ids_sha256(unit_ids),
             "records": [
-                {"unit_id": "s1_L", "StudyInstanceUID": "s1", "laterality": "L", "score": 0.05},
-                {"unit_id": "s1_R", "StudyInstanceUID": "s1", "laterality": "R", "score": 0.15},
-                {"unit_id": "s2_L", "StudyInstanceUID": "s2", "laterality": "L", "score": 0.01},
-                {"unit_id": "s2_R", "StudyInstanceUID": "s2", "laterality": "R", "score": 0.02},
+                {"unit_id": "i1", "StudyInstanceUID": "s1", "image_uid": "i1", "score": 0.05},
+                {"unit_id": "i2", "StudyInstanceUID": "s1", "image_uid": "i2", "score": 0.15},
+                {"unit_id": "i3", "StudyInstanceUID": "s2", "image_uid": "i3", "score": 0.01},
+                {"unit_id": "i4", "StudyInstanceUID": "s2", "image_uid": "i4", "score": 0.02},
             ],
         }
         ok, reason = validate_exp2_shard_payload(
             payload,
-            model_id="petrini_twoview_efnb3",
+            model_id="end2end_cbis_ddsm",
             expected_unit_ids=unit_ids,
             split_name="nlbs_4view",
             shard_idx=0,
@@ -259,7 +290,7 @@ class TestPaper1Exp2Adapters(unittest.TestCase):
         bad_payload["records"][0]["score"] = float("nan")
         ok_bad, _ = validate_exp2_shard_payload(
             bad_payload,
-            model_id="petrini_twoview_efnb3",
+            model_id="end2end_cbis_ddsm",
             expected_unit_ids=unit_ids,
             split_name="nlbs_4view",
             shard_idx=0,
@@ -270,21 +301,22 @@ class TestPaper1Exp2Adapters(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as td:
             lock = finalize_and_lock_exp2_predictions(
-                model_id="petrini_twoview_efnb3",
+                model_id="end2end_cbis_ddsm",
                 split_name="nlbs_4view",
                 shard_outputs=[payload],
                 expected_studies=["s1", "s2"],
                 checkpoint_sha256=sha,
                 out_dir=Path(td),
             )
-            case_csv = Path(td) / "petrini_twoview_efnb3_nlbs_4view_case_scores.csv"
+            case_csv = Path(td) / "end2end_cbis_ddsm_nlbs_4view_case_scores.csv"
             self.assertEqual(compute_sha256_file(case_csv), lock["locked_files_sha256"][case_csv.name])
 
     def test_8_cli_guards_and_progressive_pilot_batches(self):
         self.assertEqual(default_pilot_batch_sizes("glam_pretrained"), [1, 2, 4])
         self.assertEqual(default_pilot_batch_sizes("end2end_cbis_ddsm"), [4, 8, 16, 32])
-        self.assertEqual(default_pilot_batch_sizes("petrini_twoview_efnb3"), [2, 4, 8, 16])
-        self.assertEqual(parse_pilot_batch_sizes("2,4,8", "petrini_twoview_efnb3"), [2, 4, 8])
+        self.assertEqual(parse_pilot_batch_sizes("4,8,16", "end2end_cbis_ddsm"), [4, 8, 16])
+        with self.assertRaises(RuntimeError):
+            default_pilot_batch_sizes("petrini_twoview_efnb3")
 
         validate_exp2_cli_and_guard(
             stage="plan",
@@ -341,7 +373,28 @@ class TestPaper1Exp2Adapters(unittest.TestCase):
                 approve_full_infer=False,
                 max_total_spend_usd=5.0,
             )
-        for blocked in ("frcnn_cad", "mammoscreen_r1", "petrini_vindr_r2", "mammo_clip_zeroshot", "gmic_pretrained"):
+        with self.assertRaises(RuntimeError):
+            validate_exp2_cli_and_guard(
+                stage="infer",
+                model_id="petrini_twoview_efnb3",
+                split="nlbs_full",
+                num_shards=4,
+                batch_size=8,
+                pilot_limit=200,
+                cache_mode="uncropped_1152x896",
+                approve_wave2_download=True,
+                approve_pilot=True,
+                approve_full_infer=True,
+                max_total_spend_usd=5.0,
+            )
+        for blocked in (
+            "petrini_twoview_efnb3",
+            "frcnn_cad",
+            "mammoscreen_r1",
+            "petrini_vindr_r2",
+            "mammo_clip_zeroshot",
+            "gmic_pretrained",
+        ):
             with self.assertRaises(RuntimeError):
                 validate_exp2_cli_and_guard(
                     stage="plan",
