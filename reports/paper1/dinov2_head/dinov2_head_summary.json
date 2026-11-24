@@ -1,0 +1,48 @@
+{
+  "model_id": "dinov2_vits14_rsna",
+  "checkpoint_path": "reports\\paper1\\dinov2_head\\dinov2_vits14_head_seed42.pt",
+  "checkpoint_sha256": "b141c2631ca8e54e5d233239823aafaf18fa3f5d8c62c755339888f41f67d5f5",
+  "best_epoch": 2,
+  "best_train_calib_auroc": 0.7469066366704162,
+  "rsna_val_calib_auroc": 0.6301721220871213,
+  "rsna_val_calib_auprc": 0.06838434250719694,
+  "rsna_oof_2fold_boot_95ci": {
+    "auroc": {
+      "mean": 0.6296351970013587,
+      "ci95_low": 0.5791027208246325,
+      "ci95_high": 0.6801644963793368
+    },
+    "auprc": {
+      "mean": 0.07379008757842816,
+      "ci95_low": 0.04823294972284254,
+      "ci95_high": 0.11103846486412157
+    },
+    "target_95_sensitivity": {
+      "mean": 0.9582999368911833,
+      "ci95_low": 0.9148871302542813,
+      "ci95_high": 0.9900990099009901
+    },
+    "target_95_dismissal": {
+      "mean": 0.14143031066330816,
+      "ci95_low": 0.12804366078925272,
+      "ci95_high": 0.15534214945424007
+    },
+    "target_98_sensitivity": {
+      "mean": 0.9687876930658021,
+      "ci95_low": 0.9299956140350878,
+      "ci95_high": 1.0
+    },
+    "target_98_dismissal": {
+      "mean": 0.07787615449202352,
+      "ci95_low": 0.06757976490344249,
+      "ci95_high": 0.08859151973131817
+    }
+  },
+  "full_val_calib_thresholds_for_nlbs": {
+    "target_95": 0.20651577413082123,
+    "target_98": 0.18343570828437805
+  },
+  "locked_nlbs_predictions_csv": "reports\\paper1\\dinov2_head\\locked_nlbs_predictions.csv",
+  "locked_nlbs_sha256": "c27a8b7746f82dde9adfd3812a868b9de86e38740fd57322acc2861b1ddd79d1",
+  "locked_nlbs_studies": 6359
+}
