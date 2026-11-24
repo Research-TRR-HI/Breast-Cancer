@@ -1,0 +1,152 @@
+{
+  "aggregate_worker_container_s": 22.689,
+  "all_verified": true,
+  "bundle": "exp3_backbones",
+  "dst_profile": "tigerwood697",
+  "effective_concurrent_workers": 16,
+  "estimated_container_compute_usd": 0.001236,
+  "job_id": "tigerwood697_exp3_backbones_full_20261124T151605Z",
+  "num_containers": 4,
+  "num_slices": 1,
+  "skipped_bytes": 102540417,
+  "slice_index": 0,
+  "startup_and_scheduling_overhead_s": 7.207,
+  "streams_per_container": 4,
+  "transfer_results": [
+    {
+      "elapsed_s": 15.948611304000002,
+      "errors": [],
+      "interrupted": false,
+      "job_id": "tigerwood697_exp3_backbones_full_20261124T151605Z",
+      "manifest_rel_path": "_transfer_manifests/tigerwood697_exp3_backbones_full_20261124T151605Z/shard_0000.json",
+      "shard_id": 0,
+      "stats": {
+        "adaptive_fallback_triggered": false,
+        "commit_calls": 1,
+        "commit_duration_s": 1.687,
+        "commit_retries": 0,
+        "cpu_seconds": 10.65,
+        "failed_files": 0,
+        "file_retries": 0,
+        "final_streams_per_container": 4,
+        "peak_rss_mib": 334.82,
+        "skipped_bytes": 0,
+        "skipped_files": 0,
+        "transferred_bytes": 1654145453,
+        "transferred_files": 1
+      }
+    },
+    {
+      "elapsed_s": 0.0021832470000000548,
+      "errors": [],
+      "interrupted": false,
+      "job_id": "tigerwood697_exp3_backbones_full_20261124T151605Z",
+      "manifest_rel_path": "_transfer_manifests/tigerwood697_exp3_backbones_full_20261124T151605Z/shard_0001.json",
+      "shard_id": 1,
+      "stats": {
+        "adaptive_fallback_triggered": false,
+        "commit_calls": 1,
+        "commit_duration_s": 1.717,
+        "commit_retries": 0,
+        "cpu_seconds": 1.23,
+        "failed_files": 0,
+        "file_retries": 0,
+        "final_streams_per_container": 4,
+        "peak_rss_mib": 55.0,
+        "skipped_bytes": 102540417,
+        "skipped_files": 1,
+        "transferred_bytes": 0,
+        "transferred_files": 0
+      }
+    },
+    {
+      "elapsed_s": 3.0994028159999996,
+      "errors": [],
+      "interrupted": false,
+      "job_id": "tigerwood697_exp3_backbones_full_20261124T151605Z",
+      "manifest_rel_path": "_transfer_manifests/tigerwood697_exp3_backbones_full_20261124T151605Z/shard_0002.json",
+      "shard_id": 2,
+      "stats": {
+        "adaptive_fallback_triggered": false,
+        "commit_calls": 1,
+        "commit_duration_s": 0.743,
+        "commit_retries": 0,
+        "cpu_seconds": 2.66,
+        "failed_files": 0,
+        "file_retries": 0,
+        "final_streams_per_container": 4,
+        "peak_rss_mib": 198.53,
+        "skipped_bytes": 0,
+        "skipped_files": 0,
+        "transferred_bytes": 88283115,
+        "transferred_files": 1
+      }
+    },
+    {
+      "elapsed_s": 3.6389539139999996,
+      "errors": [],
+      "interrupted": false,
+      "job_id": "tigerwood697_exp3_backbones_full_20261124T151605Z",
+      "manifest_rel_path": "_transfer_manifests/tigerwood697_exp3_backbones_full_20261124T151605Z/shard_0003.json",
+      "shard_id": 3,
+      "stats": {
+        "adaptive_fallback_triggered": false,
+        "commit_calls": 1,
+        "commit_duration_s": 1.769,
+        "commit_retries": 0,
+        "cpu_seconds": 2.64,
+        "failed_files": 0,
+        "file_retries": 0,
+        "final_streams_per_container": 4,
+        "peak_rss_mib": 162.41,
+        "skipped_bytes": 0,
+        "skipped_files": 0,
+        "transferred_bytes": 85445101,
+        "transferred_files": 2
+      }
+    }
+  ],
+  "transfer_wall_seconds": 23.156,
+  "transferred_bytes": 1827873669,
+  "verify_results": [
+    {
+      "mismatches": [],
+      "passed": true,
+      "png_failures": [],
+      "png_spot_checked": 0,
+      "shard_id": 0,
+      "total_listed": 1,
+      "verified_ok": 1
+    },
+    {
+      "mismatches": [],
+      "passed": true,
+      "png_failures": [],
+      "png_spot_checked": 0,
+      "shard_id": 1,
+      "total_listed": 1,
+      "verified_ok": 1
+    },
+    {
+      "mismatches": [],
+      "passed": true,
+      "png_failures": [],
+      "png_spot_checked": 0,
+      "shard_id": 2,
+      "total_listed": 1,
+      "verified_ok": 1
+    },
+    {
+      "mismatches": [],
+      "passed": true,
+      "png_failures": [],
+      "png_spot_checked": 0,
+      "shard_id": 3,
+      "total_listed": 2,
+      "verified_ok": 2
+    }
+  ],
+  "verify_wall_seconds": 11.907,
+  "wall_throughput_mb_per_s": 75.281,
+  "worker_throughput_mb_per_s": 109.301
+}
