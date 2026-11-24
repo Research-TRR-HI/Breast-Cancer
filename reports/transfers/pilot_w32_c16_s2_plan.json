@@ -1,0 +1,54 @@
+{
+  "bundle": "dinov2",
+  "by_source_profile": {
+    "hasinishrak2015": {
+      "bytes": 393585827,
+      "files": 430,
+      "gib": 0.3666
+    },
+    "hasinishrak74001": {
+      "bytes": 143134153,
+      "files": 396,
+      "gib": 0.1333
+    }
+  },
+  "cost_projections": {
+    "baseline_120mbps": {
+      "container_hours": 0.01895763185289171,
+      "estimated_cost_usd": 0.0012000180962880452,
+      "per_container_usd_hr": 0.0633,
+      "total_gib": 0.49985943362116814,
+      "wall_minutes": 0.07109111944834391,
+      "wall_seconds": 4.265467166900635
+    },
+    "conservative_50mbps": {
+      "container_hours": 0.0454983164469401,
+      "estimated_cost_usd": 0.002880043431091308,
+      "per_container_usd_hr": 0.0633,
+      "total_gib": 0.49985943362116814,
+      "wall_minutes": 0.1706186866760254,
+      "wall_seconds": 10.237121200561523
+    },
+    "fast_250mbps": {
+      "container_hours": 0.009099663289388021,
+      "estimated_cost_usd": 0.0005760086862182617,
+      "per_container_usd_hr": 0.0633,
+      "total_gib": 0.49985943362116814,
+      "wall_minutes": 0.03412373733520508,
+      "wall_seconds": 2.0474242401123046
+    }
+  },
+  "dst_profile": "tigerwood693",
+  "effective_concurrent_workers": 32,
+  "generated_at_utc": "2026-11-24T07:08:47.579117+00:00",
+  "mode": "pilot",
+  "num_containers": 16,
+  "num_slices": 3,
+  "per_container_usd_hr": 0.0633,
+  "pilot_max_gib": 1.5,
+  "slice_index": 2,
+  "streams_per_container": 2,
+  "total_bytes": 536719980,
+  "total_files": 826,
+  "total_gib": 0.4999
+}
