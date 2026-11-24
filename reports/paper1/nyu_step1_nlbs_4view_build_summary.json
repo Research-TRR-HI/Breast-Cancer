@@ -1,0 +1,292 @@
+{
+  "shards": [
+    {
+      "split_name": "nlbs_4view",
+      "shard_idx": 0,
+      "num_shards": 12,
+      "total_exams_in_shard": 516,
+      "total_images_in_shard": 2064,
+      "skipped_resumed": 1200,
+      "rejected_corrupt_resumed": 0,
+      "newly_processed": 864,
+      "n_fallbacks": 0,
+      "loop_wall_sec": 586.54,
+      "container_wall_sec": 1137.82,
+      "host_rss_gb": 4.051,
+      "cost_usd": 0.05013
+    },
+    {
+      "split_name": "nlbs_4view",
+      "shard_idx": 1,
+      "num_shards": 12,
+      "total_exams_in_shard": 516,
+      "total_images_in_shard": 2064,
+      "skipped_resumed": 0,
+      "rejected_corrupt_resumed": 0,
+      "newly_processed": 2064,
+      "n_fallbacks": 0,
+      "loop_wall_sec": 1898.88,
+      "container_wall_sec": 1901.42,
+      "host_rss_gb": 4.292,
+      "cost_usd": 0.08377
+    },
+    {
+      "split_name": "nlbs_4view",
+      "shard_idx": 2,
+      "num_shards": 12,
+      "total_exams_in_shard": 516,
+      "total_images_in_shard": 2064,
+      "skipped_resumed": 0,
+      "rejected_corrupt_resumed": 0,
+      "newly_processed": 2064,
+      "n_fallbacks": 0,
+      "loop_wall_sec": 1436.39,
+      "container_wall_sec": 1439.9,
+      "host_rss_gb": 4.32,
+      "cost_usd": 0.06344
+    },
+    {
+      "split_name": "nlbs_4view",
+      "shard_idx": 3,
+      "num_shards": 12,
+      "total_exams_in_shard": 516,
+      "total_images_in_shard": 2064,
+      "skipped_resumed": 1100,
+      "rejected_corrupt_resumed": 0,
+      "newly_processed": 964,
+      "n_fallbacks": 0,
+      "loop_wall_sec": 659.95,
+      "container_wall_sec": 1225.69,
+      "host_rss_gb": 4.048,
+      "cost_usd": 0.054
+    },
+    {
+      "split_name": "nlbs_4view",
+      "shard_idx": 4,
+      "num_shards": 12,
+      "total_exams_in_shard": 515,
+      "total_images_in_shard": 2060,
+      "skipped_resumed": 0,
+      "rejected_corrupt_resumed": 0,
+      "newly_processed": 2060,
+      "n_fallbacks": 0,
+      "loop_wall_sec": 1947.23,
+      "container_wall_sec": 1949.45,
+      "host_rss_gb": 4.13,
+      "cost_usd": 0.08588
+    },
+    {
+      "split_name": "nlbs_4view",
+      "shard_idx": 5,
+      "num_shards": 12,
+      "total_exams_in_shard": 515,
+      "total_images_in_shard": 2060,
+      "skipped_resumed": 1200,
+      "rejected_corrupt_resumed": 0,
+      "newly_processed": 860,
+      "n_fallbacks": 0,
+      "loop_wall_sec": 469.99,
+      "container_wall_sec": 969.56,
+      "host_rss_gb": 4.124,
+      "cost_usd": 0.04271
+    },
+    {
+      "split_name": "nlbs_4view",
+      "shard_idx": 6,
+      "num_shards": 12,
+      "total_exams_in_shard": 515,
+      "total_images_in_shard": 2060,
+      "skipped_resumed": 0,
+      "rejected_corrupt_resumed": 0,
+      "newly_processed": 2060,
+      "n_fallbacks": 0,
+      "loop_wall_sec": 1413.42,
+      "container_wall_sec": 1417.1,
+      "host_rss_gb": 4.099,
+      "cost_usd": 0.06243
+    },
+    {
+      "split_name": "nlbs_4view",
+      "shard_idx": 7,
+      "num_shards": 12,
+      "total_exams_in_shard": 515,
+      "total_images_in_shard": 2060,
+      "skipped_resumed": 0,
+      "rejected_corrupt_resumed": 0,
+      "newly_processed": 2060,
+      "n_fallbacks": 0,
+      "loop_wall_sec": 1404.56,
+      "container_wall_sec": 1407.91,
+      "host_rss_gb": 4.089,
+      "cost_usd": 0.06203
+    },
+    {
+      "split_name": "nlbs_4view",
+      "shard_idx": 8,
+      "num_shards": 12,
+      "total_exams_in_shard": 515,
+      "total_images_in_shard": 2060,
+      "skipped_resumed": 0,
+      "rejected_corrupt_resumed": 0,
+      "newly_processed": 2060,
+      "n_fallbacks": 0,
+      "loop_wall_sec": 1277.31,
+      "container_wall_sec": 1280.38,
+      "host_rss_gb": 4.163,
+      "cost_usd": 0.05641
+    },
+    {
+      "split_name": "nlbs_4view",
+      "shard_idx": 9,
+      "num_shards": 12,
+      "total_exams_in_shard": 515,
+      "total_images_in_shard": 2060,
+      "skipped_resumed": 0,
+      "rejected_corrupt_resumed": 0,
+      "newly_processed": 2060,
+      "n_fallbacks": 0,
+      "loop_wall_sec": 1183.62,
+      "container_wall_sec": 1187.54,
+      "host_rss_gb": 3.977,
+      "cost_usd": 0.05232
+    },
+    {
+      "split_name": "nlbs_4view",
+      "shard_idx": 10,
+      "num_shards": 12,
+      "total_exams_in_shard": 515,
+      "total_images_in_shard": 2060,
+      "skipped_resumed": 0,
+      "rejected_corrupt_resumed": 0,
+      "newly_processed": 2060,
+      "n_fallbacks": 0,
+      "loop_wall_sec": 1178.72,
+      "container_wall_sec": 1182.24,
+      "host_rss_gb": 4.152,
+      "cost_usd": 0.05208
+    },
+    {
+      "split_name": "nlbs_4view",
+      "shard_idx": 11,
+      "num_shards": 12,
+      "total_exams_in_shard": 515,
+      "total_images_in_shard": 2060,
+      "skipped_resumed": 0,
+      "rejected_corrupt_resumed": 0,
+      "newly_processed": 2060,
+      "n_fallbacks": 0,
+      "loop_wall_sec": 1434.65,
+      "container_wall_sec": 1438.04,
+      "host_rss_gb": 4.091,
+      "cost_usd": 0.06335
+    }
+  ],
+  "verify_shards": [
+    {
+      "shard_idx": 0,
+      "verified_count": 2064,
+      "rejected": 0,
+      "wall_sec": 443.36,
+      "cost_usd": 0.0078
+    },
+    {
+      "shard_idx": 1,
+      "verified_count": 2064,
+      "rejected": 0,
+      "wall_sec": 885.93,
+      "cost_usd": 0.01558
+    },
+    {
+      "shard_idx": 2,
+      "verified_count": 2064,
+      "rejected": 0,
+      "wall_sec": 1473.98,
+      "cost_usd": 0.02592
+    },
+    {
+      "shard_idx": 3,
+      "verified_count": 2064,
+      "rejected": 0,
+      "wall_sec": 659.68,
+      "cost_usd": 0.0116
+    },
+    {
+      "shard_idx": 4,
+      "verified_count": 2060,
+      "rejected": 0,
+      "wall_sec": 672.42,
+      "cost_usd": 0.01182
+    },
+    {
+      "shard_idx": 5,
+      "verified_count": 2060,
+      "rejected": 0,
+      "wall_sec": 671.6,
+      "cost_usd": 0.01181
+    },
+    {
+      "shard_idx": 6,
+      "verified_count": 2060,
+      "rejected": 0,
+      "wall_sec": 671.62,
+      "cost_usd": 0.01181
+    },
+    {
+      "shard_idx": 7,
+      "verified_count": 2060,
+      "rejected": 0,
+      "wall_sec": 1442.36,
+      "cost_usd": 0.02536
+    },
+    {
+      "shard_idx": 8,
+      "verified_count": 2060,
+      "rejected": 0,
+      "wall_sec": 686.23,
+      "cost_usd": 0.01207
+    },
+    {
+      "shard_idx": 9,
+      "verified_count": 2060,
+      "rejected": 0,
+      "wall_sec": 685.41,
+      "cost_usd": 0.01205
+    },
+    {
+      "shard_idx": 10,
+      "verified_count": 2060,
+      "rejected": 0,
+      "wall_sec": 905.92,
+      "cost_usd": 0.01593
+    },
+    {
+      "shard_idx": 11,
+      "verified_count": 2060,
+      "rejected": 0,
+      "wall_sec": 925.3,
+      "cost_usd": 0.01627
+    }
+  ],
+  "total_shard_compute_usd": 0.7286,
+  "total_verify_shard_compute_usd": 0.178,
+  "total_compute_usd": 0.9066,
+  "verify": {
+    "split_name": "nlbs_4view",
+    "n_images": 24736,
+    "n_exams": 6184,
+    "n_fallback_views": 0,
+    "n_fallback_exams": 0,
+    "pixel_spot_checked": 101,
+    "total_storage_gib": 87.698,
+    "manifest_sha256": "e941df848f2baeac58bbe35b11e4b5ec4e30074c28b893b59f18258008beec65",
+    "by_view_slot": {
+      "L-CC": 6184,
+      "L-MLO": 6184,
+      "R-CC": 6184,
+      "R-MLO": 6184
+    },
+    "by_photometric": {
+      "MONOCHROME2": 24736
+    }
+  }
+}
