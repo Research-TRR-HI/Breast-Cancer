@@ -151,6 +151,30 @@ def get_bundle_specs(bundle_name: str) -> List[SourceSpec]:
             assert_transfer_path_allowed(spec.dst_prefix, context=f"bundle:{bundle_name}:dst")
         return specs
 
+    if bundle_name == "exp3_backbones":
+        specs = [
+            SourceSpec(
+                src_profile="hasinishrak74001",
+                src_volume="rsna-mammography-vol",
+                src_prefix="models/mammo_clip",
+                dst_volume="rsna-mammography-vol",
+                dst_prefix="models/mammo_clip",
+                description="Mammo-CLIP EfficientNet-B5 Ensem backbone checkpoint",
+            ),
+            SourceSpec(
+                src_profile="hasinishrak2015",
+                src_volume="rsna-mammography-vol",
+                src_prefix="models/paper1",
+                dst_volume="rsna-mammography-vol",
+                dst_prefix="models/paper1",
+                description="Paper 1 pretrained backbones (incl. dinov2_vits14_pretrain.pth)",
+            ),
+        ]
+        for spec in specs:
+            assert_transfer_path_allowed(spec.src_prefix, context=f"bundle:{bundle_name}:src")
+            assert_transfer_path_allowed(spec.dst_prefix, context=f"bundle:{bundle_name}:dst")
+        return specs
+
     if bundle_name in (
         "dryousuf_gmic_eval_rsna_val_calib",
         "dryousuf_gmic_eval_nlbs",
