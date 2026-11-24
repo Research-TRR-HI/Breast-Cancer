@@ -11,6 +11,7 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
+from scripts.preprocess_paper1_nyu_cpu import _load_split_rows
 from src.paper1.gmic_adapter import save_uint16_png_atomic
 from src.paper1.nyu_fourview_adapter import (
     NYU_INPUT_SIZES,
@@ -169,14 +170,32 @@ class TestNYUStep1CPUPreprocessing(unittest.TestCase):
     def test_5_guarded_build_cli_blocks_without_approval(self):
         with self.assertRaises(RuntimeError):
             validate_nyu_cli_stage_and_guard("build", "all", 12, approve_full_build=False)
+        with self.assertRaises(RuntimeError):
+            validate_nyu_cli_stage_and_guard("build", "train_all", 12, approve_full_build=False)
         self.assertEqual(
             validate_nyu_cli_stage_and_guard("build", "all", 12, approve_full_build=True),
             ["rsna_val_calib", "nlbs_4view"],
         )
         self.assertEqual(
+            validate_nyu_cli_stage_and_guard("build", "train_all", 12, approve_full_build=True),
+            ["rsna_train", "rsna_train_calib"],
+        )
+        self.assertEqual(
             validate_nyu_cli_stage_and_guard("validate_config", "rsna_val_calib", 8, approve_full_build=False),
             ["rsna_val_calib"],
         )
+
+    def test_6_rsna_train_and_train_calib_row_loading_label_free_and_4view(self):
+        tr_rows = _load_split_rows("rsna_train", local_root=ROOT)
+        tc_rows = _load_split_rows("rsna_train_calib", local_root=ROOT)
+        self.assertEqual(len(tr_rows), 8339 * 4)
+        self.assertEqual(len(tc_rows), 1192 * 4)
+        self.assertNotIn("cancer", tr_rows[0])
+        self.assertNotIn("cancer", tc_rows[0])
+        self.assertEqual(len({r["case_id"] for r in tr_rows}), 8339)
+        self.assertEqual(len({r["case_id"] for r in tc_rows}), 1192)
+        vc_rows = _load_split_rows("rsna_val_calib", local_root=ROOT)
+        self.assertEqual(len(vc_rows), 2382 * 4)
 
 
 if __name__ == "__main__":

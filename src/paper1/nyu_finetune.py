@@ -25,9 +25,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from src.paper1.nyu_fourview_adapter import NYU_VIEWS
+from src.evaluation.stage_c_eval import compute_sha256_file
+from src.paper1.nyu_fourview_adapter import NYU_REPO_DEFAULT, NYU_VIEWS, _ensure_nyu_importable
 
 NYU_FINETUNE_STRATEGIES = ("head_only", "partial", "full")
+NYU_FINETUNED_MODEL_ID = "nyu_fourview_rsna_finetuned"
+NYU_FINETUNED_CKPT_SCHEMA = "paper1_nyu_finetune_ckpt_v1"
 
 
 def select_rsna_4view_split_exams(
@@ -241,11 +244,273 @@ def validate_nyu_finetune_cli_guard(
     max_spend_usd: float,
 ) -> None:
     """Block unapproved full GPU training or evaluation runs."""
-    if stage not in ("pilot", "train", "eval"):
-        raise ValueError(f"Unknown --stage={stage!r}")
+    valid_stages = ("pilot", "train", "eval", "extract_head_features", "train_cached_head")
+    if stage not in valid_stages:
+        raise ValueError(f"Unknown --stage={stage!r}; expected one of {valid_stages}")
     if float(max_spend_usd) <= 0.0:
         raise ValueError(f"--max-spend-usd must be > 0, got {max_spend_usd}")
-    if stage == "train" and not approve_full_train:
-        raise RuntimeError("BLOCKED: `--stage train` requires `--approve-full-train`.")
+    if stage in ("train", "extract_head_features", "train_cached_head") and not approve_full_train:
+        raise RuntimeError(f"BLOCKED: `--stage {stage}` requires `--approve-full-train`.")
     if stage == "eval" and not approve_eval:
         raise RuntimeError("BLOCKED: `--stage eval` requires `--approve-eval`.")
+
+
+def set_nyu_backbone_eval_mode(model: nn.Module, strategy: str) -> None:
+    """Ensure frozen NYU backbone BatchNorm & GaussianNoise layers stay in `.eval()` during fine-tuning."""
+    model.train()
+    if strategy == "full":
+        return
+    if strategy == "head_only":
+        if hasattr(model, "four_view_resnet"):
+            model.four_view_resnet.eval()
+        if hasattr(model, "all_views_gaussian_noise_layer"):
+            model.all_views_gaussian_noise_layer.eval()
+    for mod in model.modules():
+        if isinstance(mod, (nn.BatchNorm1d, nn.BatchNorm2d, nn.BatchNorm3d, nn.SyncBatchNorm)):
+            params = list(mod.parameters())
+            if params and all(not p.requires_grad for p in params):
+                mod.eval()
+
+
+@torch.no_grad()
+def extract_nyu_backbone_features(
+    model: nn.Module,
+    tensor_batch: Dict[str, torch.Tensor],
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    """Extract frozen `(h_cc_in, h_mlo_in)` 512-d vectors in `.eval()` mode without GaussianNoise/BN drift."""
+    was_training = model.training
+    model.eval()
+    try:
+        x_clean = model.all_views_gaussian_noise_layer(tensor_batch) if hasattr(model, "all_views_gaussian_noise_layer") else tensor_batch
+        feats = model.four_view_resnet(x_clean)
+        pooled = model.all_views_avg_pool(feats)
+        h_cc = torch.cat([pooled["L-CC"], pooled["R-CC"]], dim=1)
+        h_mlo = torch.cat([pooled["L-MLO"], pooled["R-MLO"]], dim=1)
+        return h_cc, h_mlo
+    finally:
+        if was_training:
+            model.train()
+
+
+def forward_nyu_head_from_features(
+    model: nn.Module,
+    h_cc_in: torch.Tensor,
+    h_mlo_in: torch.Tensor,
+) -> Dict[str, torch.Tensor]:
+    """Run trainable SplitBreastModel head (`fc1_{cc,mlo}` + `output_layer_{cc,mlo}`) from cached 512-d features."""
+    z_cc = F.relu(model.fc1_cc(h_cc_in))
+    z_mlo = F.relu(model.fc1_mlo(h_mlo_in))
+    return {
+        "CC": model.output_layer_cc(z_cc),
+        "MLO": model.output_layer_mlo(z_mlo),
+    }
+
+
+@torch.no_grad()
+def score_nyu_head_from_tta_features(
+    model: nn.Module,
+    h_cc_tta: torch.Tensor,
+    h_mlo_tta: torch.Tensor,
+) -> List[Dict[str, float]]:
+    """Score `(B, T, 512)` cached TTA feature tensors identically to `score_nyu_fourview_exam_batch`."""
+    b_exams, t_epochs, feat_dim = h_cc_tta.shape
+    out = forward_nyu_head_from_features(
+        model,
+        h_cc_tta.reshape(b_exams * t_epochs, feat_dim),
+        h_mlo_tta.reshape(b_exams * t_epochs, feat_dim),
+    )
+    cc_probs = np.exp(out["CC"].float().cpu().numpy())[:, :, 1].reshape(b_exams, t_epochs, 4)
+    mlo_probs = np.exp(out["MLO"].float().cpu().numpy())[:, :, 1].reshape(b_exams, t_epochs, 4)
+    mean_4 = np.mean(0.5 * (cc_probs + mlo_probs), axis=1)
+    results: List[Dict[str, float]] = []
+    for row in mean_4:
+        lb, rb, lm, rm = [float(x) for x in row]
+        results.append(
+            {
+                "left_benign": lb,
+                "right_benign": rb,
+                "left_malignant": lm,
+                "right_malignant": rm,
+                "exam_score": max(lm, rm),
+            }
+        )
+    return results
+
+
+def validate_nyu_eval_cli_args(
+    *,
+    split: str,
+    batch_exams: int,
+    num_shards: int,
+    num_tta_epochs: int,
+    checkpoint_path: str,
+    approve_eval: bool,
+    max_spend_usd: float,
+) -> None:
+    """Validate CLI args for NYU fine-tuned evaluation-only mode."""
+    validate_nyu_finetune_cli_guard(
+        stage="eval",
+        approve_full_train=False,
+        approve_eval=approve_eval,
+        max_spend_usd=max_spend_usd,
+    )
+    if split not in ("rsna_val_calib", "nlbs_4view"):
+        raise ValueError(f"Unsupported NYU eval --split={split!r}; expected 'rsna_val_calib' or 'nlbs_4view'")
+    if int(batch_exams) < 1:
+        raise ValueError(f"--batch-exams must be >= 1, got {batch_exams}")
+    if int(num_shards) < 1:
+        raise ValueError(f"--num-shards must be >= 1, got {num_shards}")
+    if int(num_tta_epochs) != 10:
+        raise ValueError(f"Official NYU evaluation protocol requires --num-tta-epochs=10, got {num_tta_epochs}")
+    if not str(checkpoint_path).strip():
+        raise ValueError("--checkpoint-path must be non-empty for --stage eval")
+
+
+def load_nyu_finetuned_model_for_eval(
+    checkpoint_path: Path,
+    *,
+    expected_sha256: Optional[str] = None,
+    device: Optional[torch.device] = None,
+    nyu_repo_dir: Path = NYU_REPO_DEFAULT,
+    model_override: Optional[nn.Module] = None,
+) -> Tuple[nn.Module, Dict[str, Any], Dict[str, Any]]:
+    """Load fine-tuned NYU SplitBreastModel checkpoint with SHA-256 verification and zero-grad eval guarantee."""
+    ckpt_path = Path(checkpoint_path)
+    if not ckpt_path.exists():
+        raise FileNotFoundError(f"Missing fine-tuned NYU checkpoint: {ckpt_path}")
+    actual_sha = compute_sha256_file(ckpt_path).lower()
+    if expected_sha256 and actual_sha != str(expected_sha256).strip().lower():
+        raise RuntimeError(
+            f"Fine-tuned NYU checkpoint SHA-256 mismatch: got {actual_sha}, expected {expected_sha256}"
+        )
+
+    ckpt = torch.load(str(ckpt_path), map_location="cpu", weights_only=False)
+    if ckpt.get("schema_version") != NYU_FINETUNED_CKPT_SCHEMA:
+        raise RuntimeError(f"Unsupported fine-tuned NYU checkpoint schema: {ckpt.get('schema_version')}")
+
+    if device is None:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    if model_override is not None:
+        model = model_override
+        mods: Dict[str, Any] = {}
+    else:
+        mods = _ensure_nyu_importable(nyu_repo_dir)
+        model = mods["models"].SplitBreastModel(input_channels=1)
+
+    model.load_state_dict(ckpt["model"], strict=True)
+    model = model.to(device)
+    model.eval()
+    for p in model.parameters():
+        p.requires_grad_(False)
+
+    meta = {
+        "model_id": NYU_FINETUNED_MODEL_ID,
+        "checkpoint_file": ckpt_path.name,
+        "checkpoint_sha256": actual_sha,
+        "strategy": ckpt.get("strategy"),
+        "epoch": int(ckpt["epoch"]),
+        "best_epoch": int(ckpt["best_epoch"]),
+        "best_train_calib_auroc": float(ckpt["best_auroc"]),
+        "seed": int(ckpt.get("seed", 42)),
+    }
+    return model, mods, meta
+
+
+def train_nyu_head_from_cached_features(
+    *,
+    model: nn.Module,
+    train_h_cc: torch.Tensor,
+    train_h_mlo: torch.Tensor,
+    train_lm: np.ndarray,
+    train_rm: np.ndarray,
+    train_exam_cancer: np.ndarray,
+    tc_h_cc: torch.Tensor,
+    tc_h_mlo: torch.Tensor,
+    tc_exam_cancer: np.ndarray,
+    out_dir: Path,
+    epochs: int = 8,
+    batch_exams: int = 16,
+    steps_per_epoch: int = 400,
+    lr: float = 1e-4,
+    seed: int = 42,
+    device: Optional[torch.device] = None,
+) -> Dict[str, Any]:
+    """Train `head_only` NYU SplitBreastModel layers from cached 512-d CC/MLO features."""
+    from src.data.rsna_dataset import BalancedBatchSampler
+    from src.evaluation.stage_c_eval import compute_auroc
+
+    if device is None:
+        device = torch.device("cpu")
+    model = model.to(device)
+    param_groups = configure_nyu_trainable_params(model, strategy="head_only", base_lr=lr)
+    opt = torch.optim.AdamW(param_groups, weight_decay=1e-4)
+    sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=max(1, epochs))
+    sampler = BalancedBatchSampler(
+        labels=train_exam_cancer,
+        batch_size=batch_exams,
+        n_pos=max(1, batch_exams // 4),
+        seed=seed,
+        epoch_policy="paper_independent",
+        steps_per_epoch=steps_per_epoch,
+    )
+    draw_rng = np.random.default_rng(seed + 77)
+    n_draws = int(train_h_cc.shape[1])
+
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    best_pt = out_dir / f"nyu_rsna_head_only_cached_seed{seed}_best_train_calib.pt"
+    latest_pt = out_dir / f"nyu_rsna_head_only_cached_seed{seed}_latest.pt"
+
+    best_auroc, best_epoch, history = -1.0, 0, []
+    for ep in range(1, epochs + 1):
+        set_nyu_backbone_eval_mode(model, "head_only")
+        ep_losses: List[float] = []
+        for indices in sampler:
+            d_idx = draw_rng.integers(0, n_draws, size=len(indices))
+            idx_t = torch.tensor(indices, dtype=torch.long)
+            draw_t = torch.tensor(d_idx, dtype=torch.long)
+            bh_cc = train_h_cc[idx_t, draw_t].to(device)
+            bh_mlo = train_h_mlo[idx_t, draw_t].to(device)
+            lm_t = torch.tensor([train_lm[i] for i in indices], dtype=torch.long, device=device)
+            rm_t = torch.tensor([train_rm[i] for i in indices], dtype=torch.long, device=device)
+            opt.zero_grad(set_to_none=True)
+            out = forward_nyu_head_from_features(model, bh_cc, bh_mlo)
+            loss, ld = compute_nyu_rsna_loss(out, lm_t, rm_t)
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_([p for p in model.parameters() if p.requires_grad], 5.0)
+            opt.step()
+            ep_losses.append(ld["loss_total"])
+        sched.step()
+
+        model.eval()
+        tc_scores: List[float] = []
+        for s0 in range(0, len(tc_h_cc), 64):
+            res_list = score_nyu_head_from_tta_features(
+                model,
+                tc_h_cc[s0 : s0 + 64].to(device),
+                tc_h_mlo[s0 : s0 + 64].to(device),
+            )
+            tc_scores.extend(r["exam_score"] for r in res_list)
+        auroc = float(compute_auroc(tc_exam_cancer, np.asarray(tc_scores)))
+        if auroc > best_auroc:
+            best_auroc, best_epoch = auroc, ep
+            save_nyu_finetune_checkpoint(
+                best_pt, model, opt, sched,
+                epoch=ep, best_auroc=best_auroc, best_epoch=best_epoch,
+                history=history, sampler=sampler, aug_seed_base=seed, strategy="head_only", seed=seed,
+            )
+        history.append({"epoch": ep, "mean_loss": float(np.mean(ep_losses)), "train_calib_auroc": auroc})
+        save_nyu_finetune_checkpoint(
+            latest_pt, model, opt, sched,
+            epoch=ep, best_auroc=best_auroc, best_epoch=best_epoch,
+            history=history, sampler=sampler, aug_seed_base=seed, strategy="head_only", seed=seed,
+        )
+
+    return {
+        "best_epoch": best_epoch,
+        "best_train_calib_auroc": round(best_auroc, 6),
+        "best_checkpoint_path": str(best_pt),
+        "best_checkpoint_sha256": compute_sha256_file(best_pt),
+        "history": history,
+    }

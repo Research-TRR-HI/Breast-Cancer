@@ -151,6 +151,39 @@ def get_bundle_specs(bundle_name: str) -> List[SourceSpec]:
             assert_transfer_path_allowed(spec.dst_prefix, context=f"bundle:{bundle_name}:dst")
         return specs
 
+    if bundle_name in (
+        "dryousuf_gmic_eval_rsna_val_calib",
+        "dryousuf_gmic_eval_nlbs",
+        "dryousuf_gmic_eval_cache",
+    ):
+        specs = []
+        if bundle_name in ("dryousuf_gmic_eval_rsna_val_calib", "dryousuf_gmic_eval_cache"):
+            specs.append(
+                SourceSpec(
+                    src_profile="hasinishrak2015",
+                    src_volume="rsna-mammography-vol",
+                    src_prefix="cache/paper1_gmic_uint16_v1/rsna_val_calib",
+                    dst_volume="rsna-mammography-vol",
+                    dst_prefix="cache/paper1_gmic_uint16_v1/rsna_val_calib",
+                    description="Verified 10,982 RSNA val_calib GMIC (2944x1920) uint16 PNG eval cache (~62.06 GiB)",
+                )
+            )
+        if bundle_name in ("dryousuf_gmic_eval_nlbs", "dryousuf_gmic_eval_cache"):
+            specs.append(
+                SourceSpec(
+                    src_profile="hasinishrak2015",
+                    src_volume="rsna-mammography-vol",
+                    src_prefix="cache/paper1_gmic_uint16_v1/nlbs",
+                    dst_volume="rsna-mammography-vol",
+                    dst_prefix="cache/paper1_gmic_uint16_v1/nlbs",
+                    description="Verified 26,988 label-free NLBS GMIC (2944x1920) uint16 PNG eval cache (~97.31 GiB)",
+                )
+            )
+        for spec in specs:
+            assert_transfer_path_allowed(spec.src_prefix, context=f"bundle:{bundle_name}:src")
+            assert_transfer_path_allowed(spec.dst_prefix, context=f"bundle:{bundle_name}:dst")
+        return specs
+
     specs: List[SourceSpec] = [
         SourceSpec(
             src_profile="hasinishrak74001",
