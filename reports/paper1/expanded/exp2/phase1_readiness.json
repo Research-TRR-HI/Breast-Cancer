@@ -1,0 +1,201 @@
+{
+  "schema_version": "paper1_exp2_phase1_readiness_v1",
+  "generated_at_utc": "2026-11-24T14:20:00Z",
+  "branch": "paper1-exp2-phase1",
+  "verdict": "CONDITIONAL_GO",
+  "wave1_cloud_spend_usd": 0.0,
+  "modal_audit": {
+    "target_profile": "tigerwood693",
+    "profile_activate_called": false,
+    "active_apps_count": 0,
+    "billing_this_month_usd": {
+      "metered_cost": 12.51457098,
+      "billed_cost": 0.0,
+      "credits_drawn": 4.23,
+      "credits_remaining": 25.77,
+      "free_storage_offset": 8.23953107,
+      "reset_date_utc": "2026-12-01"
+    },
+    "volumes_count": 9,
+    "total_files": 410266,
+    "total_storage_gib": 224.8539,
+    "daily_storage_overage_usd": 0.0,
+    "preserved_rsna_mammography_vol_assets": {
+      "total_files": 81806,
+      "total_gib": 102.2373,
+      "stage1_nlbs_uint16": {"files": 27020, "gib": 35.9386},
+      "stage1_rsna_uint16": {"files": 54709, "gib": 65.9501},
+      "paper1_dinov2_vits14": {"files": 23, "gib": 0.2369},
+      "models_paper1": {"files": 1, "gib": 0.0822}
+    },
+    "hasinishrak2015_source_read_only": {
+      "credits_remaining_usd": 5.97,
+      "nlbs_extracted": {"files": 26988, "gib": 324.4480},
+      "gmic_nlbs_uint16_pngs": {"files": 27007, "gib": 97.3070}
+    }
+  },
+  "models": [
+    {
+      "model_id": "gmic_pretrained",
+      "slot": 1,
+      "eligibility": "eligible_locked_reuse",
+      "threshold_category": "C",
+      "optional_threshold_category": "B_non_rsna_only",
+      "repo": "https://github.com/nyukat/GMIC",
+      "revision": "594029efe6184bcca3a151fa1dd46c5fd620cb25",
+      "checkpoint_name": "sample_model_1.p",
+      "checkpoint_sha256": "3b792e6de22fdccd34a43b4c1cc87a94f5f4fa8aed42722dce4e4badac347991",
+      "license": "AGPL-3.0",
+      "locked_nlbs_csv": "reports/paper1/predictions_locked/gmic_nlbs_case_scores.csv",
+      "locked_nlbs_sha256": "94521810b9a78e7047a39d71bc54618ea2c7e95600a6f4fba717b79fdb3a6b36",
+      "caveats": ["Single checkpoint model_1 vs 5-checkpoint author ensemble", "Raw uncalibrated scores; no fixed published cutoff tau"]
+    },
+    {
+      "model_id": "nyu_fourview_pretrained",
+      "slot": 2,
+      "eligibility": "eligible_locked_reuse",
+      "threshold_category": "C",
+      "optional_threshold_category": "B_non_rsna_only",
+      "repo": "https://github.com/nyukat/breast_cancer_classifier",
+      "revision": "6176ebea6950b0a953339593d2da417ab846dae0",
+      "checkpoint_name": "sample_image_model.p",
+      "checkpoint_sha256": "9a1d97f93493ea2007c00e6c1805dfa634cbc321ecdeba2c2adecd351e86b014",
+      "license": "AGPL-3.0",
+      "locked_nlbs_csv": "reports/paper1/predictions_locked/nyu_nlbs_4view_case_scores.csv",
+      "locked_nlbs_sha256": "03e19975edb7a02d297d5b15b672169dd449a86c850488f3f543c5ceddede317",
+      "caveats": ["Single checkpoint vs 5-copy paper ensemble", "2019 model deprecated clinically at NYU", "No fixed published cutoff tau"]
+    },
+    {
+      "model_id": "glam_pretrained",
+      "slot": 3,
+      "eligibility": "eligible_new_inference",
+      "threshold_category": "C",
+      "repo": "https://github.com/nyukat/GLAM",
+      "revision": "17a0019860441e2ea8d7b7c7e0aaeada735e871f",
+      "checkpoint_name": "model_joint.ckpt",
+      "checkpoint_url": "https://github.com/nyukat/GLAM/raw/main/models/model_joint.ckpt",
+      "checkpoint_bytes": 101239420,
+      "checkpoint_git_blob_sha1": "d8b6e1333a7b8bfded7aa5d0e7990115f2264093",
+      "checkpoint_sha256": "UNKNOWN",
+      "license": "NYU Non-Commercial Research-Only (LICENSE) / AGPL-3.0 (README conflict)",
+      "nlbs_cache_reuse": "hasinishrak2015:/rsna-mammography-vol/cache/paper1_gmic_uint16_v1/nlbs",
+      "preprocessing_parity_vs_gmic": "EXACT_MATCH_2944x1920_UINT16",
+      "output_semantics": "benign_pred, malignant_pred -> max(malignant_pred) per StudyInstanceUID",
+      "caveats": ["README states output scores are uncalibrated", "Legacy torch==1.1.0 assert in upstream run_model.py bypassed by exp2_adapters"]
+    },
+    {
+      "model_id": "end2end_cbis_ddsm",
+      "slot": 4,
+      "eligibility": "eligible_new_inference",
+      "threshold_category": "C",
+      "optional_threshold_category": "B_cbis_ddsm_only",
+      "repo": "https://github.com/lishen/end2end-all-conv",
+      "revision": "58401e220a2dd5120b373eef40e9737d7ce8d56c",
+      "checkpoint_name": "ddsm_resnet50_s10_[512-512-1024]x2.h5",
+      "checkpoint_url": "https://drive.google.com/drive/folders/0B1PVLadG_dCKV2pZem5MTjc1cHc?resourcekey=0-t4vtopuv27D9NnMC97w6hg",
+      "checkpoint_sha256": "UNKNOWN",
+      "license": "CC BY-NC-SA 4.0",
+      "training_dataset": "CBIS-DDSM (whole-image S10 split, digitized film)",
+      "input_size_hw": [1152, 896],
+      "nlbs_cache_reuse": "tigerwood693:/rsna-mammography-vol/cache/stage1_nlbs_uint16",
+      "output_semantics": "2-class softmax [neg, pos] -> pred[:, 1] -> max per StudyInstanceUID",
+      "caveats": ["Requires Google Drive resourcekey folder download", "Requires Keras 2.0.5/TF 1.4.0 -> PyTorch conversion and <1e-5 parity check in Wave 2"]
+    },
+    {
+      "model_id": "frcnn_cad",
+      "slot": 5,
+      "eligibility": "ineligible",
+      "threshold_category": "N/A",
+      "repo": "https://github.com/riblidezso/frcnn_cad",
+      "revision": "6c2deb57e37832c281588da11aed8808ba6ee1e9",
+      "checkpoint_name": "vgg16_frcnn_cad.caffemodel",
+      "checkpoint_url": "http://dkrib.web.elte.hu/cad_faster_rcnn/vgg16_frcnn_cad.caffemodel",
+      "checkpoint_sha256": "UNKNOWN",
+      "license": "NONE/UNSPECIFIED",
+      "output_semantics": "Faster R-CNN 3-class [bg, BENIGN, MALIGNANT], cls_ind=2",
+      "ineligibility_reasons": [
+        "Official ELTE weight URL redirects to https://error.elte.hu/error/452.html (dead, HTTP 452 error page) with zero official mirrors.",
+        "Requires BVLC Caffe + py-faster-rcnn compiled on CUDA 8.0 / cuDNN 6 / Python 3.5, incompatible with NVIDIA L40S (sm_89)."
+      ]
+    },
+    {
+      "model_id": "petrini_twoview_efnb3",
+      "slot": 6,
+      "eligibility": "eligible_new_inference",
+      "threshold_category": "C",
+      "optional_threshold_category": "B_cbis_ddsm_only",
+      "repo": "https://github.com/dpetrini/multiple-view",
+      "revision": "2331b545ebdbd5e8c1da58e13b5dd14ba80d33c2",
+      "hf_repo": "https://huggingface.co/dpetrini/cbis-ddsm-efficientnetb3-multiple-view",
+      "hf_revision": "eafc5d168217c974313aa87ea336e053c54813b3",
+      "checkpoint_name": "2024-10-01-14h36m_50ep_best_model_AUC_08643_Best_2-Views-CBIS-EFB3-CVUBP.pt",
+      "checkpoint_bytes": 516949042,
+      "checkpoint_sha256": "82add40900054835f23737d9f3a01922275f1e4dcfd3156a0f7059cb58147071",
+      "license": "MIT",
+      "training_dataset": "CBIS-DDSM two-view (N=2,694)",
+      "input_size_hw": [1152, 896],
+      "channel_order": "[CC_R, CC_G, CC_B, MLO_R, MLO_G, MLO_B]",
+      "laterality_orientation": "Chest wall on left (right-mirrored), matching Stage-1 uint16 PNG cache",
+      "nlbs_cache_reuse": "tigerwood693:/rsna-mammography-vol/cache/stage1_nlbs_uint16",
+      "output_semantics": "2-class softmax per breast -> max(left_malignant, right_malignant)"
+    },
+    {
+      "model_id": "mammoscreen_r1",
+      "slot": "5_replacement_primary",
+      "eligibility": "replacement_candidate",
+      "threshold_category": "A",
+      "published_thresholds": {"target_98": 0.0072, "target_95": 0.0127},
+      "repo": "https://huggingface.co/ianpan/mammoscreen",
+      "checkpoint_name": "model.safetensors",
+      "checkpoint_bytes": 244305924,
+      "checkpoint_sha256": "8ace0998e2d534b08eaa673fad37df16eaffef6dca3f3b5ac2196857a2949596",
+      "license": "Apache-2.0",
+      "training_dataset": "CBIS-DDSM pretraining + RSNA 80/10/10 Split 1 (NLBS 100% unseen)",
+      "nlbs_cache_reuse": "tigerwood693:/rsna-mammography-vol/cache/stage1_nlbs_uint16",
+      "output_semantics": "3-net ensemble sigmoid cancer prob per breast (view-avg) -> max(L, R)"
+    },
+    {
+      "model_id": "petrini_vindr_r2",
+      "slot": "5_replacement_backup",
+      "eligibility": "replacement_candidate",
+      "threshold_category": "C",
+      "repo": "https://huggingface.co/dpetrini/vindr-convnext-multiple-view",
+      "checkpoint_name": "2024-08-07-18h35m_50ep_best_model_AUC_08655_ConvNext_VinDr_Collab.pt",
+      "checkpoint_bytes": 561286562,
+      "checkpoint_sha256": "4619a4d337af31b7dcb622410bc0858ef1b20b872d0aea15f0c4f6c5705f8e71",
+      "license": "MIT",
+      "training_dataset": "VinDr-Mammo (BI-RADS 1-2 Normal vs 3-5 Abnormal; zero RSNA/NLBS overlap)"
+    }
+  ],
+  "metarepository_overlap": {
+    "repo": "https://github.com/nyukat/mammography_metarepository",
+    "revision": "4f9b8a08d7446b6a872f547e9794efdcbeb56271",
+    "license": "BSD-2-Clause",
+    "paper": "Chledowski / Stadnick et al. (MEDINFO 2025 / Stud Health Technol Inform 2025)",
+    "overlapping_models": ["nyu_fourview_pretrained", "gmic_pretrained", "glam_pretrained", "end2end_cbis_ddsm", "frcnn_cad"],
+    "distinct_paper1_contributions": [
+      "Unseen 2025 FRDR Canadian screening program cohort (NLBS)",
+      "Direct comparison against Stratum A RSNA-supervised models and 2025/2026 two-view models",
+      "Category A/B/C original-threshold audit and frozen high-sensitivity dismissal analysis",
+      "Cross-model missed-cancer Jaccard/UpSet overlap"
+    ]
+  },
+  "nlbs_manifest_counts": {
+    "nlbs_4view": {"studies": 6184, "images": 24736, "breast_pairs": 12368},
+    "nlbs_full": {"studies": 6359, "images": 26988, "breast_pairs": 12374}
+  },
+  "cost_projection_usd": {
+    "wave1": 0.0,
+    "wave2_transfer_and_weights": {"min": 0.25, "max": 0.35},
+    "wave3_pilots": {"min": 0.20, "max": 0.40},
+    "phase2_full_inference": {"min": 1.70, "max": 3.45},
+    "total_projected": {"min": 2.15, "max": 4.20},
+    "tigerwood693_credits_remaining": 25.77,
+    "peak_storage_gib": 323.7,
+    "storage_daily_cost_usd": 0.0
+  },
+  "local_tests": {
+    "command": "python -m unittest discover -s tests -p \"test_paper1_exp2_adapters.py\" -v",
+    "status": "PASS (8/8 tests)"
+  }
+}
