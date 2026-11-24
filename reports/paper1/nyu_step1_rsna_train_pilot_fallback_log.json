@@ -1,0 +1,234 @@
+[
+  {
+    "split_name": "rsna_train_pilot",
+    "case_id": "10736",
+    "item_id": "855508729",
+    "view_slot": "L-MLO",
+    "height": 2776,
+    "width": 2082,
+    "dtype": "uint16",
+    "best_center_y": 809,
+    "best_center_x": 874,
+    "crop_window": [
+      0,
+      2776,
+      0,
+      2082
+    ],
+    "raw_shape": [
+      2776,
+      2082
+    ],
+    "file_bytes": 1189723,
+    "png_sha256": "2f7b17368ce855758eecb63d8bc22c0956350a4747126c1ceeac63be34cd6449",
+    "u16_sha256": "7aaf0183b569027a05f6ef7a29a2f011971954ccb705136920c3256b52ece2ec",
+    "photometric": "MONOCHROME2",
+    "oriented_flipped": false,
+    "crop_fallback": true,
+    "fallback_strategy": "native_scale_optimal_window_no_resize",
+    "crop_error": "attempt to get argmax of an empty sequence"
+  },
+  {
+    "split_name": "rsna_train_pilot",
+    "case_id": "10736",
+    "item_id": "1862960721",
+    "view_slot": "R-MLO",
+    "height": 2776,
+    "width": 2082,
+    "dtype": "uint16",
+    "best_center_y": 896,
+    "best_center_x": 874,
+    "crop_window": [
+      0,
+      2776,
+      0,
+      2082
+    ],
+    "raw_shape": [
+      2776,
+      2082
+    ],
+    "file_bytes": 1387478,
+    "png_sha256": "c8cf6852985f074d80b3a288790de828f050beb7b427e5e096d96618d46e3202",
+    "u16_sha256": "f1cf2874fc3f0e3d61ecb2c3b0bc00edd2e7bb09987d117d990f4c8ca47437b6",
+    "photometric": "MONOCHROME2",
+    "oriented_flipped": false,
+    "crop_fallback": true,
+    "fallback_strategy": "native_scale_optimal_window_no_resize",
+    "crop_error": "attempt to get argmax of an empty sequence"
+  },
+  {
+    "split_name": "rsna_train_pilot",
+    "case_id": "10746",
+    "item_id": "1897089136",
+    "view_slot": "L-MLO",
+    "height": 4740,
+    "width": 3540,
+    "dtype": "uint16",
+    "best_center_y": 1487,
+    "best_center_x": 874,
+    "crop_window": [
+      0,
+      4740,
+      0,
+      3540
+    ],
+    "raw_shape": [
+      4740,
+      3540
+    ],
+    "file_bytes": 1529071,
+    "png_sha256": "915e98cc1f244d13e9e10c9d78c59c1f273c21c16043a443b30046e9540f948f",
+    "u16_sha256": "9c7495babe61a4323ba199a681fda3b4305cb21e31fbc2dd27af57a44fbe32cf",
+    "photometric": "MONOCHROME1",
+    "oriented_flipped": false,
+    "crop_fallback": true,
+    "fallback_strategy": "native_scale_optimal_window_no_resize",
+    "crop_error": "attempt to get argmax of an empty sequence"
+  },
+  {
+    "split_name": "rsna_train_pilot",
+    "case_id": "10746",
+    "item_id": "374609869",
+    "view_slot": "R-MLO",
+    "height": 4740,
+    "width": 3540,
+    "dtype": "uint16",
+    "best_center_y": 1487,
+    "best_center_x": 874,
+    "crop_window": [
+      0,
+      4740,
+      0,
+      3540
+    ],
+    "raw_shape": [
+      4740,
+      3540
+    ],
+    "file_bytes": 1540789,
+    "png_sha256": "a8a31f0a840b879c26dda1ae3b62f401602deca34e5e1f89f35eae0cfc36b9b2",
+    "u16_sha256": "5a9efca2406a7b5fe20335056f2fae8538c06d033fc421c6f3efcfee99d0cac4",
+    "photometric": "MONOCHROME1",
+    "oriented_flipped": false,
+    "crop_fallback": true,
+    "fallback_strategy": "native_scale_optimal_window_no_resize",
+    "crop_error": "attempt to get argmax of an empty sequence"
+  },
+  {
+    "split_name": "rsna_train_pilot",
+    "case_id": "10972",
+    "item_id": "863024799",
+    "view_slot": "L-CC",
+    "height": 2776,
+    "width": 2082,
+    "dtype": "uint16",
+    "best_center_y": 1347,
+    "best_center_x": 971,
+    "crop_window": [
+      0,
+      2776,
+      0,
+      2082
+    ],
+    "raw_shape": [
+      2776,
+      2082
+    ],
+    "file_bytes": 3621729,
+    "png_sha256": "0b0554d44d8824e8869afba6515ccd16b25136f0a3d56d75ee4c575fe8a08a18",
+    "u16_sha256": "26c06217974b35b4bce9aaf7a5436bec8ade29dc6db359b2e269fdfeae165693",
+    "photometric": "MONOCHROME2",
+    "oriented_flipped": false,
+    "crop_fallback": true,
+    "fallback_strategy": "native_scale_optimal_window_no_resize",
+    "crop_error": "attempt to get argmax of an empty sequence"
+  },
+  {
+    "split_name": "rsna_train_pilot",
+    "case_id": "10972",
+    "item_id": "922882520",
+    "view_slot": "R-CC",
+    "height": 2776,
+    "width": 2082,
+    "dtype": "uint16",
+    "best_center_y": 1338,
+    "best_center_x": 971,
+    "crop_window": [
+      0,
+      2776,
+      0,
+      2082
+    ],
+    "raw_shape": [
+      2776,
+      2082
+    ],
+    "file_bytes": 2156237,
+    "png_sha256": "420fbeb907594847ea8eac21eea4ecfa9f13823af20284b17c7922d515d5eeff",
+    "u16_sha256": "b4a51af32e7f9e55107828294bb75a0d57a642cb26c646e4843e7434743ff71d",
+    "photometric": "MONOCHROME2",
+    "oriented_flipped": false,
+    "crop_fallback": true,
+    "fallback_strategy": "native_scale_optimal_window_no_resize",
+    "crop_error": "attempt to get argmax of an empty sequence"
+  },
+  {
+    "split_name": "rsna_train_pilot",
+    "case_id": "10972",
+    "item_id": "1410917221",
+    "view_slot": "L-MLO",
+    "height": 2776,
+    "width": 2082,
+    "dtype": "uint16",
+    "best_center_y": 897,
+    "best_center_x": 874,
+    "crop_window": [
+      0,
+      2776,
+      0,
+      2082
+    ],
+    "raw_shape": [
+      2776,
+      2082
+    ],
+    "file_bytes": 1116771,
+    "png_sha256": "88bdf96e5e2e0b72c6a1da1d9670bd1c18afafa6a16926f249ed3d0523844e07",
+    "u16_sha256": "e46bdf7e0c858e03f7010633a4825ef89f20efee1939d47f77108de298a3e88b",
+    "photometric": "MONOCHROME2",
+    "oriented_flipped": false,
+    "crop_fallback": true,
+    "fallback_strategy": "native_scale_optimal_window_no_resize",
+    "crop_error": "attempt to get argmax of an empty sequence"
+  },
+  {
+    "split_name": "rsna_train_pilot",
+    "case_id": "10972",
+    "item_id": "1445838252",
+    "view_slot": "R-MLO",
+    "height": 2776,
+    "width": 2082,
+    "dtype": "uint16",
+    "best_center_y": 801,
+    "best_center_x": 874,
+    "crop_window": [
+      0,
+      2776,
+      0,
+      2082
+    ],
+    "raw_shape": [
+      2776,
+      2082
+    ],
+    "file_bytes": 1059179,
+    "png_sha256": "feb08017b1b6a5332270f9ec233ae3aa1448e2846beead85d09b3559c160a48a",
+    "u16_sha256": "57eacca6b4fef88a35f5c29f334eb58c485a54f9c413cda5c992a45790e360dd",
+    "photometric": "MONOCHROME2",
+    "oriented_flipped": false,
+    "crop_fallback": true,
+    "fallback_strategy": "native_scale_optimal_window_no_resize",
+    "crop_error": "attempt to get argmax of an empty sequence"
+  }
+]
