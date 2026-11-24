@@ -482,6 +482,12 @@ def compute_nyu_case_ids_sha256(case_ids: Sequence[str]) -> str:
     return hashlib.sha256("\n".join(str(x) for x in case_ids).encode("utf-8")).hexdigest()
 
 
+def compute_text_lf_sha256(path: Path) -> str:
+    """Compute SHA-256 of a text/CSV manifest after normalizing CRLF line endings to LF."""
+    data = Path(path).read_bytes().replace(b"\r\n", b"\n")
+    return hashlib.sha256(data).hexdigest()
+
+
 def validate_nyu_step2_cli_and_guard(
     stage: str,
     split: str,
