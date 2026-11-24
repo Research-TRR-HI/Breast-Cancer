@@ -58,6 +58,12 @@ class TestModalTransferQuarantineAndPlanning(unittest.TestCase):
             self.assertTrue(assert_transfer_path_allowed(path, context="unit_test"))
 
     def test_bundles_prefer_74001_for_rsna_stage1(self) -> None:
+        glam_specs = get_bundle_specs("glam_nlbs")
+        self.assertEqual(len(glam_specs), 1)
+        self.assertEqual(glam_specs[0].src_profile, "hasinishrak2015")
+        self.assertEqual(glam_specs[0].src_prefix, "cache/paper1_gmic_uint16_v1/nlbs")
+        self.assertEqual(glam_specs[0].dst_prefix, "cache/paper1_gmic_uint16_v1/nlbs")
+
         for bundle_name, expected_weight in [
             ("dinov2", "models/paper1/dinov2_vits14_pretrain.pth"),
             ("resnet50", "models/paper1/resnet50-11ad3fa6.pth"),

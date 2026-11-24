@@ -1,19 +1,18 @@
 """Paper 1 Experiment 2 — Original Pretrained Mammography Model Adapters & Quarantine Pipeline.
 
-Covers Wave 1 infrastructure for Experiment 2 (original pretrained external models evaluated
-strictly zero-shot on NLBS without RSNA threshold calibration):
-  - Retained Locked Baselines:
+Locked Section 6 Decisions (5 Eligible Models, Category C Primary AUROC/AUPRC):
+  - Eligible Locked Reuse ($0.00):
       1. `gmic_pretrained` (nyukat/GMIC, sample_model_1.p)
       2. `nyu_fourview_pretrained` (nyukat/breast_cancer_classifier, sample_image_model.p)
-  - New Eligible Pretrained Models:
+  - Eligible New Inference (tigerwood693):
       3. `glam_pretrained` (nyukat/GLAM, model_joint.ckpt; reuses GMIC 2944x1920 NLBS PNGs)
       4. `end2end_cbis_ddsm` (lishen/end2end-all-conv, ddsm_resnet50_s10_[512-512-1024]x2.h5)
-      6. `petrini_twoview_efnb3` (dpetrini/multiple-view, CBIS-DDSM EfficientNet-B3 2-view)
-  - Disqualified Candidate (Hard-Blocked):
-      5. `frcnn_cad` (riblidezso/frcnn_cad — dead ELTE weight URL + CUDA 8.0 Caffe obsolescence)
-  - Vetted Replacement Candidates for Slot 5:
-      R1. `mammoscreen_r1` (ianpan/mammoscreen — Apache-2.0, Category A published thresholds)
-      R2. `petrini_vindr_r2` (dpetrini/vindr-convnext-multiple-view — MIT, VinDr-Mammo 2-view)
+      5. `petrini_twoview_efnb3` (dpetrini/multiple-view, CBIS-DDSM EfficientNet-B3 2-view)
+  - Formally Disqualified & Rejected Candidates (Hard-Blocked):
+      - `frcnn_cad`: DISQUALIFIED (dead ELTE weight URL + CUDA 8.0/Caffe + unvalidated semantics)
+      - `mammoscreen_r1`: REJECTED (trained on RSNA 80/10/10 — violates zero-RSNA-supervision design)
+      - `petrini_vindr_r2`: REJECTED (VinDr-Mammo BI-RADS >=3 is not biopsy-confirmed cancer)
+      - `mammo_clip_zeroshot`: REJECTED (contrastive VLM; not a supervised cancer classifier)
 """
 
 from __future__ import annotations
@@ -27,7 +26,7 @@ import math
 from pathlib import Path
 import sys
 import types
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import cv2
 import numpy as np
@@ -38,6 +37,18 @@ import torch.nn as nn
 from src.evaluation.stage_c_eval import assert_no_forbidden_columns, compute_sha256_file
 from src.paper1.gmic_adapter import GMIC_INPUT_SIZE, standard_normalize_gmic_uint16
 
+EXP2_ELIGIBLE_MODELS: Tuple[str, ...] = (
+    "gmic_pretrained",
+    "nyu_fourview_pretrained",
+    "glam_pretrained",
+    "end2end_cbis_ddsm",
+    "petrini_twoview_efnb3",
+)
+EXP2_NEW_INFER_MODELS: Tuple[str, ...] = (
+    "glam_pretrained",
+    "end2end_cbis_ddsm",
+    "petrini_twoview_efnb3",
+)
 EXP2_PETRINI_INPUT_SIZE: Tuple[int, int] = (1152, 896)  # (height, width)
 EXP2_PETRINI_CBIS_MEAN: float = 13369.0
 EXP2_END2END_INPUT_SIZE: Tuple[int, int] = (1152, 896)  # (height, width)
@@ -48,24 +59,60 @@ EXP2_ALLOWED_NLBS_MANIFESTS: Tuple[str, ...] = (
     "datasets/nlbs/inference_manifest_stage_c.csv",
 )
 
+EXP2_NLBS_CACHE_OPTIONS: Dict[str, Dict[str, Any]] = {
+    "option_a_raw_dicom_transfer": {
+        "description": "Transfer raw 26,988 NLBS DICOMs from hasinishrak2015:/nlbs/extracted to tigerwood693",
+        "transfer_gib": 324.4480,
+        "dest_storage_gib": 324.45,
+        "estimated_cost_usd_range": [1.15, 1.75],
+        "recommended": False,
+        "reason": "Expensive raw transfer (+324.45 GiB) plus on-the-fly DICOM decode overhead.",
+    },
+    "option_b1_streamed_uncropped_1152x896": {
+        "description": (
+            "Stream read-only DICOMs from hasinishrak2015 into tigerwood693 CPU workers -> decode LUT + "
+            "MONOCHROME1 invert + right-mirror -> resize uncropped full image to (1152, 896) uint16 PNGs"
+        ),
+        "transfer_gib": 0.0,
+        "dest_storage_gib_range": [30.0, 38.0],
+        "estimated_cost_usd_range": [0.38, 0.55],
+        "recommended": True,
+        "reason": (
+            "Preserves exact uncropped whole-mammogram aspect/background statistics required by CBIS-DDSM "
+            "models (End2End & Petrini) at ~9x lower storage than Option A and $0.00 hasinishrak2015 delta."
+        ),
+    },
+    "option_b2_reuse_stage1_1520x912_cropped": {
+        "description": "Reuse already-present tigerwood693:/cache/stage1_nlbs_uint16 (1520x912 breast-cropped)",
+        "transfer_gib": 0.0,
+        "dest_storage_gib": 0.0,
+        "estimated_cost_usd_range": [0.0, 0.0],
+        "recommended": False,
+        "reason": (
+            "Zero extra build cost, but tight TRUST breast-crop alters background fraction and pixel mean "
+            "vs CBIS-DDSM uncropped 1152x896 training distribution (kept as fallback/ablation only)."
+        ),
+    },
+}
+
 
 @dataclass(frozen=True)
 class Exp2ModelSpec:
     model_id: str
     display_name: str
-    eligibility: str  # "eligible_locked_reuse", "eligible_new_inference", "ineligible", "replacement_candidate"
-    threshold_category: str  # "A", "B", "C", "N/A"
+    eligibility: str  # "eligible_locked_reuse", "eligible_new_inference", "disqualified", "rejected"
+    threshold_category: str  # "C", "B", "A", "N/A"
     official_repo: str
     repo_revision: str
     checkpoint_name: str
-    checkpoint_sha256: str  # "UNKNOWN" if unverified prior to Wave 2 download
+    checkpoint_sha256: str
     license: str
     training_dataset: str
     input_level: str  # "image", "breast_2view", "exam_4view"
-    nlbs_cache_source: str  # "locked_reuse", "gmic_2944x1920", "stage1_1520x912"
+    nlbs_cache_source: str  # "locked_reuse", "gmic_2944x1920", "uncropped_1152x896", "blocked"
     aggregation_rule: str
     published_thresholds: Optional[Dict[str, float]] = None
-    ineligibility_reason: str = ""
+    exclusion_reason: str = ""
 
 
 EXP2_MODEL_REGISTRY: Dict[str, Exp2ModelSpec] = {
@@ -126,28 +173,8 @@ EXP2_MODEL_REGISTRY: Dict[str, Exp2ModelSpec] = {
         license="CC BY-NC-SA 4.0",
         training_dataset="CBIS-DDSM (digitized film, S10 whole-image split)",
         input_level="image",
-        nlbs_cache_source="stage1_1520x912",
+        nlbs_cache_source="uncropped_1152x896",
         aggregation_rule="max(malignant_pred across exam images)",
-    ),
-    "frcnn_cad": Exp2ModelSpec(
-        model_id="frcnn_cad",
-        display_name="Ribli Faster R-CNN CAD (VGG-16 Caffe)",
-        eligibility="ineligible",
-        threshold_category="N/A",
-        official_repo="https://github.com/riblidezso/frcnn_cad",
-        repo_revision="6c2deb57e37832c281588da11aed8808ba6ee1e9",
-        checkpoint_name="vgg16_frcnn_cad.caffemodel",
-        checkpoint_sha256="UNKNOWN",
-        license="UNSPECIFIED (No LICENSE file in repository)",
-        training_dataset="DDSM + private Hungarian clinical mammograms (evaluated on INbreast/DREAM)",
-        input_level="image",
-        nlbs_cache_source="ineligible",
-        aggregation_rule="N/A (ineligible)",
-        ineligibility_reason=(
-            "Official weight URL http://dkrib.web.elte.hu/cad_faster_rcnn/vgg16_frcnn_cad.caffemodel "
-            "redirects to https://error.elte.hu/error/452.html (dead, no official mirror), and Caffe/"
-            "py-faster-rcnn requires CUDA 8.0/cuDNN 6 incompatible with NVIDIA L40S (sm_89)."
-        ),
     ),
     "petrini_twoview_efnb3": Exp2ModelSpec(
         model_id="petrini_twoview_efnb3",
@@ -161,51 +188,109 @@ EXP2_MODEL_REGISTRY: Dict[str, Exp2ModelSpec] = {
         license="MIT",
         training_dataset="CBIS-DDSM (two-view CC+MLO, original split, N=2,694)",
         input_level="breast_2view",
-        nlbs_cache_source="stage1_1520x912",
+        nlbs_cache_source="uncropped_1152x896",
         aggregation_rule="max(left_breast_malignancy_prob, right_breast_malignancy_prob)",
+    ),
+    "frcnn_cad": Exp2ModelSpec(
+        model_id="frcnn_cad",
+        display_name="Ribli Faster R-CNN CAD (VGG-16 Caffe)",
+        eligibility="disqualified",
+        threshold_category="N/A",
+        official_repo="https://github.com/riblidezso/frcnn_cad",
+        repo_revision="6c2deb57e37832c281588da11aed8808ba6ee1e9",
+        checkpoint_name="vgg16_frcnn_cad.caffemodel",
+        checkpoint_sha256="UNKNOWN",
+        license="UNSPECIFIED (No LICENSE file in repository)",
+        training_dataset="DDSM + private Hungarian clinical mammograms",
+        input_level="image",
+        nlbs_cache_source="blocked",
+        aggregation_rule="N/A (disqualified)",
+        exclusion_reason=(
+            "DISQUALIFIED: Official weight URL http://dkrib.web.elte.hu/cad_faster_rcnn/vgg16_frcnn_cad.caffemodel "
+            "redirects to error.elte.hu/error/452.html (dead, no mirror), CUDA 8.0/Caffe is incompatible with "
+            "NVIDIA L40S (sm_89), and lesion detection outputs are not natively calibrated screening cancer scores."
+        ),
     ),
     "mammoscreen_r1": Exp2ModelSpec(
         model_id="mammoscreen_r1",
         display_name="MammoScreen (ianpan/mammoscreen 3x EfficientNetV2-S)",
-        eligibility="replacement_candidate",
-        threshold_category="A",
+        eligibility="rejected",
+        threshold_category="N/A",
         official_repo="https://huggingface.co/ianpan/mammoscreen",
         repo_revision="main",
         checkpoint_name="model.safetensors",
         checkpoint_sha256="8ace0998e2d534b08eaa673fad37df16eaffef6dca3f3b5ac2196857a2949596",
         license="Apache-2.0",
-        training_dataset="CBIS-DDSM pretraining + RSNA Screening Mammography (80/10/10 Split 1; NLBS 100% unseen)",
+        training_dataset="CBIS-DDSM pretraining + RSNA Screening Mammography (80/10/10 Split 1)",
         input_level="breast_2view",
-        nlbs_cache_source="stage1_1520x912",
-        aggregation_rule="max(left_breast_cancer_prob, right_breast_cancer_prob)",
-        published_thresholds={"target_98": 0.0072, "target_95": 0.0127},
+        nlbs_cache_source="blocked",
+        aggregation_rule="N/A (rejected)",
+        exclusion_reason=(
+            "REJECTED FOR EXP 2: Fine-tuned on RSNA Screening Mammography (80/10/10 Split 1), violating "
+            "Experiment 2's strict zero-RSNA-supervision separation from Experiment 1."
+        ),
     ),
     "petrini_vindr_r2": Exp2ModelSpec(
         model_id="petrini_vindr_r2",
         display_name="Petrini Two-View ConvNeXt-Base (VinDr-Mammo BI-RADS>=3)",
-        eligibility="replacement_candidate",
-        threshold_category="C",
+        eligibility="rejected",
+        threshold_category="N/A",
         official_repo="https://huggingface.co/dpetrini/vindr-convnext-multiple-view",
         repo_revision="main",
         checkpoint_name="2024-08-07-18h35m_50ep_best_model_AUC_08655_ConvNext_VinDr_Collab.pt",
         checkpoint_sha256="4619a4d337af31b7dcb622410bc0858ef1b20b872d0aea15f0c4f6c5705f8e71",
         license="MIT",
-        training_dataset="VinDr-Mammo (BI-RADS 1-2 Normal vs 3-5 Abnormal; zero RSNA/NLBS overlap)",
+        training_dataset="VinDr-Mammo (BI-RADS 1-2 Normal vs 3-5 Abnormal)",
         input_level="breast_2view",
-        nlbs_cache_source="stage1_1520x912",
-        aggregation_rule="max(left_breast_abnormal_prob, right_breast_abnormal_prob)",
+        nlbs_cache_source="blocked",
+        aggregation_rule="N/A (rejected)",
+        exclusion_reason=(
+            "REJECTED FOR EXP 2: Trained on radiological BI-RADS >=3 ('Abnormal') labels rather than "
+            "pathology/follow-up confirmed breast cancer."
+        ),
+    ),
+    "mammo_clip_zeroshot": Exp2ModelSpec(
+        model_id="mammo_clip_zeroshot",
+        display_name="Mammo-CLIP B5 Zero-Shot Prompt Alignment",
+        eligibility="rejected",
+        threshold_category="N/A",
+        official_repo="https://github.com/shawn24/Mammo-CLIP",
+        repo_revision="2f356926a00fc3f0d9fdad1193c1464fd9adf564",
+        checkpoint_name="b5-model-best-epoch-7.tar",
+        checkpoint_sha256="0baccb0cc19cd6093ff8252f7c2b7a6efbc32973498640abcb311210c46fd02c",
+        license="CC BY-NC-SA 4.0",
+        training_dataset="UPMC mammogram-report pairs (contrastive vision-language pretraining)",
+        input_level="image",
+        nlbs_cache_source="blocked",
+        aggregation_rule="N/A (rejected)",
+        exclusion_reason=(
+            "REJECTED FOR EXP 2: Contrastive vision-language foundation model, not a supervised breast "
+            "cancer screening classifier (already benchmarked with RSNA heads as ce_b5/trust_b5 in Exp 1)."
+        ),
     ),
 }
 
 
+def default_pilot_batch_sizes(model_id: str) -> List[int]:
+    """Return progressive L40S pilot batch sizes per model architecture and input resolution."""
+    assert_model_eligible(model_id)
+    if model_id == "glam_pretrained":
+        return [1, 2, 4]
+    if model_id == "end2end_cbis_ddsm":
+        return [4, 8, 16, 32]
+    if model_id == "petrini_twoview_efnb3":
+        return [2, 4, 8, 16]
+    return [1]
+
+
 def assert_model_eligible(model_id: str) -> Exp2ModelSpec:
-    """Return model spec or raise RuntimeError if unknown or disqualified."""
+    """Return model spec or raise RuntimeError if unknown, disqualified, or rejected for Exp 2."""
     if model_id not in EXP2_MODEL_REGISTRY:
         raise ValueError(f"Unknown Experiment 2 model_id={model_id!r}")
     spec = EXP2_MODEL_REGISTRY[model_id]
-    if spec.eligibility == "ineligible":
+    if spec.eligibility in ("disqualified", "rejected"):
         raise RuntimeError(
-            f"BLOCKED: model_id={model_id!r} is INELIGIBLE ({spec.ineligibility_reason})."
+            f"BLOCKED ({spec.eligibility.upper()}): model_id={model_id!r} ({spec.exclusion_reason})"
         )
     return spec
 
@@ -256,7 +341,6 @@ def load_exp2_nlbs_manifest(manifest_csv: Path, model_id: str) -> pd.DataFrame:
     out["view_slot"] = out["laterality"] + "-" + out["view_position"]
 
     if spec.input_level in ("breast_2view", "exam_4view"):
-        # Deterministic label-blind canonical slot deduplication when manifest includes extra views
         if "manufacturer" not in out.columns:
             out["manufacturer"] = ""
         out["_mfg_rank"] = np.where(out["manufacturer"].fillna("").str.strip() == "GE MEDICAL SYSTEMS", 0, 1)
@@ -292,6 +376,43 @@ def build_petrini_breast_pairs(manifest_df: pd.DataFrame) -> pd.DataFrame:
     return pairs.sort_values(["StudyInstanceUID", "laterality"]).reset_index(drop=True)
 
 
+def prepare_uncropped_1152x896_from_array(
+    arr_f32: np.ndarray,
+    *,
+    photometric: str,
+    laterality: str,
+    target_hw: Tuple[int, int] = EXP2_PETRINI_INPUT_SIZE,
+) -> np.ndarray:
+    """Option B1 preprocessor: invert MONOCHROME1, mirror R->left chest wall, resize uncropped to 1152x896 uint16."""
+    arr = np.asarray(arr_f32, dtype=np.float32)
+    if arr.ndim != 2:
+        raise ValueError(f"Expected 2D mammogram array, got shape={arr.shape}")
+    if str(photometric).strip().upper() == "MONOCHROME1":
+        arr = float(np.max(arr)) - arr
+    arr = arr - float(np.min(arr))
+    max_v = float(np.max(arr))
+    if max_v > 0.0:
+        u16 = np.round((arr / max_v) * 65535.0).clip(0.0, 65535.0).astype(np.uint16)
+    else:
+        u16 = np.zeros_like(arr, dtype=np.uint16)
+
+    # Enforce chest-wall-on-left orientation matching Petrini CBIS-DDSM & End2End conventions
+    mid = u16.shape[1] // 2
+    left_mean = float(np.mean(u16[:, :mid]))
+    right_mean = float(np.mean(u16[:, mid:]))
+    eff_lat = str(laterality).strip().upper()
+    if eff_lat == "R" and right_mean > left_mean:
+        u16 = np.fliplr(u16).copy()
+    elif eff_lat == "L" and right_mean > left_mean:
+        u16 = np.fliplr(u16).copy()
+
+    h, w = int(target_hw[0]), int(target_hw[1])
+    if u16.shape != (h, w):
+        resized = cv2.resize(u16, dsize=(w, h), interpolation=cv2.INTER_AREA)
+        u16 = np.clip(resized, 0, 65535).astype(np.uint16)
+    return u16
+
+
 def preprocess_glam_from_gmic_uint16(arr_u16: np.ndarray) -> np.ndarray:
     """Standardize cached GMIC (2944, 1920) uint16 PNG identically for nyukat/GLAM."""
     arr = np.asarray(arr_u16)
@@ -303,7 +424,7 @@ def preprocess_glam_from_gmic_uint16(arr_u16: np.ndarray) -> np.ndarray:
 def _resize_uint16_to_model_hw(arr_u16: np.ndarray, target_hw: Tuple[int, int]) -> np.ndarray:
     arr = np.asarray(arr_u16)
     if arr.ndim != 2 or arr.dtype != np.uint16:
-        raise ValueError(f"Expected 2D uint16 Stage-1 PNG, got shape={arr.shape}, dtype={arr.dtype}")
+        raise ValueError(f"Expected 2D uint16 PNG, got shape={arr.shape}, dtype={arr.dtype}")
     h, w = int(target_hw[0]), int(target_hw[1])
     if arr.shape == (h, w):
         return arr
@@ -311,21 +432,17 @@ def _resize_uint16_to_model_hw(arr_u16: np.ndarray, target_hw: Tuple[int, int]) 
     return np.clip(resized, 0, 65535).astype(np.uint16)
 
 
-def preprocess_petrini_view_from_stage1_uint16(
+def preprocess_petrini_view_from_uint16(
     arr_u16: np.ndarray,
     *,
     dataset: str = "CBIS-DDSM",
 ) -> np.ndarray:
-    """Resize Stage-1 uint16 PNG to (1152, 896), normalize per Petrini, and return (3, H, W) float32."""
+    """Normalize (1152, 896) uint16 PNG per Petrini and return (3, H, W) float32."""
     resized_u16 = _resize_uint16_to_model_hw(arr_u16, EXP2_PETRINI_INPUT_SIZE)
     img = resized_u16.astype(np.float32)
     if dataset == "CBIS-DDSM":
         img -= np.float32(EXP2_PETRINI_CBIS_MEAN)
         img /= np.float32(65535.0)
-    elif dataset == "VINDR-MAMMO":
-        img /= np.float32(65535.0)
-        img -= np.mean(img)
-        img /= np.maximum(np.std(img), np.float32(1e-5))
     else:
         raise ValueError(f"Unsupported Petrini dataset normalization={dataset!r}")
     return np.repeat(img[np.newaxis, :, :], 3, axis=0).astype(np.float32)
@@ -338,29 +455,21 @@ def build_petrini_twoview_tensor(
     dataset: str = "CBIS-DDSM",
 ) -> torch.Tensor:
     """Construct exact (6, 1152, 896) float32 tensor with strict [CC_RGB, MLO_RGB] channel order."""
-    cc_t = torch.from_numpy(preprocess_petrini_view_from_stage1_uint16(cc_u16, dataset=dataset))
-    mlo_t = torch.from_numpy(preprocess_petrini_view_from_stage1_uint16(mlo_u16, dataset=dataset))
+    cc_t = torch.from_numpy(preprocess_petrini_view_from_uint16(cc_u16, dataset=dataset))
+    mlo_t = torch.from_numpy(preprocess_petrini_view_from_uint16(mlo_u16, dataset=dataset))
     return torch.cat([cc_t, mlo_t], dim=0)
 
 
-def preprocess_end2end_from_stage1_uint16(
+def preprocess_end2end_from_uint16(
     arr_u16: np.ndarray,
     *,
     mean_pixel_intensity: float = EXP2_END2END_CBIS_MEAN,
 ) -> np.ndarray:
-    """Resize Stage-1 uint16 PNG to (1152, 896), rescale to [0, 255], subtract mean, return (3, H, W) float32."""
+    """Rescale (1152, 896) uint16 PNG to [0, 255], subtract mean, return (3, H, W) float32."""
     resized_u16 = _resize_uint16_to_model_hw(arr_u16, EXP2_END2END_INPUT_SIZE)
     img = resized_u16.astype(np.float32) * np.float32(EXP2_END2END_RESCALE_FACTOR)
     img -= np.float32(mean_pixel_intensity)
     return np.repeat(img[np.newaxis, :, :], 3, axis=0).astype(np.float32)
-
-
-def preprocess_mammoscreen_view_from_stage1_uint16(arr_u16: np.ndarray) -> np.ndarray:
-    """Convert 2D uint16 Stage-1 PNG linearly to 2D uint8 [0, 255] expected by ianpan/mammoscreen."""
-    arr = np.asarray(arr_u16)
-    if arr.ndim != 2 or arr.dtype != np.uint16:
-        raise ValueError(f"Expected 2D uint16 Stage-1 PNG, got shape={arr.shape}, dtype={arr.dtype}")
-    return np.round(arr.astype(np.float32) * (255.0 / 65535.0)).clip(0.0, 255.0).astype(np.uint8)
 
 
 def _ensure_repo_module(repo_dir: Path, module_names: Sequence[str], *, pkg_prefix: Optional[str] = None) -> Dict[str, Any]:
@@ -430,12 +539,10 @@ def build_petrini_twoview_model(
     *,
     petrini_repo_dir: Path,
     device: Optional[torch.device] = None,
-    variant: str = "cbis_efnb3",
     expected_sha256: Optional[str] = None,
 ) -> Tuple[nn.Module, str]:
     """Construct Petrini SideMIDBreastModel directly without redundant single-view .pt load."""
-    spec_id = "petrini_twoview_efnb3" if variant == "cbis_efnb3" else "petrini_vindr_r2"
-    exp_sha = expected_sha256 or EXP2_MODEL_REGISTRY[spec_id].checkpoint_sha256
+    exp_sha = expected_sha256 or EXP2_MODEL_REGISTRY["petrini_twoview_efnb3"].checkpoint_sha256
     sha = verify_checkpoint_sha256(checkpoint_path, exp_sha)
     if device is None:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -449,42 +556,26 @@ def build_petrini_twoview_model(
         if sys.path and sys.path[0] == repo_str:
             sys.path.pop(0)
 
-    network = "EfficientNet-b3" if variant == "cbis_efnb3" else "convnext_base"
-    dataset = "CBIS-DDSM" if variant == "cbis_efnb3" else "VINDR-MAMMO"
-
-    # Bypass intermediate torch.load(single_model_file) because full 2-view state_dict loads all weights.
     orig_load = tvn.torch.load
+    orig_init = tvn.TwoViewsMIDBreastClassifier.__init__
     tvn.torch.load = lambda *args, **kwargs: None  # type: ignore[assignment]
-    orig_sbc_cls = tvn.SingleBreastClassifier
-
-    class _NoLoadSingleBreast(orig_sbc_cls):
-        def load_state_dict(self, state_dict, strict=True, assign=False):  # type: ignore[override]
-            if state_dict is None:
-                return ([], [])
-            return super().load_state_dict(state_dict, strict=strict, assign=assign)
-
-    class _NoLoadFe:
-        pass
-
     try:
-        # Patch SingleBreastClassifier wrapper so __init__ skips loading dummy single-view file
         def _patched_init(self_tw, _dev, _mf, _net, exp_type="PBC", dataset="CBIS-DDSM"):
             nn.Module.__init__(self_tw)
             self_tw.single_clf_full = sfn.SingleBreastClassifier(_net, exp_type, dataset)
             self_tw.single_clf_core = self_tw.single_clf_full.feature_extractor
 
-        orig_init = tvn.TwoViewsMIDBreastClassifier.__init__
         tvn.TwoViewsMIDBreastClassifier.__init__ = _patched_init  # type: ignore[method-assign]
         model = tvn.SideMIDBreastModel(
             device,
             "UNUSED_INTERMEDIATE.pt",
-            network,
+            "EfficientNet-b3",
             n_blocks=2,
             b_type="mbconv",
             avg_pool=True,
             strides=2,
             exp_type="PBC",
-            dataset=dataset,
+            dataset="CBIS-DDSM",
         )
     finally:
         tvn.torch.load = orig_load
@@ -556,7 +647,7 @@ def apply_threshold_policy(
     *,
     external_thresholds: Optional[Dict[str, Any]] = None,
 ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
-    """Enforce Category A/B/C original-threshold discipline (NEVER RSNA calibration or arbitrary 0.5)."""
+    """Enforce Category C primary (AUROC/AUPRC) and block RSNA/NLBS calibration or arbitrary 0.5."""
     spec = assert_model_eligible(model_id)
     assert_no_forbidden_columns(exam_scores_df.columns, context=f"exp2_thresh_{model_id}")
     df = exam_scores_df.copy()
@@ -597,7 +688,6 @@ def apply_threshold_policy(
             "target_95": t95,
         }
 
-    # Category C: threshold-independent AUROC/AUPRC only
     if external_thresholds is not None:
         cal_dom = str(external_thresholds.get("calibration_domain", "")).strip().upper()
         if "RSNA" in cal_dom or "NLBS" in cal_dom:
