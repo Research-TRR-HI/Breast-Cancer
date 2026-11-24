@@ -1,0 +1,113 @@
+{
+  "schema_version": "paper1_nyu_step2_lock_v1",
+  "model_id": "nyu_fourview_pretrained",
+  "checkpoint_file": "sample_image_model.p",
+  "checkpoint_sha256": "9a1d97f93493ea2007c00e6c1805dfa634cbc321ecdeba2c2adecd351e86b014",
+  "preprocess_version": "paper1_nyu_uint16_v1",
+  "preprocess_manifest_sha256s": [
+    "e941df848f2baeac58bbe35b11e4b5ec4e30074c28b893b59f18258008beec65"
+  ],
+  "split_name": "nlbs_4view",
+  "batch_exams": 4,
+  "num_tta_epochs": 10,
+  "tta_seed": 0,
+  "label_quarantine_enforced": true,
+  "n_unique_cases": 6184,
+  "n_unique_images": 24736,
+  "all_scores_finite": true,
+  "exam_score_summary_label_free": {
+    "min": 0.010054,
+    "median": 0.062435,
+    "p95": 0.296575,
+    "max": 0.998097
+  },
+  "shards": [
+    {
+      "shard_idx": 0,
+      "num_shards": 4,
+      "n_exams": 1546,
+      "n_images": 6184,
+      "n_fallback_views": 0,
+      "elapsed_sec": 772.458,
+      "container_wall_sec": 799.906,
+      "model_load_sec": 2.665,
+      "nvme_stage_sec": 19.521,
+      "decode_tta_sec": 142.194,
+      "gpu_infer_sec": 627.731,
+      "estimated_cost_usd": 0.57424,
+      "peak_vram_gb": 9.309,
+      "host_rss_gb": 19.703,
+      "expected_case_ids_sha256": "d0711edd349c49951f5c5de9e46e854c604bbe2be31d537d6d369e481d66bdf6",
+      "resumed_from_cache": false
+    },
+    {
+      "shard_idx": 1,
+      "num_shards": 4,
+      "n_exams": 1546,
+      "n_images": 6184,
+      "n_fallback_views": 0,
+      "elapsed_sec": 765.305,
+      "container_wall_sec": 795.677,
+      "model_load_sec": 2.651,
+      "nvme_stage_sec": 22.413,
+      "decode_tta_sec": 155.8,
+      "gpu_infer_sec": 607.202,
+      "estimated_cost_usd": 0.57121,
+      "peak_vram_gb": 9.309,
+      "host_rss_gb": 19.322,
+      "expected_case_ids_sha256": "2bf486a886fbb6953805a3ea7b598b1ef24b8b86bfa75e8bb103d762d76f0fce",
+      "resumed_from_cache": false
+    },
+    {
+      "shard_idx": 2,
+      "num_shards": 4,
+      "n_exams": 1546,
+      "n_images": 6184,
+      "n_fallback_views": 0,
+      "elapsed_sec": 801.394,
+      "container_wall_sec": 828.702,
+      "model_load_sec": 0.131,
+      "nvme_stage_sec": 22.015,
+      "decode_tta_sec": 157.401,
+      "gpu_infer_sec": 641.583,
+      "estimated_cost_usd": 0.59492,
+      "peak_vram_gb": 9.309,
+      "host_rss_gb": 21.935,
+      "expected_case_ids_sha256": "c081ffd2062e4c44bbede056805012597fccbb26de375ab33a9eeae94f168a3b",
+      "resumed_from_cache": false
+    },
+    {
+      "shard_idx": 3,
+      "num_shards": 4,
+      "n_exams": 1546,
+      "n_images": 6184,
+      "n_fallback_views": 0,
+      "elapsed_sec": 757.412,
+      "container_wall_sec": 785.123,
+      "model_load_sec": 0.087,
+      "nvme_stage_sec": 22.562,
+      "decode_tta_sec": 142.872,
+      "gpu_infer_sec": 611.748,
+      "estimated_cost_usd": 0.56363,
+      "peak_vram_gb": 9.309,
+      "host_rss_gb": 21.247,
+      "expected_case_ids_sha256": "2df1d7080a2b23af6d195cd8d75807f2d33c5f600e0aa09ea3e62bc8358ef732",
+      "resumed_from_cache": false
+    }
+  ],
+  "total_estimated_cost_usd": 2.304,
+  "artifacts": {
+    "exam_scores_json": {
+      "path": "reports\\paper1\\predictions_locked\\nyu_nlbs_4view_exam_scores.json",
+      "sha256": "c748d6aa3259fb028cb4b951d35e09460bd406998b2618f8e6fc43edf85a3b3e"
+    },
+    "case_scores_csv": {
+      "path": "reports\\paper1\\predictions_locked\\nyu_nlbs_4view_case_scores.csv",
+      "sha256": "03e19975edb7a02d297d5b15b672169dd449a86c850488f3f543c5ceddede317"
+    },
+    "fallback_log_json": {
+      "path": "reports\\paper1\\predictions_locked\\nyu_nlbs_4view_fallback_log.json",
+      "sha256": "64207eaebba742f10ddf483622601aedef8a8b95b4627bab6f3ce847b2a6ecb8"
+    }
+  }
+}
