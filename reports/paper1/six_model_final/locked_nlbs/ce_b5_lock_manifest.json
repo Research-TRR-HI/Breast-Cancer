@@ -1,0 +1,15 @@
+{
+  "schema_version": "paper1_locked_predictions_v1",
+  "locked_at_utc": "2026-11-24T10:40:36.759986+00:00",
+  "model_id": "ce_b5",
+  "stratum": "A_rsna_supervised",
+  "model_sha256": "adf1443455ee1b507485ee4b7f64932d5cf6f59bb6afcf11b9f415c634372d22",
+  "frozen_rsna_thresholds": {
+    "target_98": 0.0961934626102447,
+    "target_95": 0.124415136873722
+  },
+  "n_studies": 6359,
+  "n_studies_with_crop_fallback": 0,
+  "predictions_csv": "ce_b5_locked_nlbs_predictions.csv",
+  "predictions_sha256": "3cac46aa2c277703f241b397374f8b5629262d69a9146423c0a5a8438fe22da1"
+}

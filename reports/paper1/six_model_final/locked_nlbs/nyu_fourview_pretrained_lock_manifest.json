@@ -1,0 +1,15 @@
+{
+  "schema_version": "paper1_locked_predictions_v1",
+  "locked_at_utc": "2026-11-24T10:40:44.191667+00:00",
+  "model_id": "nyu_fourview_pretrained",
+  "stratum": "B_pretrained_direct",
+  "model_sha256": "9a1d97f93493ea2007c00e6c1805dfa634cbc321ecdeba2c2adecd351e86b014",
+  "frozen_rsna_thresholds": {
+    "target_98": 0.02142770960927,
+    "target_95": 0.0349914357066154
+  },
+  "n_studies": 6184,
+  "n_studies_with_crop_fallback": 0,
+  "predictions_csv": "nyu_fourview_pretrained_locked_nlbs_predictions.csv",
+  "predictions_sha256": "d8e7d400d38f82770f3b871fb6161fea2c521d40990bb83ad3fa582c25ad550c"
+}

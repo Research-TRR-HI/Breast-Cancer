@@ -1,0 +1,4390 @@
+{
+  "study_id": "paper1_external_validation_6model",
+  "stratum_a_rsna_supervised": [
+    "ce_b5",
+    "trust_b5",
+    "dinov2_rsna",
+    "resnet50_rsna"
+  ],
+  "stratum_b_pretrained_direct": [
+    "gmic_pretrained",
+    "nyu_fourview_pretrained"
+  ],
+  "rsna_source_eval": {
+    "ce_b5": {
+      "n_patients": 2382,
+      "n_pos": 97,
+      "auroc": 0.7427959123824133,
+      "auprc": 0.10641288800294346,
+      "oof_pooled": {
+        "target_98_sens": 0.9896907216494846,
+        "target_98_missed": 1,
+        "target_98_dis": 0.11670864819479429,
+        "target_95_sens": 0.8969072164948454,
+        "target_95_missed": 10,
+        "target_95_dis": 0.29093198992443325
+      },
+      "bootstrap_95ci": {
+        "auroc": {
+          "mean": 0.7419312447077855,
+          "ci95_low": 0.6929834001583087,
+          "ci95_high": 0.788162907983533
+        },
+        "auprc": {
+          "mean": 0.11065307820245758,
+          "ci95_low": 0.07849597899110443,
+          "ci95_high": 0.15039685471283631
+        },
+        "s98": {
+          "mean": 0.9895081639976605,
+          "ci95_low": 0.9645938685208596,
+          "ci95_high": 1.0
+        },
+        "d98": {
+          "mean": 0.11669752308984048,
+          "ci95_low": 0.10411418975650713,
+          "ci95_high": 0.1297229219143577
+        },
+        "s95": {
+          "mean": 0.8976925925428915,
+          "ci95_low": 0.8333333333333334,
+          "ci95_high": 0.9519249999999999
+        },
+        "d95": {
+          "mean": 0.29078799328295546,
+          "ci95_low": 0.27329974811083124,
+          "ci95_high": 0.30856423173803527
+        }
+      },
+      "fold_details": {
+        "fold_a_to_fold_b": {
+          "tau_98": 0.0758498460054397,
+          "tau_95": 0.1748505383729934,
+          "target_98": {
+            "threshold": 0.0758498460054397,
+            "total_cases": 1191,
+            "total_cancers": 49,
+            "n_dismissed": 99,
+            "n_retained": 1092,
+            "dismissal_rate": 0.08312342569269521,
+            "detected_cancers": 49,
+            "missed_cancers": 0,
+            "triage_recall": 1.0,
+            "cancer_prev_dismissed": 0.0,
+            "clopper_pearson_99_ub": 0.04545154333816592,
+            "meets_target_recall": true,
+            "reported_dismissal_rate": 0.08312342569269521
+          },
+          "target_95": {
+            "threshold": 0.1748505383729934,
+            "total_cases": 1191,
+            "total_cancers": 49,
+            "n_dismissed": 439,
+            "n_retained": 752,
+            "dismissal_rate": 0.36859781696053734,
+            "detected_cancers": 40,
+            "missed_cancers": 9,
+            "triage_recall": 0.8163265306122449,
+            "cancer_prev_dismissed": 0.02050113895216401,
+            "clopper_pearson_99_ub": 0.04231065360779591,
+            "meets_target_recall": false,
+            "reported_dismissal_rate": null
+          }
+        },
+        "fold_b_to_fold_a": {
+          "tau_98": 0.0961934626102447,
+          "tau_95": 0.1193863302469253,
+          "target_98": {
+            "threshold": 0.0961934626102447,
+            "total_cases": 1191,
+            "total_cancers": 48,
+            "n_dismissed": 179,
+            "n_retained": 1012,
+            "dismissal_rate": 0.15029387069689337,
+            "detected_cancers": 47,
+            "missed_cancers": 1,
+            "triage_recall": 0.9791666666666666,
+            "cancer_prev_dismissed": 0.00558659217877095,
+            "clopper_pearson_99_ub": 0.036507057670125256,
+            "meets_target_recall": false,
+            "reported_dismissal_rate": null
+          },
+          "target_95": {
+            "threshold": 0.1193863302469253,
+            "total_cases": 1191,
+            "total_cancers": 48,
+            "n_dismissed": 254,
+            "n_retained": 937,
+            "dismissal_rate": 0.21326616288832914,
+            "detected_cancers": 47,
+            "missed_cancers": 1,
+            "triage_recall": 0.9791666666666666,
+            "cancer_prev_dismissed": 0.003937007874015748,
+            "clopper_pearson_99_ub": 0.025847051953304483,
+            "meets_target_recall": true,
+            "reported_dismissal_rate": 0.21326616288832914
+          }
+        }
+      },
+      "full_val_calib_thresholds": {
+        "target_98": 0.0961934626102447,
+        "target_95": 0.124415136873722
+      },
+      "fold_a_sensitivity_thresholds": {
+        "target_98": 0.0758498460054397,
+        "target_95": 0.1748505383729934
+      },
+      "score_quantiles": {
+        "positive": {
+          "p05": 0.13009415417909617,
+          "p25": 0.2528353035449981,
+          "p50": 0.4306691288948059,
+          "p75": 0.5332654118537903,
+          "p95": 0.6925103783607481,
+          "mean": 0.40746690240717426
+        },
+        "negative": {
+          "p05": 0.05985199436545366,
+          "p25": 0.1317812204360962,
+          "p50": 0.2155825346708297,
+          "p75": 0.3561559021472931,
+          "p95": 0.5715754508972168,
+          "mean": 0.2560136828587861
+        }
+      }
+    },
+    "trust_b5": {
+      "n_patients": 2382,
+      "n_pos": 97,
+      "auroc": 0.7442486859617857,
+      "auprc": 0.10715688633042672,
+      "oof_pooled": {
+        "target_98_sens": 0.9896907216494846,
+        "target_98_missed": 1,
+        "target_98_dis": 0.12804366078925272,
+        "target_95_sens": 0.8969072164948454,
+        "target_95_missed": 10,
+        "target_95_dis": 0.29429051217464314
+      },
+      "bootstrap_95ci": {
+        "auroc": {
+          "mean": 0.7434262402195595,
+          "ci95_low": 0.6939468984853132,
+          "ci95_high": 0.789634545212953
+        },
+        "auprc": {
+          "mean": 0.1112008214190845,
+          "ci95_low": 0.07936749747572096,
+          "ci95_high": 0.15003143823670143
+        },
+        "s98": {
+          "mean": 0.9895081639976605,
+          "ci95_low": 0.9645938685208596,
+          "ci95_high": 1.0
+        },
+        "d98": {
+          "mean": 0.12805205709487824,
+          "ci95_low": 0.11502938706968933,
+          "ci95_high": 0.14147774979009237
+        },
+        "s95": {
+          "mean": 0.8976925925428915,
+          "ci95_low": 0.8333333333333334,
+          "ci95_high": 0.9519249999999999
+        },
+        "d95": {
+          "mean": 0.29411775818639796,
+          "ci95_low": 0.2766477749790092,
+          "ci95_high": 0.3123425692695214
+        }
+      },
+      "fold_details": {
+        "fold_a_to_fold_b": {
+          "tau_98": 0.1369949877262115,
+          "tau_95": 0.2577307522296905,
+          "target_98": {
+            "threshold": 0.1369949877262115,
+            "total_cases": 1191,
+            "total_cancers": 49,
+            "n_dismissed": 89,
+            "n_retained": 1102,
+            "dismissal_rate": 0.07472712006717044,
+            "detected_cancers": 49,
+            "missed_cancers": 0,
+            "triage_recall": 1.0,
+            "cancer_prev_dismissed": 0.0,
+            "clopper_pearson_99_ub": 0.050427585051197044,
+            "meets_target_recall": true,
+            "reported_dismissal_rate": 0.07472712006717044
+          },
+          "target_95": {
+            "threshold": 0.2577307522296905,
+            "total_cases": 1191,
+            "total_cancers": 49,
+            "n_dismissed": 449,
+            "n_retained": 742,
+            "dismissal_rate": 0.37699412258606213,
+            "detected_cancers": 40,
+            "missed_cancers": 9,
+            "triage_recall": 0.8163265306122449,
+            "cancer_prev_dismissed": 0.0200445434298441,
+            "clopper_pearson_99_ub": 0.041378650454121896,
+            "meets_target_recall": false,
+            "reported_dismissal_rate": null
+          }
+        },
+        "fold_b_to_fold_a": {
+          "tau_98": 0.1795480698347091,
+          "tau_95": 0.1948882043361663,
+          "target_98": {
+            "threshold": 0.1795480698347091,
+            "total_cases": 1191,
+            "total_cancers": 48,
+            "n_dismissed": 216,
+            "n_retained": 975,
+            "dismissal_rate": 0.181360201511335,
+            "detected_cancers": 47,
+            "missed_cancers": 1,
+            "triage_recall": 0.9791666666666666,
+            "cancer_prev_dismissed": 0.004629629629629629,
+            "clopper_pearson_99_ub": 0.030335054664909922,
+            "meets_target_recall": false,
+            "reported_dismissal_rate": null
+          },
+          "target_95": {
+            "threshold": 0.1948882043361663,
+            "total_cases": 1191,
+            "total_cancers": 48,
+            "n_dismissed": 252,
+            "n_retained": 939,
+            "dismissal_rate": 0.21158690176322417,
+            "detected_cancers": 47,
+            "missed_cancers": 1,
+            "triage_recall": 0.9791666666666666,
+            "cancer_prev_dismissed": 0.003968253968253968,
+            "clopper_pearson_99_ub": 0.026049897025028752,
+            "meets_target_recall": true,
+            "reported_dismissal_rate": 0.21158690176322417
+          }
+        }
+      },
+      "full_val_calib_thresholds": {
+        "target_98": 0.1795480698347091,
+        "target_95": 0.1954631060361862
+      },
+      "fold_a_sensitivity_thresholds": {
+        "target_98": 0.1369949877262115,
+        "target_95": 0.2577307522296905
+      },
+      "score_quantiles": {
+        "positive": {
+          "p05": 0.2034789770841598,
+          "p25": 0.3195532262325287,
+          "p50": 0.4578769505023956,
+          "p75": 0.5339427590370178,
+          "p95": 0.6424676895141601,
+          "mean": 0.43599330441853434
+        },
+        "negative": {
+          "p05": 0.1213544115424156,
+          "p25": 0.2109682410955429,
+          "p50": 0.2923848927021026,
+          "p75": 0.4017560184001922,
+          "p95": 0.5585059285163876,
+          "mean": 0.31227874358223356
+        }
+      }
+    },
+    "dinov2_rsna": {
+      "n_patients": 2382,
+      "n_pos": 97,
+      "auroc": 0.6301721220871213,
+      "auprc": 0.06838434250719694,
+      "oof_pooled": {
+        "target_98_sens": 0.9690721649484536,
+        "target_98_missed": 3,
+        "target_98_dis": 0.07766582703610411,
+        "target_95_sens": 0.9587628865979382,
+        "target_95_missed": 4,
+        "target_95_dis": 0.14105793450881612
+      },
+      "bootstrap_95ci": {
+        "auroc": {
+          "mean": 0.6296351970013587,
+          "ci95_low": 0.5791027208246325,
+          "ci95_high": 0.6801644963793368
+        },
+        "auprc": {
+          "mean": 0.07379008757842816,
+          "ci95_low": 0.04823294972284254,
+          "ci95_high": 0.11103846486412157
+        },
+        "s98": {
+          "mean": 0.9687876930658021,
+          "ci95_low": 0.9299956140350878,
+          "ci95_high": 1.0
+        },
+        "d98": {
+          "mean": 0.07787615449202352,
+          "ci95_low": 0.06757976490344249,
+          "ci95_high": 0.08859151973131817
+        },
+        "s95": {
+          "mean": 0.9582999368911833,
+          "ci95_low": 0.9148871302542813,
+          "ci95_high": 0.9900990099009901
+        },
+        "d95": {
+          "mean": 0.14143031066330816,
+          "ci95_low": 0.12804366078925272,
+          "ci95_high": 0.15534214945424007
+        }
+      },
+      "fold_details": {
+        "fold_a_to_fold_b": {
+          "tau_98": 0.1874563246965408,
+          "tau_95": 0.2243066430091858,
+          "target_98": {
+            "threshold": 0.1874563246965408,
+            "total_cases": 1191,
+            "total_cancers": 49,
+            "n_dismissed": 103,
+            "n_retained": 1088,
+            "dismissal_rate": 0.08648194794290512,
+            "detected_cancers": 46,
+            "missed_cancers": 3,
+            "triage_recall": 0.9387755102040817,
+            "cancer_prev_dismissed": 0.02912621359223301,
+            "clopper_pearson_99_ub": 0.0942434751202932,
+            "meets_target_recall": false,
+            "reported_dismissal_rate": null
+          },
+          "target_95": {
+            "threshold": 0.2243066430091858,
+            "total_cases": 1191,
+            "total_cancers": 49,
+            "n_dismissed": 226,
+            "n_retained": 965,
+            "dismissal_rate": 0.1897565071368598,
+            "detected_cancers": 45,
+            "missed_cancers": 4,
+            "triage_recall": 0.9183673469387755,
+            "cancer_prev_dismissed": 0.017699115044247787,
+            "clopper_pearson_99_ub": 0.05049016802594131,
+            "meets_target_recall": false,
+            "reported_dismissal_rate": null
+          }
+        },
+        "fold_b_to_fold_a": {
+          "tau_98": 0.1736697107553482,
+          "tau_95": 0.1854697912931442,
+          "target_98": {
+            "threshold": 0.1736697107553482,
+            "total_cases": 1191,
+            "total_cancers": 48,
+            "n_dismissed": 82,
+            "n_retained": 1109,
+            "dismissal_rate": 0.0688497061293031,
+            "detected_cancers": 48,
+            "missed_cancers": 0,
+            "triage_recall": 1.0,
+            "cancer_prev_dismissed": 0.0,
+            "clopper_pearson_99_ub": 0.05461271686920599,
+            "meets_target_recall": true,
+            "reported_dismissal_rate": 0.0688497061293031
+          },
+          "target_95": {
+            "threshold": 0.1854697912931442,
+            "total_cases": 1191,
+            "total_cancers": 48,
+            "n_dismissed": 110,
+            "n_retained": 1081,
+            "dismissal_rate": 0.09235936188077246,
+            "detected_cancers": 48,
+            "missed_cancers": 0,
+            "triage_recall": 1.0,
+            "cancer_prev_dismissed": 0.0,
+            "clopper_pearson_99_ub": 0.04100093925400217,
+            "meets_target_recall": true,
+            "reported_dismissal_rate": 0.09235936188077246
+          }
+        }
+      },
+      "full_val_calib_thresholds": {
+        "target_98": 0.183435708284378,
+        "target_95": 0.2065157741308212
+      },
+      "fold_a_sensitivity_thresholds": {
+        "target_98": 0.1874563246965408,
+        "target_95": 0.2243066430091858
+      },
+      "score_quantiles": {
+        "positive": {
+          "p05": 0.20820724666118617,
+          "p25": 0.2863380908966064,
+          "p50": 0.3371773064136505,
+          "p75": 0.3780060410499573,
+          "p95": 0.49674685001373237,
+          "mean": 0.34299299812194
+        },
+        "negative": {
+          "p05": 0.1665510475635528,
+          "p25": 0.2366147488355636,
+          "p50": 0.2920978665351867,
+          "p75": 0.3578696548938751,
+          "p95": 0.4729953289031981,
+          "mean": 0.301662869875358
+        }
+      }
+    },
+    "resnet50_rsna": {
+      "n_patients": 2382,
+      "n_pos": 97,
+      "auroc": 0.6579958943355365,
+      "auprc": 0.0868545222893059,
+      "oof_pooled": {
+        "target_98_sens": 0.979381443298969,
+        "target_98_missed": 2,
+        "target_98_dis": 0.07514693534844669,
+        "target_95_sens": 0.9587628865979382,
+        "target_95_missed": 4,
+        "target_95_dis": 0.14021830394626364
+      },
+      "bootstrap_95ci": {
+        "auroc": {
+          "mean": 0.6572676123778999,
+          "ci95_low": 0.6046098027224457,
+          "ci95_high": 0.7097514051068958
+        },
+        "auprc": {
+          "mean": 0.09222014359573066,
+          "ci95_low": 0.060859573238570934,
+          "ci95_high": 0.1346442363869886
+        },
+        "s98": {
+          "mean": 0.9799376809057126,
+          "ci95_low": 0.9473544232922732,
+          "ci95_high": 1.0
+        },
+        "d98": {
+          "mean": 0.07519227539882453,
+          "ci95_low": 0.06507136859781697,
+          "ci95_high": 0.08607262804366074
+        },
+        "s95": {
+          "mean": 0.9595629972660429,
+          "ci95_low": 0.9166666666666666,
+          "ci95_high": 0.9903869047619048
+        },
+        "d95": {
+          "mean": 0.14038119227539883,
+          "ci95_low": 0.12678421494542402,
+          "ci95_high": 0.15408270361041138
+        }
+      },
+      "fold_details": {
+        "fold_a_to_fold_b": {
+          "tau_98": 0.0024433135986328,
+          "tau_95": 0.0070648193359375,
+          "target_98": {
+            "threshold": 0.0024433135986328,
+            "total_cases": 1191,
+            "total_cancers": 49,
+            "n_dismissed": 109,
+            "n_retained": 1082,
+            "dismissal_rate": 0.09151973131821999,
+            "detected_cancers": 47,
+            "missed_cancers": 2,
+            "triage_recall": 0.9591836734693877,
+            "cancer_prev_dismissed": 0.01834862385321101,
+            "clopper_pearson_99_ub": 0.07488732783199072,
+            "meets_target_recall": false,
+            "reported_dismissal_rate": null
+          },
+          "target_95": {
+            "threshold": 0.0070648193359375,
+            "total_cases": 1191,
+            "total_cancers": 49,
+            "n_dismissed": 204,
+            "n_retained": 987,
+            "dismissal_rate": 0.1712846347607053,
+            "detected_cancers": 46,
+            "missed_cancers": 3,
+            "triage_recall": 0.9387755102040817,
+            "cancer_prev_dismissed": 0.014705882352941176,
+            "clopper_pearson_99_ub": 0.0483974242033724,
+            "meets_target_recall": false,
+            "reported_dismissal_rate": null
+          }
+        },
+        "fold_b_to_fold_a": {
+          "tau_98": 0.00089693069458,
+          "tau_95": 0.0025901794433593,
+          "target_98": {
+            "threshold": 0.00089693069458,
+            "total_cases": 1191,
+            "total_cancers": 48,
+            "n_dismissed": 70,
+            "n_retained": 1121,
+            "dismissal_rate": 0.05877413937867338,
+            "detected_cancers": 48,
+            "missed_cancers": 0,
+            "triage_recall": 1.0,
+            "cancer_prev_dismissed": 0.0,
+            "clopper_pearson_99_ub": 0.06367079117605845,
+            "meets_target_recall": true,
+            "reported_dismissal_rate": 0.05877413937867338
+          },
+          "target_95": {
+            "threshold": 0.0025901794433593,
+            "total_cases": 1191,
+            "total_cancers": 48,
+            "n_dismissed": 130,
+            "n_retained": 1061,
+            "dismissal_rate": 0.109151973131822,
+            "detected_cancers": 47,
+            "missed_cancers": 1,
+            "triage_recall": 0.9791666666666666,
+            "cancer_prev_dismissed": 0.007692307692307693,
+            "clopper_pearson_99_ub": 0.0499708717153381,
+            "meets_target_recall": true,
+            "reported_dismissal_rate": 0.109151973131822
+          }
+        }
+      },
+      "full_val_calib_thresholds": {
+        "target_98": 0.0009927749633789,
+        "target_95": 0.0069313049316406
+      },
+      "fold_a_sensitivity_thresholds": {
+        "target_98": 0.0024433135986328,
+        "target_95": 0.0070648193359375
+      },
+      "score_quantiles": {
+        "positive": {
+          "p05": 0.00703811645507812,
+          "p25": 0.05194091796875,
+          "p50": 0.2451171875,
+          "p75": 0.67041015625,
+          "p95": 0.99296875,
+          "mean": 0.38440381374555765
+        },
+        "negative": {
+          "p05": 0.0006804466247558,
+          "p25": 0.0136871337890625,
+          "p50": 0.07501220703125,
+          "p75": 0.33544921875,
+          "p95": 0.91796875,
+          "mean": 0.22537715615015844
+        }
+      }
+    },
+    "gmic_pretrained": {
+      "n_patients": 2382,
+      "n_pos": 97,
+      "auroc": 0.8301067021588576,
+      "auprc": 0.25087830324814897,
+      "oof_pooled": {
+        "target_98_sens": 0.9896907216494846,
+        "target_98_missed": 1,
+        "target_98_dis": 0.13392107472712006,
+        "target_95_sens": 0.9175257731958762,
+        "target_95_missed": 8,
+        "target_95_dis": 0.3853904282115869
+      },
+      "bootstrap_95ci": {
+        "auroc": {
+          "mean": 0.829880779416744,
+          "ci95_low": 0.7884704517981275,
+          "ci95_high": 0.871022774692687
+        },
+        "auprc": {
+          "mean": 0.253390697328895,
+          "ci95_low": 0.1718962043333196,
+          "ci95_high": 0.33464708328483206
+        },
+        "s98": {
+          "mean": 0.9896264144626524,
+          "ci95_low": 0.9652046035805626,
+          "ci95_high": 1.0
+        },
+        "d98": {
+          "mean": 0.13392002518891688,
+          "ci95_low": 0.1200671704450042,
+          "ci95_high": 0.14777497900923595
+        },
+        "s95": {
+          "mean": 0.917660688213155,
+          "ci95_low": 0.860458864716179,
+          "ci95_high": 0.9684292763157895
+        },
+        "d95": {
+          "mean": 0.38567737195633917,
+          "ci95_low": 0.36648824517212425,
+          "ci95_high": 0.4055520570948782
+        }
+      },
+      "fold_details": {
+        "fold_a_to_fold_b": {
+          "tau_98": 0.0179232526570558,
+          "tau_95": 0.0774529948830604,
+          "target_98": {
+            "threshold": 0.0179232526570558,
+            "total_cases": 1191,
+            "total_cancers": 49,
+            "n_dismissed": 96,
+            "n_retained": 1095,
+            "dismissal_rate": 0.08060453400503778,
+            "detected_cancers": 49,
+            "missed_cancers": 0,
+            "triage_recall": 1.0,
+            "cancer_prev_dismissed": 0.0,
+            "clopper_pearson_99_ub": 0.046838116765212434,
+            "meets_target_recall": true,
+            "reported_dismissal_rate": 0.08060453400503778
+          },
+          "target_95": {
+            "threshold": 0.0774529948830604,
+            "total_cases": 1191,
+            "total_cancers": 49,
+            "n_dismissed": 569,
+            "n_retained": 622,
+            "dismissal_rate": 0.47774979009235935,
+            "detected_cancers": 42,
+            "missed_cancers": 7,
+            "triage_recall": 0.8571428571428571,
+            "cancer_prev_dismissed": 0.012302284710017574,
+            "clopper_pearson_99_ub": 0.027897595903761004,
+            "meets_target_recall": false,
+            "reported_dismissal_rate": null
+          }
+        },
+        "fold_b_to_fold_a": {
+          "tau_98": 0.0288736540824174,
+          "tau_95": 0.0436448641121387,
+          "target_98": {
+            "threshold": 0.0288736540824174,
+            "total_cases": 1191,
+            "total_cancers": 48,
+            "n_dismissed": 223,
+            "n_retained": 968,
+            "dismissal_rate": 0.18723761544920234,
+            "detected_cancers": 47,
+            "missed_cancers": 1,
+            "triage_recall": 0.9791666666666666,
+            "cancer_prev_dismissed": 0.004484304932735426,
+            "clopper_pearson_99_ub": 0.02939484630327602,
+            "meets_target_recall": false,
+            "reported_dismissal_rate": null
+          },
+          "target_95": {
+            "threshold": 0.0436448641121387,
+            "total_cases": 1191,
+            "total_cancers": 48,
+            "n_dismissed": 349,
+            "n_retained": 842,
+            "dismissal_rate": 0.29303106633081444,
+            "detected_cancers": 47,
+            "missed_cancers": 1,
+            "triage_recall": 0.9791666666666666,
+            "cancer_prev_dismissed": 0.0028653295128939827,
+            "clopper_pearson_99_ub": 0.018868144322521273,
+            "meets_target_recall": true,
+            "reported_dismissal_rate": 0.29303106633081444
+          }
+        }
+      },
+      "full_val_calib_thresholds": {
+        "target_98": 0.0288736540824174,
+        "target_95": 0.0466411337256431
+      },
+      "fold_a_sensitivity_thresholds": {
+        "target_98": 0.0179232526570558,
+        "target_95": 0.0774529948830604
+      },
+      "score_quantiles": {
+        "positive": {
+          "p05": 0.05782112628221511,
+          "p25": 0.1737942099571228,
+          "p50": 0.3438024520874023,
+          "p75": 0.5876477956771851,
+          "p95": 0.9439481973648071,
+          "mean": 0.4134678643235226
+        },
+        "negative": {
+          "p05": 0.014728966914117281,
+          "p25": 0.0370668210089206,
+          "p50": 0.08032838255167,
+          "p75": 0.1630463898181915,
+          "p95": 0.48954919576644584,
+          "mean": 0.13773552726636304
+        }
+      }
+    },
+    "nyu_fourview_pretrained": {
+      "n_patients": 2382,
+      "n_pos": 97,
+      "auroc": 0.772117575402107,
+      "auprc": 0.19241721352866312,
+      "oof_pooled": {
+        "target_98_sens": 0.9690721649484536,
+        "target_98_missed": 3,
+        "target_98_dis": 0.0675902602854744,
+        "target_95_sens": 0.9690721649484536,
+        "target_95_missed": 3,
+        "target_95_dis": 0.14567590260285473
+      },
+      "bootstrap_95ci": {
+        "auroc": {
+          "mean": 0.7723337554419637,
+          "ci95_low": 0.7210636829326147,
+          "ci95_high": 0.819955457917435
+        },
+        "auprc": {
+          "mean": 0.20169528032217662,
+          "ci95_low": 0.12962576625524386,
+          "ci95_high": 0.2812819451865167
+        },
+        "s98": {
+          "mean": 0.9693328204074279,
+          "ci95_low": 0.9299852941176471,
+          "ci95_high": 1.0
+        },
+        "d98": {
+          "mean": 0.06774349286314021,
+          "ci95_low": 0.05751469353484467,
+          "ci95_high": 0.07808564231738035
+        },
+        "s95": {
+          "mean": 0.9693328204074279,
+          "ci95_low": 0.9299852941176471,
+          "ci95_high": 1.0
+        },
+        "d95": {
+          "mean": 0.14568136020151132,
+          "ci95_low": 0.13140218303946263,
+          "ci95_high": 0.15952980688497062
+        }
+      },
+      "fold_details": {
+        "fold_a_to_fold_b": {
+          "tau_98": 0.0303818471729755,
+          "tau_95": 0.0375960245728492,
+          "target_98": {
+            "threshold": 0.0303818471729755,
+            "total_cases": 1191,
+            "total_cancers": 49,
+            "n_dismissed": 127,
+            "n_retained": 1064,
+            "dismissal_rate": 0.10663308144416457,
+            "detected_cancers": 46,
+            "missed_cancers": 3,
+            "triage_recall": 0.9387755102040817,
+            "cancer_prev_dismissed": 0.023622047244094488,
+            "clopper_pearson_99_ub": 0.07693011814020868,
+            "meets_target_recall": false,
+            "reported_dismissal_rate": null
+          },
+          "target_95": {
+            "threshold": 0.0375960245728492,
+            "total_cases": 1191,
+            "total_cancers": 49,
+            "n_dismissed": 216,
+            "n_retained": 975,
+            "dismissal_rate": 0.181360201511335,
+            "detected_cancers": 46,
+            "missed_cancers": 3,
+            "triage_recall": 0.9387755102040817,
+            "cancer_prev_dismissed": 0.013888888888888888,
+            "clopper_pearson_99_ub": 0.045752587534147106,
+            "meets_target_recall": false,
+            "reported_dismissal_rate": null
+          }
+        },
+        "fold_b_to_fold_a": {
+          "tau_98": 0.0211146492511034,
+          "tau_95": 0.0301240738481283,
+          "target_98": {
+            "threshold": 0.0211146492511034,
+            "total_cases": 1191,
+            "total_cancers": 48,
+            "n_dismissed": 34,
+            "n_retained": 1157,
+            "dismissal_rate": 0.028547439126784216,
+            "detected_cancers": 48,
+            "missed_cancers": 0,
+            "triage_recall": 1.0,
+            "cancer_prev_dismissed": 0.0,
+            "clopper_pearson_99_ub": 0.12667383761715667,
+            "meets_target_recall": true,
+            "reported_dismissal_rate": 0.028547439126784216
+          },
+          "target_95": {
+            "threshold": 0.0301240738481283,
+            "total_cases": 1191,
+            "total_cancers": 48,
+            "n_dismissed": 131,
+            "n_retained": 1060,
+            "dismissal_rate": 0.10999160369437448,
+            "detected_cancers": 48,
+            "missed_cancers": 0,
+            "triage_recall": 1.0,
+            "cancer_prev_dismissed": 0.0,
+            "clopper_pearson_99_ub": 0.034543247418094225,
+            "meets_target_recall": true,
+            "reported_dismissal_rate": 0.10999160369437448
+          }
+        }
+      },
+      "full_val_calib_thresholds": {
+        "target_98": 0.02142770960927,
+        "target_95": 0.0349914357066154
+      },
+      "fold_a_sensitivity_thresholds": {
+        "target_98": 0.0303818471729755,
+        "target_95": 0.0375960245728492
+      },
+      "score_quantiles": {
+        "positive": {
+          "p05": 0.037075106799602436,
+          "p25": 0.0807178914546966,
+          "p50": 0.161334604024887,
+          "p75": 0.3077617287635803,
+          "p95": 0.7541824340820311,
+          "mean": 0.24464088881906776
+        },
+        "negative": {
+          "p05": 0.02421095520257948,
+          "p25": 0.0412860065698623,
+          "p50": 0.0632025077939033,
+          "p75": 0.1063413992524147,
+          "p95": 0.2892442822456357,
+          "mean": 0.09430072828475178
+        }
+      }
+    }
+  },
+  "nlbs_common_4view_primary": {
+    "n_units": 6184,
+    "n_clusters": 5868,
+    "n_positive": 151,
+    "models": {
+      "ce_b5": {
+        "stratum": "A_rsna_supervised",
+        "auroc": 0.7088787606354894,
+        "auprc": 0.054805390907582796,
+        "target_98": {
+          "threshold": 0.0961934626102447,
+          "total_cases": 6184,
+          "total_cancers": 151,
+          "n_dismissed": 1885,
+          "n_retained": 4299,
+          "dismissal_rate": 0.3048188874514877,
+          "detected_cancers": 136,
+          "missed_cancers": 15,
+          "triage_recall": 0.9006622516556292,
+          "cancer_prev_dismissed": 0.007957559681697613,
+          "clopper_pearson_99_ub": 0.01414302543486165,
+          "meets_target_recall": false,
+          "reported_dismissal_rate": null
+        },
+        "target_95": {
+          "threshold": 0.124415136873722,
+          "total_cases": 6184,
+          "total_cancers": 151,
+          "n_dismissed": 3071,
+          "n_retained": 3113,
+          "dismissal_rate": 0.4966041397153946,
+          "detected_cancers": 121,
+          "missed_cancers": 30,
+          "triage_recall": 0.8013245033112583,
+          "cancer_prev_dismissed": 0.00976880494952784,
+          "clopper_pearson_99_ub": 0.014746613300360258,
+          "meets_target_recall": false,
+          "reported_dismissal_rate": null
+        },
+        "bootstrap_95ci": {
+          "auroc": {
+            "mean": 0.7090266115971929,
+            "ci95_low": 0.6668276819261758,
+            "ci95_high": 0.7462929361342014
+          },
+          "auprc": {
+            "mean": 0.05731633946393734,
+            "ci95_low": 0.04175935620535949,
+            "ci95_high": 0.07637937847474524
+          },
+          "target_98_sens": {
+            "mean": 0.9012606992569487,
+            "ci95_low": 0.85,
+            "ci95_high": 0.9432724003596044
+          },
+          "target_98_dis": {
+            "mean": 0.30468818299944167,
+            "ci95_low": 0.29258370180205623,
+            "ci95_high": 0.31654736124710947
+          },
+          "target_95_sens": {
+            "mean": 0.8019655542112937,
+            "ci95_low": 0.7343609487410072,
+            "ci95_high": 0.8630210899773332
+          },
+          "target_95_dis": {
+            "mean": 0.49652761344067403,
+            "ci95_low": 0.48366836008194414,
+            "ci95_high": 0.5090300024237894
+          }
+        },
+        "score_quantiles": {
+          "positive": {
+            "p05": 0.082183837890625,
+            "p25": 0.14349365234375,
+            "p50": 0.1942138671875,
+            "p75": 0.2650146484375,
+            "p95": 0.4605712890625,
+            "mean": 0.2141238585213162
+          },
+          "negative": {
+            "p05": 0.056121826171875,
+            "p25": 0.08819580078125,
+            "p50": 0.12359619140625,
+            "p75": 0.18115234375,
+            "p95": 0.32167968749999964,
+            "mean": 0.14791069871727633
+          }
+        },
+        "fallback_audit": {
+          "n_studies_with_fallback": 0,
+          "pct_studies_with_fallback": 0.0,
+          "excluded_sensitivity_check": null
+        }
+      },
+      "trust_b5": {
+        "stratum": "A_rsna_supervised",
+        "auroc": 0.7039955740118092,
+        "auprc": 0.053873806182616224,
+        "target_98": {
+          "threshold": 0.1795480698347091,
+          "total_cases": 6184,
+          "total_cancers": 151,
+          "n_dismissed": 2447,
+          "n_retained": 3737,
+          "dismissal_rate": 0.3956985769728331,
+          "detected_cancers": 128,
+          "missed_cancers": 23,
+          "triage_recall": 0.847682119205298,
+          "cancer_prev_dismissed": 0.00939926440539436,
+          "clopper_pearson_99_ub": 0.01501311267519355,
+          "meets_target_recall": false,
+          "reported_dismissal_rate": null
+        },
+        "target_95": {
+          "threshold": 0.1954631060361862,
+          "total_cases": 6184,
+          "total_cancers": 151,
+          "n_dismissed": 3048,
+          "n_retained": 3136,
+          "dismissal_rate": 0.49288486416558863,
+          "detected_cancers": 122,
+          "missed_cancers": 29,
+          "triage_recall": 0.8079470198675497,
+          "cancer_prev_dismissed": 0.009514435695538058,
+          "clopper_pearson_99_ub": 0.014461788589050947,
+          "meets_target_recall": false,
+          "reported_dismissal_rate": null
+        },
+        "bootstrap_95ci": {
+          "auroc": {
+            "mean": 0.7042113526613764,
+            "ci95_low": 0.6617420341780482,
+            "ci95_high": 0.7422891038300664
+          },
+          "auprc": {
+            "mean": 0.05631650386129259,
+            "ci95_low": 0.04089641094625443,
+            "ci95_high": 0.07468455431381114
+          },
+          "target_98_sens": {
+            "mean": 0.8484274917663024,
+            "ci95_low": 0.7872306108442004,
+            "ci95_high": 0.9022988505747126
+          },
+          "target_98_dis": {
+            "mean": 0.3956703186785838,
+            "ci95_low": 0.38313534528235016,
+            "ci95_high": 0.40830906013067614
+          },
+          "target_95_sens": {
+            "mean": 0.8084029273949395,
+            "ci95_low": 0.7402532467532468,
+            "ci95_high": 0.8662526539278131
+          },
+          "target_95_dis": {
+            "mean": 0.49286154945061295,
+            "ci95_low": 0.4798865080825956,
+            "ci95_high": 0.5055416908774459
+          }
+        },
+        "score_quantiles": {
+          "positive": {
+            "p05": 0.14520263671875,
+            "p25": 0.21221923828125,
+            "p50": 0.2587890625,
+            "p75": 0.3231201171875,
+            "p95": 0.47509765625,
+            "mean": 0.27371276451262416
+          },
+          "negative": {
+            "p05": 0.11181640625,
+            "p25": 0.1549072265625,
+            "p50": 0.1954345703125,
+            "p75": 0.253173828125,
+            "p95": 0.37158203125,
+            "mean": 0.21293470426003336
+          }
+        },
+        "fallback_audit": {
+          "n_studies_with_fallback": 0,
+          "pct_studies_with_fallback": 0.0,
+          "excluded_sensitivity_check": null
+        }
+      },
+      "dinov2_rsna": {
+        "stratum": "A_rsna_supervised",
+        "auroc": 0.6299316233123999,
+        "auprc": 0.04249079002979632,
+        "target_98": {
+          "threshold": 0.183435708284378,
+          "total_cases": 6184,
+          "total_cancers": 151,
+          "n_dismissed": 598,
+          "n_retained": 5586,
+          "dismissal_rate": 0.09670116429495472,
+          "detected_cancers": 148,
+          "missed_cancers": 3,
+          "triage_recall": 0.9801324503311258,
+          "cancer_prev_dismissed": 0.005016722408026756,
+          "clopper_pearson_99_ub": 0.01669918212331321,
+          "meets_target_recall": true,
+          "reported_dismissal_rate": 0.09670116429495472
+        },
+        "target_95": {
+          "threshold": 0.2065157741308212,
+          "total_cases": 6184,
+          "total_cancers": 151,
+          "n_dismissed": 1078,
+          "n_retained": 5106,
+          "dismissal_rate": 0.1743208279430789,
+          "detected_cancers": 142,
+          "missed_cancers": 9,
+          "triage_recall": 0.9403973509933775,
+          "cancer_prev_dismissed": 0.008348794063079777,
+          "clopper_pearson_99_ub": 0.017345063465865507,
+          "meets_target_recall": false,
+          "reported_dismissal_rate": null
+        },
+        "bootstrap_95ci": {
+          "auroc": {
+            "mean": 0.6291309010431707,
+            "ci95_low": 0.5861201003082942,
+            "ci95_high": 0.6710135126606961
+          },
+          "auprc": {
+            "mean": 0.04484588417492468,
+            "ci95_low": 0.03198332653778712,
+            "ci95_high": 0.06284565192432905
+          },
+          "target_98_sens": {
+            "mean": 0.9799207459178875,
+            "ci95_low": 0.9545454545454546,
+            "ci95_high": 1.0
+          },
+          "target_98_dis": {
+            "mean": 0.09667554375407159,
+            "ci95_low": 0.08913101221625139,
+            "ci95_high": 0.10402210300751898
+          },
+          "target_95_sens": {
+            "mean": 0.9405008636008811,
+            "ci95_low": 0.8974358974358975,
+            "ci95_high": 0.9747912372496168
+          },
+          "target_95_dis": {
+            "mean": 0.17424840838955466,
+            "ci95_low": 0.16466552529586445,
+            "ci95_high": 0.18373739393523358
+          }
+        },
+        "score_quantiles": {
+          "positive": {
+            "p05": 0.20344499498605725,
+            "p25": 0.25511015951633453,
+            "p50": 0.3116297125816345,
+            "p75": 0.3571700006723404,
+            "p95": 0.4670587182044983,
+            "mean": 0.31839959925373656
+          },
+          "negative": {
+            "p05": 0.16156396269798276,
+            "p25": 0.2231469303369522,
+            "p50": 0.2727177441120147,
+            "p75": 0.3304777443408966,
+            "p95": 0.41935840845108024,
+            "mean": 0.2798237940619167
+          }
+        },
+        "fallback_audit": {
+          "n_studies_with_fallback": 0,
+          "pct_studies_with_fallback": 0.0,
+          "excluded_sensitivity_check": null
+        }
+      },
+      "resnet50_rsna": {
+        "stratum": "A_rsna_supervised",
+        "auroc": 0.645220053502645,
+        "auprc": 0.10385304182650892,
+        "target_98": {
+          "threshold": 0.0009927749633789,
+          "total_cases": 6184,
+          "total_cancers": 151,
+          "n_dismissed": 331,
+          "n_retained": 5853,
+          "dismissal_rate": 0.05352522639068564,
+          "detected_cancers": 147,
+          "missed_cancers": 4,
+          "triage_recall": 0.9735099337748344,
+          "cancer_prev_dismissed": 0.012084592145015106,
+          "clopper_pearson_99_ub": 0.034658519413262576,
+          "meets_target_recall": false,
+          "reported_dismissal_rate": null
+        },
+        "target_95": {
+          "threshold": 0.0069313049316406,
+          "total_cases": 6184,
+          "total_cancers": 151,
+          "n_dismissed": 1223,
+          "n_retained": 4961,
+          "dismissal_rate": 0.19776843467011643,
+          "detected_cancers": 128,
+          "missed_cancers": 23,
+          "triage_recall": 0.847682119205298,
+          "cancer_prev_dismissed": 0.018806214227309895,
+          "clopper_pearson_99_ub": 0.029953141891162254,
+          "meets_target_recall": false,
+          "reported_dismissal_rate": null
+        },
+        "bootstrap_95ci": {
+          "auroc": {
+            "mean": 0.6453114143543284,
+            "ci95_low": 0.5935153830657035,
+            "ci95_high": 0.6940825103962507
+          },
+          "auprc": {
+            "mean": 0.10756359954569103,
+            "ci95_low": 0.06558443293615605,
+            "ci95_high": 0.15969926010771046
+          },
+          "target_98_sens": {
+            "mean": 0.9733898930669732,
+            "ci95_low": 0.9448275862068966,
+            "ci95_high": 0.9938271604938271
+          },
+          "target_98_dis": {
+            "mean": 0.053491314438355295,
+            "ci95_low": 0.04772706205208624,
+            "ci95_high": 0.059494249682498446
+          },
+          "target_95_sens": {
+            "mean": 0.8483308435871425,
+            "ci95_low": 0.7873939547879096,
+            "ci95_high": 0.9041971204649525
+          },
+          "target_95_dis": {
+            "mean": 0.19777214366962936,
+            "ci95_low": 0.1878313426214932,
+            "ci95_high": 0.20778609857319572
+          }
+        },
+        "score_quantiles": {
+          "positive": {
+            "p05": 0.0018362998962402001,
+            "p25": 0.027984619140625,
+            "p50": 0.27880859375,
+            "p75": 0.8310546875,
+            "p95": 0.999755859375,
+            "mean": 0.40939653827654604
+          },
+          "negative": {
+            "p05": 0.0009040832519531,
+            "p25": 0.010406494140625,
+            "p50": 0.05450439453125,
+            "p75": 0.29541015625,
+            "p95": 0.9020507812499998,
+            "mean": 0.20761097425966343
+          }
+        },
+        "fallback_audit": {
+          "n_studies_with_fallback": 0,
+          "pct_studies_with_fallback": 0.0,
+          "excluded_sensitivity_check": null
+        }
+      },
+      "gmic_pretrained": {
+        "stratum": "B_pretrained_direct",
+        "auroc": 0.854124610448274,
+        "auprc": 0.34368540158282535,
+        "target_98": {
+          "threshold": 0.0288736540824174,
+          "total_cases": 6184,
+          "total_cancers": 151,
+          "n_dismissed": 1501,
+          "n_retained": 4683,
+          "dismissal_rate": 0.24272315653298834,
+          "detected_cancers": 147,
+          "missed_cancers": 4,
+          "triage_recall": 0.9735099337748344,
+          "cancer_prev_dismissed": 0.002664890073284477,
+          "clopper_pearson_99_ub": 0.007711699298844192,
+          "meets_target_recall": false,
+          "reported_dismissal_rate": null
+        },
+        "target_95": {
+          "threshold": 0.0466411337256431,
+          "total_cases": 6184,
+          "total_cancers": 151,
+          "n_dismissed": 2379,
+          "n_retained": 3805,
+          "dismissal_rate": 0.38470245795601554,
+          "detected_cancers": 141,
+          "missed_cancers": 10,
+          "triage_recall": 0.9337748344370861,
+          "cancer_prev_dismissed": 0.004203446826397646,
+          "clopper_pearson_99_ub": 0.008449662867451056,
+          "meets_target_recall": false,
+          "reported_dismissal_rate": null
+        },
+        "bootstrap_95ci": {
+          "auroc": {
+            "mean": 0.8542109068020076,
+            "ci95_low": 0.8186902115883898,
+            "ci95_high": 0.8874380066225696
+          },
+          "auprc": {
+            "mean": 0.3455941208776625,
+            "ci95_low": 0.2660282611827045,
+            "ci95_high": 0.4240402895561816
+          },
+          "target_98_sens": {
+            "mean": 0.9737404988588765,
+            "ci95_low": 0.9444444444444444,
+            "ci95_high": 0.9939403066812705
+          },
+          "target_98_dis": {
+            "mean": 0.24268019044931352,
+            "ci95_low": 0.23128141439755373,
+            "ci95_high": 0.25375659914484355
+          },
+          "target_95_sens": {
+            "mean": 0.9339269141197228,
+            "ci95_low": 0.89171974522293,
+            "ci95_high": 0.9716362001798021
+          },
+          "target_95_dis": {
+            "mean": 0.38470570286191824,
+            "ci95_low": 0.37204305771534557,
+            "ci95_high": 0.3972637005112604
+          }
+        },
+        "score_quantiles": {
+          "positive": {
+            "p05": 0.0380822960287332,
+            "p25": 0.16755525767803187,
+            "p50": 0.4877591133117676,
+            "p75": 0.7966717183589935,
+            "p95": 0.9920556247234344,
+            "mean": 0.49359535020683576
+          },
+          "negative": {
+            "p05": 0.01070150360465044,
+            "p25": 0.029013454914093,
+            "p50": 0.0628130361437797,
+            "p75": 0.1434191763401031,
+            "p95": 0.40317378640174856,
+            "mean": 0.11494368916787587
+          }
+        },
+        "fallback_audit": {
+          "n_studies_with_fallback": 0,
+          "pct_studies_with_fallback": 0.0,
+          "excluded_sensitivity_check": null
+        }
+      },
+      "nyu_fourview_pretrained": {
+        "stratum": "B_pretrained_direct",
+        "auroc": 0.7924670383530757,
+        "auprc": 0.14897447867475128,
+        "target_98": {
+          "threshold": 0.02142770960927,
+          "total_cases": 6184,
+          "total_cancers": 151,
+          "n_dismissed": 120,
+          "n_retained": 6064,
+          "dismissal_rate": 0.019404915912031046,
+          "detected_cancers": 151,
+          "missed_cancers": 0,
+          "triage_recall": 1.0,
+          "cancer_prev_dismissed": 0.0,
+          "clopper_pearson_99_ub": 0.03764937360191145,
+          "meets_target_recall": true,
+          "reported_dismissal_rate": 0.019404915912031046
+        },
+        "target_95": {
+          "threshold": 0.0349914357066154,
+          "total_cases": 6184,
+          "total_cancers": 151,
+          "n_dismissed": 965,
+          "n_retained": 5219,
+          "dismissal_rate": 0.15604786545924967,
+          "detected_cancers": 150,
+          "missed_cancers": 1,
+          "triage_recall": 0.9933774834437086,
+          "cancer_prev_dismissed": 0.0010362694300518134,
+          "clopper_pearson_99_ub": 0.006859058977814353,
+          "meets_target_recall": true,
+          "reported_dismissal_rate": 0.15604786545924967
+        },
+        "bootstrap_95ci": {
+          "auroc": {
+            "mean": 0.7928816005602595,
+            "ci95_low": 0.7550905982351327,
+            "ci95_high": 0.828043247991003
+          },
+          "auprc": {
+            "mean": 0.1536727678022315,
+            "ci95_low": 0.10661728517926657,
+            "ci95_high": 0.2118490288633914
+          },
+          "target_98_sens": {
+            "mean": 1.0,
+            "ci95_low": 1.0,
+            "ci95_high": 1.0
+          },
+          "target_98_dis": {
+            "mean": 0.019433273868829832,
+            "ci95_low": 0.015947649422074498,
+            "ci95_high": 0.02311097776074217
+          },
+          "target_95_sens": {
+            "mean": 0.9933963471947072,
+            "ci95_low": 0.9785675745118191,
+            "ci95_high": 1.0
+          },
+          "target_95_dis": {
+            "mean": 0.15623634286760496,
+            "ci95_low": 0.14673378658266903,
+            "ci95_high": 0.1655313974494891
+          }
+        },
+        "score_quantiles": {
+          "positive": {
+            "p05": 0.04531231150031085,
+            "p25": 0.08668555691838259,
+            "p50": 0.1573091745376587,
+            "p75": 0.29457722604274744,
+            "p95": 0.8289308845996857,
+            "mean": 0.2526966788072065
+          },
+          "negative": {
+            "p05": 0.02506698518991466,
+            "p25": 0.0414802692830562,
+            "p50": 0.0614275448024272,
+            "p75": 0.1010816842317581,
+            "p95": 0.2773627400398252,
+            "mean": 0.09273139751083576
+          }
+        },
+        "fallback_audit": {
+          "n_studies_with_fallback": 0,
+          "pct_studies_with_fallback": 0.0,
+          "excluded_sensitivity_check": null
+        }
+      }
+    },
+    "paired_contrasts": {
+      "ce_b5_minus_trust_b5": {
+        "delta_auroc": {
+          "mean": 0.004815258935816529,
+          "ci95_low": 0.0004804220841593432,
+          "ci95_high": 0.009003035611739717
+        },
+        "delta_sens98": {
+          "mean": 0.05283320749064633,
+          "ci95_low": 0.01898734177215189,
+          "ci95_high": 0.09154929577464788
+        },
+        "delta_dis98": {
+          "mean": -0.09098213567914223,
+          "ci95_low": -0.09794649360160815,
+          "ci95_high": -0.08403532349078002
+        },
+        "delta_sens95": {
+          "mean": -0.006437373183645642,
+          "ci95_low": -0.029239766081871288,
+          "ci95_high": 0.014186930091185306
+        },
+        "delta_dis95": {
+          "mean": 0.0036660639900611617,
+          "ci95_low": -0.0004855371022599475,
+          "ci95_high": 0.008166029047911246
+        },
+        "mcnemar_cancer_retained_98": {
+          "only_a": 8,
+          "only_b": 0,
+          "p_value": 0.0078125
+        },
+        "mcnemar_dismissed_98": {
+          "only_a": 1,
+          "only_b": 563,
+          "p_value": 1.8713752827928495e-167
+        }
+      },
+      "ce_b5_minus_dinov2_rsna": {
+        "delta_auroc": {
+          "mean": 0.07989571055402214,
+          "ci95_low": 0.027511640748826355,
+          "ci95_high": 0.1299307840578018
+        },
+        "delta_sens98": {
+          "mean": -0.07866004666093869,
+          "ci95_low": -0.1333333333333333,
+          "ci95_high": -0.02720628792057369
+        },
+        "delta_dis98": {
+          "mean": 0.20801263924537006,
+          "ci95_low": 0.19356345998914354,
+          "ci95_high": 0.2220072166426712
+        },
+        "delta_sens95": {
+          "mean": -0.13853530938958744,
+          "ci95_low": -0.21341463414634143,
+          "ci95_high": -0.06626406287401265
+        },
+        "delta_dis95": {
+          "mean": 0.32227920505111946,
+          "ci95_low": 0.30616336676071093,
+          "ci95_high": 0.33793833812565877
+        },
+        "mcnemar_cancer_retained_98": {
+          "only_a": 3,
+          "only_b": 15,
+          "p_value": 0.007537841796875
+        },
+        "mcnemar_dismissed_98": {
+          "only_a": 1663,
+          "only_b": 376,
+          "p_value": 1.806124271110717e-192
+        }
+      },
+      "ce_b5_minus_resnet50_rsna": {
+        "delta_auroc": {
+          "mean": 0.06371519724286459,
+          "ci95_low": 0.007933772129541328,
+          "ci95_high": 0.1190749131057392
+        },
+        "delta_sens98": {
+          "mean": -0.07212919381002444,
+          "ci95_low": -0.12258361369483474,
+          "ci95_high": -0.02157508036124294
+        },
+        "delta_dis98": {
+          "mean": 0.25119686856108636,
+          "ci95_low": 0.23836630330491082,
+          "ci95_high": 0.2636634451360633
+        },
+        "delta_sens95": {
+          "mean": -0.04636528937584876,
+          "ci95_low": -0.1347613571017826,
+          "ci95_high": 0.040005747126436786
+        },
+        "delta_dis95": {
+          "mean": 0.29875546977104467,
+          "ci95_low": 0.2839557594851538,
+          "ci95_high": 0.3144164821995273
+        },
+        "mcnemar_cancer_retained_98": {
+          "only_a": 3,
+          "only_b": 14,
+          "p_value": 0.012725830078125
+        },
+        "mcnemar_dismissed_98": {
+          "only_a": 1720,
+          "only_b": 166,
+          "p_value": 0.0
+        }
+      },
+      "ce_b5_minus_gmic_pretrained": {
+        "delta_auroc": {
+          "mean": -0.1451842952048146,
+          "ci95_low": -0.18662386608091783,
+          "ci95_high": -0.1014350973227706
+        },
+        "delta_sens98": {
+          "mean": -0.07247979960192763,
+          "ci95_low": -0.12271161198541829,
+          "ci95_high": -0.02614379084967322
+        },
+        "delta_dis98": {
+          "mean": 0.06200799255012813,
+          "ci95_low": 0.0486343928137755,
+          "ci95_high": 0.0753524550315994
+        },
+        "delta_sens95": {
+          "mean": -0.13196135990842914,
+          "ci95_low": -0.20326332429990965,
+          "ci95_high": -0.06206045125585361
+        },
+        "delta_dis95": {
+          "mean": 0.11182191057875579,
+          "ci95_low": 0.09698897797429813,
+          "ci95_high": 0.1256689038715674
+        },
+        "mcnemar_cancer_retained_98": {
+          "only_a": 2,
+          "only_b": 13,
+          "p_value": 0.00738525390625
+        },
+        "mcnemar_dismissed_98": {
+          "only_a": 1110,
+          "only_b": 726,
+          "p_value": 2.9390002281430206e-19
+        }
+      },
+      "ce_b5_minus_nyu_fourview_pretrained": {
+        "delta_auroc": {
+          "mean": -0.08385498896306652,
+          "ci95_low": -0.12759934906820375,
+          "ci95_high": -0.04180622709924923
+        },
+        "delta_sens98": {
+          "mean": -0.09873930074305125,
+          "ci95_low": -0.15000000000000002,
+          "ci95_high": -0.056727599640395594
+        },
+        "delta_dis98": {
+          "mean": 0.28525490913061186,
+          "ci95_low": 0.2730513938690588,
+          "ci95_high": 0.29723637067534403
+        },
+        "delta_sens95": {
+          "mean": -0.1914307929834134,
+          "ci95_low": -0.2597402597402597,
+          "ci95_high": -0.1324376839587933
+        },
+        "delta_dis95": {
+          "mean": 0.3402912705730691,
+          "ci95_low": 0.3260227271487868,
+          "ci95_high": 0.353142531237457
+        },
+        "mcnemar_cancer_retained_98": {
+          "only_a": 0,
+          "only_b": 15,
+          "p_value": 6.103515625e-05
+        },
+        "mcnemar_dismissed_98": {
+          "only_a": 1794,
+          "only_b": 29,
+          "p_value": 0.0
+        }
+      },
+      "trust_b5_minus_dinov2_rsna": {
+        "delta_auroc": {
+          "mean": 0.07508045161820562,
+          "ci95_low": 0.02320063069332699,
+          "ci95_high": 0.1265089858722079
+        },
+        "delta_sens98": {
+          "mean": -0.131493254151585,
+          "ci95_low": -0.19999999999999996,
+          "ci95_high": -0.06961585794655421
+        },
+        "delta_dis98": {
+          "mean": 0.29899477492451226,
+          "ci95_low": 0.2838214674537776,
+          "ci95_high": 0.3139264349286561
+        },
+        "delta_sens95": {
+          "mean": -0.13209793620594182,
+          "ci95_low": -0.20590196078431378,
+          "ci95_high": -0.060388343945391026
+        },
+        "delta_dis95": {
+          "mean": 0.3186131410610582,
+          "ci95_low": 0.30264107534599566,
+          "ci95_high": 0.3345701045602483
+        },
+        "mcnemar_cancer_retained_98": {
+          "only_a": 3,
+          "only_b": 23,
+          "p_value": 8.797645568847656e-05
+        },
+        "mcnemar_dismissed_98": {
+          "only_a": 2185,
+          "only_b": 336,
+          "p_value": 0.0
+        }
+      },
+      "trust_b5_minus_resnet50_rsna": {
+        "delta_auroc": {
+          "mean": 0.05889993830704806,
+          "ci95_low": 0.0016366618124157184,
+          "ci95_high": 0.11402119894890203
+        },
+        "delta_sens98": {
+          "mean": -0.12496240130067077,
+          "ci95_low": -0.1897810218978102,
+          "ci95_high": -0.06621624301066746
+        },
+        "delta_dis98": {
+          "mean": 0.34217900424022857,
+          "ci95_low": 0.32846052983046053,
+          "ci95_high": 0.3557468122342463
+        },
+        "delta_sens95": {
+          "mean": -0.03992791619220312,
+          "ci95_low": -0.12676319108681947,
+          "ci95_high": 0.04382013291208174
+        },
+        "delta_dis95": {
+          "mean": 0.2950894057809835,
+          "ci95_low": 0.28042545532128244,
+          "ci95_high": 0.31025849716470255
+        },
+        "mcnemar_cancer_retained_98": {
+          "only_a": 3,
+          "only_b": 22,
+          "p_value": 0.00015652179718017578
+        },
+        "mcnemar_dismissed_98": {
+          "only_a": 2255,
+          "only_b": 139,
+          "p_value": 0.0
+        }
+      },
+      "trust_b5_minus_gmic_pretrained": {
+        "delta_auroc": {
+          "mean": -0.14999955414063113,
+          "ci95_low": -0.19162663639343971,
+          "ci95_high": -0.10654858590699466
+        },
+        "delta_sens98": {
+          "mean": -0.12531300709257395,
+          "ci95_low": -0.18440032928064837,
+          "ci95_high": -0.07092058971351985
+        },
+        "delta_dis98": {
+          "mean": 0.15299012822927033,
+          "ci95_low": 0.1389923861979589,
+          "ci95_high": 0.16653182725214027
+        },
+        "delta_sens95": {
+          "mean": -0.12552398672478352,
+          "ci95_low": -0.192554347826087,
+          "ci95_high": -0.060805692055692126
+        },
+        "delta_dis95": {
+          "mean": 0.10815584658869463,
+          "ci95_low": 0.09303492565525755,
+          "ci95_high": 0.12213180224936646
+        },
+        "mcnemar_cancer_retained_98": {
+          "only_a": 1,
+          "only_b": 20,
+          "p_value": 2.09808349609375e-05
+        },
+        "mcnemar_dismissed_98": {
+          "only_a": 1499,
+          "only_b": 553,
+          "p_value": 2.6230680389284723e-100
+        }
+      },
+      "trust_b5_minus_nyu_fourview_pretrained": {
+        "delta_auroc": {
+          "mean": -0.08867024789888305,
+          "ci95_low": -0.13336950044891266,
+          "ci95_high": -0.045981836153768586
+        },
+        "delta_sens98": {
+          "mean": -0.15157250823369756,
+          "ci95_low": -0.21276938915579957,
+          "ci95_high": -0.0977011494252874
+        },
+        "delta_dis98": {
+          "mean": 0.376237044809754,
+          "ci95_low": 0.36359485554562315,
+          "ci95_high": 0.3889791129423696
+        },
+        "delta_sens95": {
+          "mean": -0.18499341979976777,
+          "ci95_low": -0.25362589227774174,
+          "ci95_high": -0.12666455696202536
+        },
+        "delta_dis95": {
+          "mean": 0.336625206583008,
+          "ci95_low": 0.32232996348810417,
+          "ci95_high": 0.34979797118017936
+        },
+        "mcnemar_cancer_retained_98": {
+          "only_a": 0,
+          "only_b": 23,
+          "p_value": 2.384185791015625e-07
+        },
+        "mcnemar_dismissed_98": {
+          "only_a": 2345,
+          "only_b": 18,
+          "p_value": 0.0
+        }
+      },
+      "dinov2_rsna_minus_resnet50_rsna": {
+        "delta_auroc": {
+          "mean": -0.01618051331115756,
+          "ci95_low": -0.07345084981496125,
+          "ci95_high": 0.043108655640433105
+        },
+        "delta_sens98": {
+          "mean": 0.006530852850914259,
+          "ci95_low": -0.02740677321156773,
+          "ci95_high": 0.03974172185430469
+        },
+        "delta_dis98": {
+          "mean": 0.043184229315716284,
+          "ci95_low": 0.03379838495473175,
+          "ci95_high": 0.05201425896400528
+        },
+        "delta_sens95": {
+          "mean": 0.09217002001373868,
+          "ci95_low": 0.021421026156941685,
+          "ci95_high": 0.1655183831925097
+        },
+        "delta_dis95": {
+          "mean": -0.02352373528007471,
+          "ci95_low": -0.03705553991252562,
+          "ci95_high": -0.009372337976286404
+        },
+        "mcnemar_cancer_retained_98": {
+          "only_a": 4,
+          "only_b": 3,
+          "p_value": 1.0
+        },
+        "mcnemar_dismissed_98": {
+          "only_a": 548,
+          "only_b": 281,
+          "p_value": 1.1638209500169413e-20
+        }
+      },
+      "dinov2_rsna_minus_gmic_pretrained": {
+        "delta_auroc": {
+          "mean": -0.22508000575883674,
+          "ci95_low": -0.2812326597550287,
+          "ci95_high": -0.17055388105474906
+        },
+        "delta_sens98": {
+          "mean": 0.0061802470590110814,
+          "ci95_low": -0.03106566662760259,
+          "ci95_high": 0.04225352112676062
+        },
+        "delta_dis98": {
+          "mean": -0.14600464669524194,
+          "ci95_low": -0.1601550928164591,
+          "ci95_high": -0.1318946500345072
+        },
+        "delta_sens95": {
+          "mean": 0.0065739494811583,
+          "ci95_low": -0.05294215037008184,
+          "ci95_high": 0.06300182987689913
+        },
+        "delta_dis95": {
+          "mean": -0.21045729447236364,
+          "ci95_low": -0.22666164601489386,
+          "ci95_high": -0.19410409258232197
+        },
+        "mcnemar_cancer_retained_98": {
+          "only_a": 4,
+          "only_b": 3,
+          "p_value": 1.0
+        },
+        "mcnemar_dismissed_98": {
+          "only_a": 461,
+          "only_b": 1364,
+          "p_value": 2.4206551279558995e-103
+        }
+      },
+      "dinov2_rsna_minus_nyu_fourview_pretrained": {
+        "delta_auroc": {
+          "mean": -0.16375069951708865,
+          "ci95_low": -0.21808397332565388,
+          "ci95_high": -0.11284401438875503
+        },
+        "delta_sens98": {
+          "mean": -0.020079254082112544,
+          "ci95_low": -0.045454545454545414,
+          "ci95_high": 0.0
+        },
+        "delta_dis98": {
+          "mean": 0.07724226988524174,
+          "ci95_low": 0.06912639080779708,
+          "ci95_high": 0.08532045373392128
+        },
+        "delta_sens95": {
+          "mean": -0.052895483593825954,
+          "ci95_low": -0.09589041095890416,
+          "ci95_high": -0.013420581655481085
+        },
+        "delta_dis95": {
+          "mean": 0.01801206552194973,
+          "ci95_low": 0.00470994001229165,
+          "ci95_high": 0.03184549936360616
+        },
+        "mcnemar_cancer_retained_98": {
+          "only_a": 0,
+          "only_b": 3,
+          "p_value": 0.25
+        },
+        "mcnemar_dismissed_98": {
+          "only_a": 578,
+          "only_b": 100,
+          "p_value": 1.2573250874233307e-82
+        }
+      },
+      "resnet50_rsna_minus_gmic_pretrained": {
+        "delta_auroc": {
+          "mean": -0.20889949244767916,
+          "ci95_low": -0.2670495706358078,
+          "ci95_high": -0.15000250728569706
+        },
+        "delta_sens98": {
+          "mean": -0.0003506057919031773,
+          "ci95_low": -0.03797468354430378,
+          "ci95_high": 0.03571428571428581
+        },
+        "delta_dis98": {
+          "mean": -0.1891888760109582,
+          "ci95_low": -0.2013630944545361,
+          "ci95_high": -0.17711837563228397
+        },
+        "delta_sens95": {
+          "mean": -0.08559607053258038,
+          "ci95_low": -0.15698314319145829,
+          "ci95_high": -0.019099323248407688
+        },
+        "delta_dis95": {
+          "mean": -0.1869335591922889,
+          "ci95_low": -0.20253965820945818,
+          "ci95_high": -0.17153521583901332
+        },
+        "mcnemar_cancer_retained_98": {
+          "only_a": 4,
+          "only_b": 4,
+          "p_value": 1.0
+        },
+        "mcnemar_dismissed_98": {
+          "only_a": 211,
+          "only_b": 1381,
+          "p_value": 1.161204104463965e-210
+        }
+      },
+      "resnet50_rsna_minus_nyu_fourview_pretrained": {
+        "delta_auroc": {
+          "mean": -0.1475701862059311,
+          "ci95_low": -0.21153905040131088,
+          "ci95_high": -0.0844319232814322
+        },
+        "delta_sens98": {
+          "mean": -0.026610106933026807,
+          "ci95_low": -0.05517241379310345,
+          "ci95_high": -0.006172839506172867
+        },
+        "delta_dis98": {
+          "mean": 0.03405804056952546,
+          "ci95_low": 0.026952208607907337,
+          "ci95_high": 0.04087296075430264
+        },
+        "delta_sens95": {
+          "mean": -0.1450655036075646,
+          "ci95_low": -0.2075532957608429,
+          "ci95_high": -0.08641753264055417
+        },
+        "delta_dis95": {
+          "mean": 0.04153580080202444,
+          "ci95_low": 0.027750392682250758,
+          "ci95_high": 0.05460757585757226
+        },
+        "mcnemar_cancer_retained_98": {
+          "only_a": 0,
+          "only_b": 4,
+          "p_value": 0.125
+        },
+        "mcnemar_dismissed_98": {
+          "only_a": 326,
+          "only_b": 115,
+          "p_value": 1.8949960080965657e-24
+        }
+      },
+      "gmic_pretrained_minus_nyu_fourview_pretrained": {
+        "delta_auroc": {
+          "mean": 0.06132930624174809,
+          "ci95_low": 0.02635100817962851,
+          "ci95_high": 0.0971242371701742
+        },
+        "delta_sens98": {
+          "mean": -0.026259501141123628,
+          "ci95_low": -0.05555555555555558,
+          "ci95_high": -0.006059693318729505
+        },
+        "delta_dis98": {
+          "mean": 0.22324691658048368,
+          "ci95_low": 0.2119561474180171,
+          "ci95_high": 0.23430503325113716
+        },
+        "delta_sens95": {
+          "mean": -0.05946943307498425,
+          "ci95_low": -0.10275187803800262,
+          "ci95_high": -0.019227707006369377
+        },
+        "delta_dis95": {
+          "mean": 0.2284693599943133,
+          "ci95_low": 0.2160758897424183,
+          "ci95_high": 0.24161375573460467
+        },
+        "mcnemar_cancer_retained_98": {
+          "only_a": 0,
+          "only_b": 4,
+          "p_value": 0.125
+        },
+        "mcnemar_dismissed_98": {
+          "only_a": 1414,
+          "only_b": 33,
+          "p_value": 0.0
+        }
+      }
+    },
+    "missed_cancer_overlap": {
+      "n_pos": 151,
+      "target_98": {
+        "missed_counts": {
+          "ce_b5": 15,
+          "trust_b5": 23,
+          "dinov2_rsna": 3,
+          "resnet50_rsna": 4,
+          "gmic_pretrained": 4,
+          "nyu_fourview_pretrained": 0
+        },
+        "pairwise_jaccard": {
+          "ce_b5": {
+            "ce_b5": 1.0,
+            "trust_b5": 0.6521739130434783,
+            "dinov2_rsna": 0.0,
+            "resnet50_rsna": 0.05555555555555555,
+            "gmic_pretrained": 0.11764705882352941,
+            "nyu_fourview_pretrained": 0.0
+          },
+          "trust_b5": {
+            "ce_b5": 0.6521739130434783,
+            "trust_b5": 1.0,
+            "dinov2_rsna": 0.0,
+            "resnet50_rsna": 0.038461538461538464,
+            "gmic_pretrained": 0.125,
+            "nyu_fourview_pretrained": 0.0
+          },
+          "dinov2_rsna": {
+            "ce_b5": 0.0,
+            "trust_b5": 0.0,
+            "dinov2_rsna": 1.0,
+            "resnet50_rsna": 0.0,
+            "gmic_pretrained": 0.0,
+            "nyu_fourview_pretrained": 0.0
+          },
+          "resnet50_rsna": {
+            "ce_b5": 0.05555555555555555,
+            "trust_b5": 0.038461538461538464,
+            "dinov2_rsna": 0.0,
+            "resnet50_rsna": 1.0,
+            "gmic_pretrained": 0.0,
+            "nyu_fourview_pretrained": 0.0
+          },
+          "gmic_pretrained": {
+            "ce_b5": 0.11764705882352941,
+            "trust_b5": 0.125,
+            "dinov2_rsna": 0.0,
+            "resnet50_rsna": 0.0,
+            "gmic_pretrained": 1.0,
+            "nyu_fourview_pretrained": 0.0
+          },
+          "nyu_fourview_pretrained": {
+            "ce_b5": 0.0,
+            "trust_b5": 0.0,
+            "dinov2_rsna": 0.0,
+            "resnet50_rsna": 0.0,
+            "gmic_pretrained": 0.0,
+            "nyu_fourview_pretrained": 1.0
+          }
+        },
+        "upset_patterns": {
+          "NONE_MISSED": 121,
+          "ce_b5|trust_b5": 12,
+          "trust_b5": 7,
+          "dinov2_rsna": 3,
+          "resnet50_rsna": 3,
+          "ce_b5|trust_b5|gmic_pretrained": 2,
+          "ce_b5|trust_b5|resnet50_rsna": 1,
+          "gmic_pretrained": 1,
+          "trust_b5|gmic_pretrained": 1
+        }
+      },
+      "target_95": {
+        "missed_counts": {
+          "ce_b5": 30,
+          "trust_b5": 29,
+          "dinov2_rsna": 9,
+          "resnet50_rsna": 23,
+          "gmic_pretrained": 10,
+          "nyu_fourview_pretrained": 1
+        },
+        "pairwise_jaccard": {
+          "ce_b5": {
+            "ce_b5": 1.0,
+            "trust_b5": 0.9032258064516129,
+            "dinov2_rsna": 0.08333333333333333,
+            "resnet50_rsna": 0.08163265306122448,
+            "gmic_pretrained": 0.14285714285714285,
+            "nyu_fourview_pretrained": 0.03333333333333333
+          },
+          "trust_b5": {
+            "ce_b5": 0.9032258064516129,
+            "trust_b5": 1.0,
+            "dinov2_rsna": 0.08571428571428572,
+            "resnet50_rsna": 0.10638297872340426,
+            "gmic_pretrained": 0.18181818181818182,
+            "nyu_fourview_pretrained": 0.0
+          },
+          "dinov2_rsna": {
+            "ce_b5": 0.08333333333333333,
+            "trust_b5": 0.08571428571428572,
+            "dinov2_rsna": 1.0,
+            "resnet50_rsna": 0.03225806451612903,
+            "gmic_pretrained": 0.0,
+            "nyu_fourview_pretrained": 0.0
+          },
+          "resnet50_rsna": {
+            "ce_b5": 0.08163265306122448,
+            "trust_b5": 0.10638297872340426,
+            "dinov2_rsna": 0.03225806451612903,
+            "resnet50_rsna": 1.0,
+            "gmic_pretrained": 0.06451612903225806,
+            "nyu_fourview_pretrained": 0.0
+          },
+          "gmic_pretrained": {
+            "ce_b5": 0.14285714285714285,
+            "trust_b5": 0.18181818181818182,
+            "dinov2_rsna": 0.0,
+            "resnet50_rsna": 0.06451612903225806,
+            "gmic_pretrained": 1.0,
+            "nyu_fourview_pretrained": 0.0
+          },
+          "nyu_fourview_pretrained": {
+            "ce_b5": 0.03333333333333333,
+            "trust_b5": 0.0,
+            "dinov2_rsna": 0.0,
+            "resnet50_rsna": 0.0,
+            "gmic_pretrained": 0.0,
+            "nyu_fourview_pretrained": 1.0
+          }
+        },
+        "upset_patterns": {
+          "NONE_MISSED": 93,
+          "ce_b5|trust_b5": 17,
+          "resnet50_rsna": 17,
+          "dinov2_rsna": 5,
+          "ce_b5|trust_b5|gmic_pretrained": 4,
+          "gmic_pretrained": 4,
+          "ce_b5|trust_b5|dinov2_rsna": 3,
+          "ce_b5|trust_b5|resnet50_rsna": 3,
+          "ce_b5": 1,
+          "ce_b5|nyu_fourview_pretrained": 1,
+          "ce_b5|trust_b5|resnet50_rsna|gmic_pretrained": 1,
+          "dinov2_rsna|resnet50_rsna": 1,
+          "trust_b5|resnet50_rsna|gmic_pretrained": 1
+        }
+      }
+    }
+  },
+  "nlbs_full_cohort_secondary": {
+    "n_units": 6359,
+    "n_clusters": 5942,
+    "n_positive": 151,
+    "models": {
+      "ce_b5": {
+        "stratum": "A_rsna_supervised",
+        "auroc": 0.7100648810336587,
+        "auprc": 0.053878680965395845,
+        "target_98": {
+          "threshold": 0.0961934626102447,
+          "total_cases": 6359,
+          "total_cancers": 151,
+          "n_dismissed": 1947,
+          "n_retained": 4412,
+          "dismissal_rate": 0.306180217015254,
+          "detected_cancers": 136,
+          "missed_cancers": 15,
+          "triage_recall": 0.9006622516556292,
+          "cancer_prev_dismissed": 0.007704160246533128,
+          "clopper_pearson_99_ub": 0.013694018745943596,
+          "meets_target_recall": false,
+          "reported_dismissal_rate": null
+        },
+        "target_95": {
+          "threshold": 0.124415136873722,
+          "total_cases": 6359,
+          "total_cancers": 151,
+          "n_dismissed": 3173,
+          "n_retained": 3186,
+          "dismissal_rate": 0.49897782670231167,
+          "detected_cancers": 121,
+          "missed_cancers": 30,
+          "triage_recall": 0.8013245033112583,
+          "cancer_prev_dismissed": 0.009454774661203908,
+          "clopper_pearson_99_ub": 0.014273720085167408,
+          "meets_target_recall": false,
+          "reported_dismissal_rate": null
+        },
+        "bootstrap_95ci": {
+          "auroc": {
+            "mean": 0.710649455936107,
+            "ci95_low": 0.6694148035546873,
+            "ci95_high": 0.7468954179729249
+          },
+          "auprc": {
+            "mean": 0.056437789919530815,
+            "ci95_low": 0.04136501366869234,
+            "ci95_high": 0.07599626380664358
+          },
+          "target_98_sens": {
+            "mean": 0.900407930586722,
+            "ci95_low": 0.8496136173767753,
+            "ci95_high": 0.94375
+          },
+          "target_98_dis": {
+            "mean": 0.30622654055382303,
+            "ci95_low": 0.2949198913571732,
+            "ci95_high": 0.3182251357499549
+          },
+          "target_95_sens": {
+            "mean": 0.8018045090839889,
+            "ci95_low": 0.7374919871794873,
+            "ci95_high": 0.8622765338887443
+          },
+          "target_95_dis": {
+            "mean": 0.4989149993327634,
+            "ci95_low": 0.4857240666432155,
+            "ci95_high": 0.5113218267581475
+          }
+        },
+        "score_quantiles": {
+          "positive": {
+            "p05": 0.082183837890625,
+            "p25": 0.14349365234375,
+            "p50": 0.1942138671875,
+            "p75": 0.2650146484375,
+            "p95": 0.4605712890625,
+            "mean": 0.2141238585213162
+          },
+          "negative": {
+            "p05": 0.055859375,
+            "p25": 0.0880126953125,
+            "p50": 0.12322998046875,
+            "p75": 0.1806640625,
+            "p95": 0.3202270507812499,
+            "mean": 0.1474870185262149
+          }
+        },
+        "fallback_audit": {
+          "n_studies_with_fallback": 0,
+          "pct_studies_with_fallback": 0.0,
+          "excluded_sensitivity_check": null
+        }
+      },
+      "trust_b5": {
+        "stratum": "A_rsna_supervised",
+        "auroc": 0.7051833353246398,
+        "auprc": 0.05292526101253217,
+        "target_98": {
+          "threshold": 0.1795480698347091,
+          "total_cases": 6359,
+          "total_cancers": 151,
+          "n_dismissed": 2529,
+          "n_retained": 3830,
+          "dismissal_rate": 0.3977040415159616,
+          "detected_cancers": 128,
+          "missed_cancers": 23,
+          "triage_recall": 0.847682119205298,
+          "cancer_prev_dismissed": 0.009094503756425464,
+          "clopper_pearson_99_ub": 0.014527666081469484,
+          "meets_target_recall": false,
+          "reported_dismissal_rate": null
+        },
+        "target_95": {
+          "threshold": 0.1954631060361862,
+          "total_cases": 6359,
+          "total_cancers": 151,
+          "n_dismissed": 3152,
+          "n_retained": 3207,
+          "dismissal_rate": 0.49567542066362635,
+          "detected_cancers": 122,
+          "missed_cancers": 29,
+          "triage_recall": 0.8079470198675497,
+          "cancer_prev_dismissed": 0.009200507614213198,
+          "clopper_pearson_99_ub": 0.013985777005302527,
+          "meets_target_recall": false,
+          "reported_dismissal_rate": null
+        },
+        "bootstrap_95ci": {
+          "auroc": {
+            "mean": 0.7056899132202638,
+            "ci95_low": 0.6643932920682077,
+            "ci95_high": 0.7428570017568733
+          },
+          "auprc": {
+            "mean": 0.05542709858053834,
+            "ci95_low": 0.04058770822460433,
+            "ci95_high": 0.07425630165894948
+          },
+          "target_98_sens": {
+            "mean": 0.8482711150985467,
+            "ci95_low": 0.7872340425531915,
+            "ci95_high": 0.9019607843137255
+          },
+          "target_98_dis": {
+            "mean": 0.39775383113983587,
+            "ci95_low": 0.38479637917114695,
+            "ci95_high": 0.41087317531487316
+          },
+          "target_95_sens": {
+            "mean": 0.8086280942536278,
+            "ci95_low": 0.7412457912457913,
+            "ci95_high": 0.8690534547152194
+          },
+          "target_95_dis": {
+            "mean": 0.4956042326668327,
+            "ci95_low": 0.48225195970536844,
+            "ci95_high": 0.5080518476028357
+          }
+        },
+        "score_quantiles": {
+          "positive": {
+            "p05": 0.14520263671875,
+            "p25": 0.21221923828125,
+            "p50": 0.2587890625,
+            "p75": 0.3231201171875,
+            "p95": 0.47509765625,
+            "mean": 0.27371276451262416
+          },
+          "negative": {
+            "p05": 0.11163330078125,
+            "p25": 0.15478515625,
+            "p50": 0.1949462890625,
+            "p75": 0.25225830078125,
+            "p95": 0.3705200195312499,
+            "mean": 0.2125431925980086
+          }
+        },
+        "fallback_audit": {
+          "n_studies_with_fallback": 0,
+          "pct_studies_with_fallback": 0.0,
+          "excluded_sensitivity_check": null
+        }
+      },
+      "dinov2_rsna": {
+        "stratum": "A_rsna_supervised",
+        "auroc": 0.6301482385471427,
+        "auprc": 0.04158915847815165,
+        "target_98": {
+          "threshold": 0.183435708284378,
+          "total_cases": 6359,
+          "total_cancers": 151,
+          "n_dismissed": 614,
+          "n_retained": 5745,
+          "dismissal_rate": 0.09655606227394245,
+          "detected_cancers": 148,
+          "missed_cancers": 3,
+          "triage_recall": 0.9801324503311258,
+          "cancer_prev_dismissed": 0.004885993485342019,
+          "clopper_pearson_99_ub": 0.01626652176968212,
+          "meets_target_recall": true,
+          "reported_dismissal_rate": 0.09655606227394245
+        },
+        "target_95": {
+          "threshold": 0.2065157741308212,
+          "total_cases": 6359,
+          "total_cancers": 151,
+          "n_dismissed": 1106,
+          "n_retained": 5253,
+          "dismissal_rate": 0.17392671803742726,
+          "detected_cancers": 142,
+          "missed_cancers": 9,
+          "triage_recall": 0.9403973509933775,
+          "cancer_prev_dismissed": 0.0081374321880651,
+          "clopper_pearson_99_ub": 0.01690789473501956,
+          "meets_target_recall": false,
+          "reported_dismissal_rate": null
+        },
+        "bootstrap_95ci": {
+          "auroc": {
+            "mean": 0.6298644321108111,
+            "ci95_low": 0.585587723273829,
+            "ci95_high": 0.6727056990033554
+          },
+          "auprc": {
+            "mean": 0.043858015542918544,
+            "ci95_low": 0.031702601427247026,
+            "ci95_high": 0.06040147614865334
+          },
+          "target_98_sens": {
+            "mean": 0.9801107427804168,
+            "ci95_low": 0.9553514194139194,
+            "ci95_high": 1.0
+          },
+          "target_98_dis": {
+            "mean": 0.09640915454653491,
+            "ci95_low": 0.08915260105867631,
+            "ci95_high": 0.10373364743905657
+          },
+          "target_95_sens": {
+            "mean": 0.9408453328889145,
+            "ci95_low": 0.901957776975821,
+            "ci95_high": 0.9746875248785924
+          },
+          "target_95_dis": {
+            "mean": 0.1738443341328359,
+            "ci95_low": 0.16449710468673184,
+            "ci95_high": 0.18336121545392348
+          }
+        },
+        "score_quantiles": {
+          "positive": {
+            "p05": 0.20344499498605725,
+            "p25": 0.25511015951633453,
+            "p50": 0.3116297125816345,
+            "p75": 0.3571700006723404,
+            "p95": 0.4670587182044983,
+            "mean": 0.31839959925373656
+          },
+          "negative": {
+            "p05": 0.16155841201543808,
+            "p25": 0.22347180545330045,
+            "p50": 0.2725617587566376,
+            "p75": 0.3302734196186065,
+            "p95": 0.41911018937826156,
+            "mean": 0.2797203645927438
+          }
+        },
+        "fallback_audit": {
+          "n_studies_with_fallback": 0,
+          "pct_studies_with_fallback": 0.0,
+          "excluded_sensitivity_check": null
+        }
+      },
+      "resnet50_rsna": {
+        "stratum": "A_rsna_supervised",
+        "auroc": 0.6451630453335154,
+        "auprc": 0.10270900420801136,
+        "target_98": {
+          "threshold": 0.0009927749633789,
+          "total_cases": 6359,
+          "total_cancers": 151,
+          "n_dismissed": 342,
+          "n_retained": 6017,
+          "dismissal_rate": 0.05378204120144677,
+          "detected_cancers": 147,
+          "missed_cancers": 4,
+          "triage_recall": 0.9735099337748344,
+          "cancer_prev_dismissed": 0.011695906432748537,
+          "clopper_pearson_99_ub": 0.03355618845850813,
+          "meets_target_recall": false,
+          "reported_dismissal_rate": null
+        },
+        "target_95": {
+          "threshold": 0.0069313049316406,
+          "total_cases": 6359,
+          "total_cancers": 151,
+          "n_dismissed": 1257,
+          "n_retained": 5102,
+          "dismissal_rate": 0.19767259002987891,
+          "detected_cancers": 128,
+          "missed_cancers": 23,
+          "triage_recall": 0.847682119205298,
+          "cancer_prev_dismissed": 0.018297533810660304,
+          "clopper_pearson_99_ub": 0.029147446023897617,
+          "meets_target_recall": false,
+          "reported_dismissal_rate": null
+        },
+        "bootstrap_95ci": {
+          "auroc": {
+            "mean": 0.6461850956116059,
+            "ci95_low": 0.5953441491146315,
+            "ci95_high": 0.6947851948105008
+          },
+          "auprc": {
+            "mean": 0.10555720383956903,
+            "ci95_low": 0.06344164715014713,
+            "ci95_high": 0.15574284277839373
+          },
+          "target_98_sens": {
+            "mean": 0.9729913909237606,
+            "ci95_low": 0.9444444444444444,
+            "ci95_high": 0.9936305732484076
+          },
+          "target_98_dis": {
+            "mean": 0.05382865611555465,
+            "ci95_low": 0.04789742160939523,
+            "ci95_high": 0.05950322918605796
+          },
+          "target_95_sens": {
+            "mean": 0.848622385454734,
+            "ci95_low": 0.7905301134467801,
+            "ci95_high": 0.9023063143752799
+          },
+          "target_95_dis": {
+            "mean": 0.19775410794285161,
+            "ci95_low": 0.18750931991280465,
+            "ci95_high": 0.20783986427300183
+          }
+        },
+        "score_quantiles": {
+          "positive": {
+            "p05": 0.0018362998962402001,
+            "p25": 0.027984619140625,
+            "p50": 0.27880859375,
+            "p75": 0.8310546875,
+            "p95": 0.999755859375,
+            "mean": 0.40939653827654604
+          },
+          "negative": {
+            "p05": 0.0009040832519531,
+            "p25": 0.0104522705078125,
+            "p50": 0.0546417236328125,
+            "p75": 0.2950439453125,
+            "p95": 0.9016845703124998,
+            "mean": 0.20741257349931702
+          }
+        },
+        "fallback_audit": {
+          "n_studies_with_fallback": 0,
+          "pct_studies_with_fallback": 0.0,
+          "excluded_sensitivity_check": null
+        }
+      },
+      "gmic_pretrained": {
+        "stratum": "B_pretrained_direct",
+        "auroc": 0.8553511384583874,
+        "auprc": 0.34260042107296085,
+        "target_98": {
+          "threshold": 0.0288736540824174,
+          "total_cases": 6359,
+          "total_cancers": 151,
+          "n_dismissed": 1570,
+          "n_retained": 4789,
+          "dismissal_rate": 0.24689416574933165,
+          "detected_cancers": 147,
+          "missed_cancers": 4,
+          "triage_recall": 0.9735099337748344,
+          "cancer_prev_dismissed": 0.0025477707006369425,
+          "clopper_pearson_99_ub": 0.0073735986467999386,
+          "meets_target_recall": false,
+          "reported_dismissal_rate": null
+        },
+        "target_95": {
+          "threshold": 0.0466411337256431,
+          "total_cases": 6359,
+          "total_cancers": 151,
+          "n_dismissed": 2477,
+          "n_retained": 3882,
+          "dismissal_rate": 0.3895266551344551,
+          "detected_cancers": 141,
+          "missed_cancers": 10,
+          "triage_recall": 0.9337748344370861,
+          "cancer_prev_dismissed": 0.004037141703673799,
+          "clopper_pearson_99_ub": 0.00811604595008049,
+          "meets_target_recall": false,
+          "reported_dismissal_rate": null
+        },
+        "bootstrap_95ci": {
+          "auroc": {
+            "mean": 0.8558733430036168,
+            "ci95_low": 0.8205240860301621,
+            "ci95_high": 0.8882746117827464
+          },
+          "auprc": {
+            "mean": 0.34599554788279013,
+            "ci95_low": 0.2679809410213605,
+            "ci95_high": 0.42284687226942697
+          },
+          "target_98_sens": {
+            "mean": 0.9733582339286112,
+            "ci95_low": 0.9466666666666667,
+            "ci95_high": 0.9939033628972653
+          },
+          "target_98_dis": {
+            "mean": 0.24688187159267272,
+            "ci95_low": 0.23566340638935623,
+            "ci95_high": 0.2580659013519776
+          },
+          "target_95_sens": {
+            "mean": 0.9342373882430215,
+            "ci95_low": 0.8934871794871795,
+            "ci95_high": 0.9710197059743509
+          },
+          "target_95_dis": {
+            "mean": 0.38950785183614334,
+            "ci95_low": 0.3768089506002045,
+            "ci95_high": 0.40232546689957926
+          }
+        },
+        "score_quantiles": {
+          "positive": {
+            "p05": 0.0380822960287332,
+            "p25": 0.16755525767803187,
+            "p50": 0.4877591133117676,
+            "p75": 0.7966717183589935,
+            "p95": 0.9920556247234344,
+            "mean": 0.49359535020683576
+          },
+          "negative": {
+            "p05": 0.010621728189289496,
+            "p25": 0.028710810467600774,
+            "p50": 0.0621794369071722,
+            "p75": 0.14197449758648864,
+            "p95": 0.401280790567398,
+            "mean": 0.11389657680579661
+          }
+        },
+        "fallback_audit": {
+          "n_studies_with_fallback": 0,
+          "pct_studies_with_fallback": 0.0,
+          "excluded_sensitivity_check": null
+        }
+      }
+    },
+    "paired_contrasts": {
+      "ce_b5_minus_trust_b5": {
+        "delta_auroc": {
+          "mean": 0.0049595427158431495,
+          "ci95_low": 0.0006183159294576024,
+          "ci95_high": 0.009267874402407974
+        },
+        "delta_sens98": {
+          "mean": 0.05213681548817521,
+          "ci95_low": 0.019230769230769273,
+          "ci95_high": 0.09146441096763905
+        },
+        "delta_dis98": {
+          "mean": -0.09152729058601289,
+          "ci95_low": -0.09886025148177371,
+          "ci95_high": -0.08414735412434653
+        },
+        "delta_sens95": {
+          "mean": -0.006823585169638798,
+          "ci95_low": -0.029417211328976043,
+          "ci95_high": 0.013891317016317063
+        },
+        "delta_dis95": {
+          "mean": 0.0033107666659306497,
+          "ci95_low": -0.0009458203452667929,
+          "ci95_high": 0.0074368560640227545
+        },
+        "mcnemar_cancer_retained_98": {
+          "only_a": 8,
+          "only_b": 0,
+          "p_value": 0.0078125
+        },
+        "mcnemar_dismissed_98": {
+          "only_a": 1,
+          "only_b": 583,
+          "p_value": 1.8478571468687766e-173
+        }
+      },
+      "ce_b5_minus_dinov2_rsna": {
+        "delta_auroc": {
+          "mean": 0.08078502382529572,
+          "ci95_low": 0.029212935295543505,
+          "ci95_high": 0.13052095932806185
+        },
+        "delta_sens98": {
+          "mean": -0.07970281219369496,
+          "ci95_low": -0.1333333333333333,
+          "ci95_high": -0.028566362715298922
+        },
+        "delta_dis98": {
+          "mean": 0.20981738600728808,
+          "ci95_low": 0.1963881593374533,
+          "ci95_high": 0.2244139453790577
+        },
+        "delta_sens95": {
+          "mean": -0.13904082380492566,
+          "ci95_low": -0.21120365142104278,
+          "ci95_high": -0.07142857142857151
+        },
+        "delta_dis95": {
+          "mean": 0.3250706651999275,
+          "ci95_low": 0.3092177688325212,
+          "ci95_high": 0.34127592754893366
+        },
+        "mcnemar_cancer_retained_98": {
+          "only_a": 3,
+          "only_b": 15,
+          "p_value": 0.007537841796875
+        },
+        "mcnemar_dismissed_98": {
+          "only_a": 1713,
+          "only_b": 380,
+          "p_value": 2.159144493410969e-201
+        }
+      },
+      "ce_b5_minus_resnet50_rsna": {
+        "delta_auroc": {
+          "mean": 0.06446436032450094,
+          "ci95_low": 0.013024752028147566,
+          "ci95_high": 0.12153078279517572
+        },
+        "delta_sens98": {
+          "mean": -0.07258346033703879,
+          "ci95_low": -0.1266746031746031,
+          "ci95_high": -0.02563694267515928
+        },
+        "delta_dis98": {
+          "mean": 0.2523978844382684,
+          "ci95_low": 0.23984816633125247,
+          "ci95_high": 0.2655909079694124
+        },
+        "delta_sens95": {
+          "mean": -0.046817876370745096,
+          "ci95_low": -0.13143233082706768,
+          "ci95_high": 0.03681549647807315
+        },
+        "delta_dis95": {
+          "mean": 0.30116089138991176,
+          "ci95_low": 0.2854218263785756,
+          "ci95_high": 0.31666446774202106
+        },
+        "mcnemar_cancer_retained_98": {
+          "only_a": 3,
+          "only_b": 14,
+          "p_value": 0.012725830078125
+        },
+        "mcnemar_dismissed_98": {
+          "only_a": 1776,
+          "only_b": 171,
+          "p_value": 0.0
+        }
+      },
+      "ce_b5_minus_gmic_pretrained": {
+        "delta_auroc": {
+          "mean": -0.1452238870675099,
+          "ci95_low": -0.1888894545578448,
+          "ci95_high": -0.09963603835600728
+        },
+        "delta_sens98": {
+          "mean": -0.07295030334188932,
+          "ci95_low": -0.12244897959183665,
+          "ci95_high": -0.025461882343632634
+        },
+        "delta_dis98": {
+          "mean": 0.059344668961150274,
+          "ci95_low": 0.04586060996209056,
+          "ci95_high": 0.0733882836838669
+        },
+        "delta_sens95": {
+          "mean": -0.13243287915903268,
+          "ci95_low": -0.2038247988602078,
+          "ci95_high": -0.06666666666666665
+        },
+        "delta_dis95": {
+          "mean": 0.10940714749662005,
+          "ci95_low": 0.09418030799580242,
+          "ci95_high": 0.12395092747268631
+        },
+        "mcnemar_cancer_retained_98": {
+          "only_a": 2,
+          "only_b": 13,
+          "p_value": 0.00738525390625
+        },
+        "mcnemar_dismissed_98": {
+          "only_a": 1132,
+          "only_b": 755,
+          "p_value": 3.808724482632803e-18
+        }
+      },
+      "trust_b5_minus_dinov2_rsna": {
+        "delta_auroc": {
+          "mean": 0.07582548110945257,
+          "ci95_low": 0.023704513411301593,
+          "ci95_high": 0.12594039435463716
+        },
+        "delta_sens98": {
+          "mean": -0.1318396276818702,
+          "ci95_low": -0.19611277632071933,
+          "ci95_high": -0.07095636889991731
+        },
+        "delta_dis98": {
+          "mean": 0.301344676593301,
+          "ci95_low": 0.2869117406866881,
+          "ci95_high": 0.31639612494733477
+        },
+        "delta_sens95": {
+          "mean": -0.13221723863528684,
+          "ci95_low": -0.20424792343806433,
+          "ci95_high": -0.06709065337544427
+        },
+        "delta_dis95": {
+          "mean": 0.3217598985339968,
+          "ci95_low": 0.3058451645310128,
+          "ci95_high": 0.3376181753897529
+        },
+        "mcnemar_cancer_retained_98": {
+          "only_a": 3,
+          "only_b": 23,
+          "p_value": 8.797645568847656e-05
+        },
+        "mcnemar_dismissed_98": {
+          "only_a": 2255,
+          "only_b": 340,
+          "p_value": 0.0
+        }
+      },
+      "trust_b5_minus_resnet50_rsna": {
+        "delta_auroc": {
+          "mean": 0.05950481760865779,
+          "ci95_low": 0.006803655247742757,
+          "ci95_high": 0.11642349238895551
+        },
+        "delta_sens98": {
+          "mean": -0.12472027582521399,
+          "ci95_low": -0.19206532022541245,
+          "ci95_high": -0.06547327264239029
+        },
+        "delta_dis98": {
+          "mean": 0.3439251750242812,
+          "ci95_low": 0.3304847349083685,
+          "ci95_high": 0.35805440934102994
+        },
+        "delta_sens95": {
+          "mean": -0.03999429120110629,
+          "ci95_low": -0.12319088743299582,
+          "ci95_high": 0.04137931034482756
+        },
+        "delta_dis95": {
+          "mean": 0.2978501247239811,
+          "ci95_low": 0.28211186546444755,
+          "ci95_high": 0.3133350596359071
+        },
+        "mcnemar_cancer_retained_98": {
+          "only_a": 3,
+          "only_b": 22,
+          "p_value": 0.00015652179718017578
+        },
+        "mcnemar_dismissed_98": {
+          "only_a": 2328,
+          "only_b": 141,
+          "p_value": 0.0
+        }
+      },
+      "trust_b5_minus_gmic_pretrained": {
+        "delta_auroc": {
+          "mean": -0.15018342978335306,
+          "ci95_low": -0.19470780543311858,
+          "ci95_high": -0.10490179983314435
+        },
+        "delta_sens98": {
+          "mean": -0.12508711883006451,
+          "ci95_low": -0.18383787025448478,
+          "ci95_high": -0.07142857142857151
+        },
+        "delta_dis98": {
+          "mean": 0.15087195954716315,
+          "ci95_low": 0.13683815082198014,
+          "ci95_high": 0.1646058154615397
+        },
+        "delta_sens95": {
+          "mean": -0.12560929398939386,
+          "ci95_low": -0.19402985074626866,
+          "ci95_high": -0.06164383561643838
+        },
+        "delta_dis95": {
+          "mean": 0.10609638083068941,
+          "ci95_low": 0.09155035257879025,
+          "ci95_high": 0.12094275709743128
+        },
+        "mcnemar_cancer_retained_98": {
+          "only_a": 1,
+          "only_b": 20,
+          "p_value": 2.09808349609375e-05
+        },
+        "mcnemar_dismissed_98": {
+          "only_a": 1535,
+          "only_b": 576,
+          "p_value": 4.3174252030201804e-100
+        }
+      },
+      "dinov2_rsna_minus_resnet50_rsna": {
+        "delta_auroc": {
+          "mean": -0.01632066350079478,
+          "ci95_low": -0.07366775323743635,
+          "ci95_high": 0.04190705284822662
+        },
+        "delta_sens98": {
+          "mean": 0.007119351856656183,
+          "ci95_low": -0.02614379084967322,
+          "ci95_high": 0.04268292682926833
+        },
+        "delta_dis98": {
+          "mean": 0.04258049843098026,
+          "ci95_low": 0.03365290588851886,
+          "ci95_high": 0.05158710631814602
+        },
+        "delta_sens95": {
+          "mean": 0.09222294743418055,
+          "ci95_low": 0.026662251655629198,
+          "ci95_high": 0.16129533159687431
+        },
+        "delta_dis95": {
+          "mean": -0.023909773810015692,
+          "ci95_low": -0.03736742854282571,
+          "ci95_high": -0.010385169841393925
+        },
+        "mcnemar_cancer_retained_98": {
+          "only_a": 4,
+          "only_b": 3,
+          "p_value": 1.0
+        },
+        "mcnemar_dismissed_98": {
+          "only_a": 561,
+          "only_b": 289,
+          "p_value": 6.848890010397942e-21
+        }
+      },
+      "dinov2_rsna_minus_gmic_pretrained": {
+        "delta_auroc": {
+          "mean": -0.22600891089280567,
+          "ci95_low": -0.27859994082559575,
+          "ci95_high": -0.17251848929654862
+        },
+        "delta_sens98": {
+          "mean": 0.006752508851805645,
+          "ci95_low": -0.025978270095917164,
+          "ci95_high": 0.03974172185430458
+        },
+        "delta_dis98": {
+          "mean": -0.15047271704613782,
+          "ci95_low": -0.16398318273383522,
+          "ci95_high": -0.13696936313471497
+        },
+        "delta_sens95": {
+          "mean": 0.006607944645893,
+          "ci95_low": -0.048484848484848464,
+          "ci95_high": 0.06212150621118008
+        },
+        "delta_dis95": {
+          "mean": -0.21566351770330738,
+          "ci95_low": -0.23229795702837971,
+          "ci95_high": -0.19945653899924826
+        },
+        "mcnemar_cancer_retained_98": {
+          "only_a": 4,
+          "only_b": 3,
+          "p_value": 1.0
+        },
+        "mcnemar_dismissed_98": {
+          "only_a": 466,
+          "only_b": 1422,
+          "p_value": 4.542319306746625e-112
+        }
+      },
+      "resnet50_rsna_minus_gmic_pretrained": {
+        "delta_auroc": {
+          "mean": -0.20968824739201086,
+          "ci95_low": -0.2678377416199533,
+          "ci95_high": -0.1552251101943828
+        },
+        "delta_sens98": {
+          "mean": -0.00036684300485053767,
+          "ci95_low": -0.03732399324134046,
+          "ci95_high": 0.03378952932524357
+        },
+        "delta_dis98": {
+          "mean": -0.19305321547711807,
+          "ci95_low": -0.20552023145010714,
+          "ci95_high": -0.1807266507613764
+        },
+        "delta_sens95": {
+          "mean": -0.08561500278828757,
+          "ci95_low": -0.1523267276679642,
+          "ci95_high": -0.016786554621848793
+        },
+        "delta_dis95": {
+          "mean": -0.1917537438932917,
+          "ci95_low": -0.20780701527015122,
+          "ci95_high": -0.1761986871767909
+        },
+        "mcnemar_cancer_retained_98": {
+          "only_a": 4,
+          "only_b": 4,
+          "p_value": 1.0
+        },
+        "mcnemar_dismissed_98": {
+          "only_a": 216,
+          "only_b": 1444,
+          "p_value": 7.041313641872357e-223
+        }
+      }
+    },
+    "missed_cancer_overlap": {
+      "n_pos": 151,
+      "target_98": {
+        "missed_counts": {
+          "ce_b5": 15,
+          "trust_b5": 23,
+          "dinov2_rsna": 3,
+          "resnet50_rsna": 4,
+          "gmic_pretrained": 4
+        },
+        "pairwise_jaccard": {
+          "ce_b5": {
+            "ce_b5": 1.0,
+            "trust_b5": 0.6521739130434783,
+            "dinov2_rsna": 0.0,
+            "resnet50_rsna": 0.05555555555555555,
+            "gmic_pretrained": 0.11764705882352941
+          },
+          "trust_b5": {
+            "ce_b5": 0.6521739130434783,
+            "trust_b5": 1.0,
+            "dinov2_rsna": 0.0,
+            "resnet50_rsna": 0.038461538461538464,
+            "gmic_pretrained": 0.125
+          },
+          "dinov2_rsna": {
+            "ce_b5": 0.0,
+            "trust_b5": 0.0,
+            "dinov2_rsna": 1.0,
+            "resnet50_rsna": 0.0,
+            "gmic_pretrained": 0.0
+          },
+          "resnet50_rsna": {
+            "ce_b5": 0.05555555555555555,
+            "trust_b5": 0.038461538461538464,
+            "dinov2_rsna": 0.0,
+            "resnet50_rsna": 1.0,
+            "gmic_pretrained": 0.0
+          },
+          "gmic_pretrained": {
+            "ce_b5": 0.11764705882352941,
+            "trust_b5": 0.125,
+            "dinov2_rsna": 0.0,
+            "resnet50_rsna": 0.0,
+            "gmic_pretrained": 1.0
+          }
+        },
+        "upset_patterns": {
+          "NONE_MISSED": 121,
+          "ce_b5|trust_b5": 12,
+          "trust_b5": 7,
+          "dinov2_rsna": 3,
+          "resnet50_rsna": 3,
+          "ce_b5|trust_b5|gmic_pretrained": 2,
+          "ce_b5|trust_b5|resnet50_rsna": 1,
+          "gmic_pretrained": 1,
+          "trust_b5|gmic_pretrained": 1
+        }
+      },
+      "target_95": {
+        "missed_counts": {
+          "ce_b5": 30,
+          "trust_b5": 29,
+          "dinov2_rsna": 9,
+          "resnet50_rsna": 23,
+          "gmic_pretrained": 10
+        },
+        "pairwise_jaccard": {
+          "ce_b5": {
+            "ce_b5": 1.0,
+            "trust_b5": 0.9032258064516129,
+            "dinov2_rsna": 0.08333333333333333,
+            "resnet50_rsna": 0.08163265306122448,
+            "gmic_pretrained": 0.14285714285714285
+          },
+          "trust_b5": {
+            "ce_b5": 0.9032258064516129,
+            "trust_b5": 1.0,
+            "dinov2_rsna": 0.08571428571428572,
+            "resnet50_rsna": 0.10638297872340426,
+            "gmic_pretrained": 0.18181818181818182
+          },
+          "dinov2_rsna": {
+            "ce_b5": 0.08333333333333333,
+            "trust_b5": 0.08571428571428572,
+            "dinov2_rsna": 1.0,
+            "resnet50_rsna": 0.03225806451612903,
+            "gmic_pretrained": 0.0
+          },
+          "resnet50_rsna": {
+            "ce_b5": 0.08163265306122448,
+            "trust_b5": 0.10638297872340426,
+            "dinov2_rsna": 0.03225806451612903,
+            "resnet50_rsna": 1.0,
+            "gmic_pretrained": 0.06451612903225806
+          },
+          "gmic_pretrained": {
+            "ce_b5": 0.14285714285714285,
+            "trust_b5": 0.18181818181818182,
+            "dinov2_rsna": 0.0,
+            "resnet50_rsna": 0.06451612903225806,
+            "gmic_pretrained": 1.0
+          }
+        },
+        "upset_patterns": {
+          "NONE_MISSED": 93,
+          "ce_b5|trust_b5": 17,
+          "resnet50_rsna": 17,
+          "dinov2_rsna": 5,
+          "ce_b5|trust_b5|gmic_pretrained": 4,
+          "gmic_pretrained": 4,
+          "ce_b5|trust_b5|dinov2_rsna": 3,
+          "ce_b5|trust_b5|resnet50_rsna": 3,
+          "ce_b5": 2,
+          "ce_b5|trust_b5|resnet50_rsna|gmic_pretrained": 1,
+          "dinov2_rsna|resnet50_rsna": 1,
+          "trust_b5|resnet50_rsna|gmic_pretrained": 1
+        }
+      }
+    }
+  },
+  "nlbs_cluster_collapsed_secondary": {
+    "n_units": 5868,
+    "n_clusters": 5868,
+    "n_positive": 149,
+    "models": {
+      "ce_b5": {
+        "stratum": "A_rsna_supervised",
+        "auroc": 0.704479710279288,
+        "auprc": 0.05600174133292279,
+        "target_98": {
+          "threshold": 0.0961934626102447,
+          "total_cases": 5868,
+          "total_cancers": 149,
+          "n_dismissed": 1736,
+          "n_retained": 4132,
+          "dismissal_rate": 0.2958418541240627,
+          "detected_cancers": 134,
+          "missed_cancers": 15,
+          "triage_recall": 0.8993288590604027,
+          "cancer_prev_dismissed": 0.008640552995391706,
+          "clopper_pearson_99_ub": 0.01535279741448184,
+          "meets_target_recall": false,
+          "reported_dismissal_rate": null
+        },
+        "target_95": {
+          "threshold": 0.124415136873722,
+          "total_cases": 5868,
+          "total_cancers": 149,
+          "n_dismissed": 2862,
+          "n_retained": 3006,
+          "dismissal_rate": 0.48773006134969327,
+          "detected_cancers": 119,
+          "missed_cancers": 30,
+          "triage_recall": 0.7986577181208053,
+          "cancer_prev_dismissed": 0.010482180293501049,
+          "clopper_pearson_99_ub": 0.015820588591901958,
+          "meets_target_recall": false,
+          "reported_dismissal_rate": null
+        },
+        "bootstrap_95ci": {
+          "auroc": {
+            "mean": 0.7046605715007497,
+            "ci95_low": 0.6614607308310423,
+            "ci95_high": 0.7429450366968788
+          },
+          "auprc": {
+            "mean": 0.05854372223988515,
+            "ci95_low": 0.042719178296784864,
+            "ci95_high": 0.07814408649702144
+          },
+          "target_98_sens": {
+            "mean": 0.8999604612128287,
+            "ci95_low": 0.8481012658227848,
+            "ci95_high": 0.9426751592356688
+          },
+          "target_98_dis": {
+            "mean": 0.2957858725289707,
+            "ci95_low": 0.2837423312883436,
+            "ci95_high": 0.3074301295160191
+          },
+          "target_95_sens": {
+            "mean": 0.7993582457974944,
+            "ci95_low": 0.731021032037173,
+            "ci95_high": 0.8601641414141412
+          },
+          "target_95_dis": {
+            "mean": 0.4877703646898432,
+            "ci95_low": 0.47460804362644854,
+            "ci95_high": 0.5000042603953647
+          }
+        },
+        "score_quantiles": {
+          "positive": {
+            "p05": 0.08199462890625,
+            "p25": 0.1434326171875,
+            "p50": 0.194580078125,
+            "p75": 0.26513671875,
+            "p95": 0.46274414062499986,
+            "mean": 0.21492690527999161
+          },
+          "negative": {
+            "p05": 0.056976318359375,
+            "p25": 0.089202880859375,
+            "p50": 0.1251220703125,
+            "p75": 0.183349609375,
+            "p95": 0.32497558593749987,
+            "mean": 0.14955006556236614
+          }
+        },
+        "fallback_audit": {
+          "n_studies_with_fallback": 0,
+          "pct_studies_with_fallback": 0.0,
+          "excluded_sensitivity_check": null
+        }
+      },
+      "trust_b5": {
+        "stratum": "A_rsna_supervised",
+        "auroc": 0.6997181184583121,
+        "auprc": 0.05508771207247004,
+        "target_98": {
+          "threshold": 0.1795480698347091,
+          "total_cases": 5868,
+          "total_cancers": 149,
+          "n_dismissed": 2263,
+          "n_retained": 3605,
+          "dismissal_rate": 0.3856509884117246,
+          "detected_cancers": 126,
+          "missed_cancers": 23,
+          "triage_recall": 0.8456375838926175,
+          "cancer_prev_dismissed": 0.010163499779054353,
+          "clopper_pearson_99_ub": 0.016230052348432635,
+          "meets_target_recall": false,
+          "reported_dismissal_rate": null
+        },
+        "target_95": {
+          "threshold": 0.1954631060361862,
+          "total_cases": 5868,
+          "total_cancers": 149,
+          "n_dismissed": 2842,
+          "n_retained": 3026,
+          "dismissal_rate": 0.4843217450579414,
+          "detected_cancers": 120,
+          "missed_cancers": 29,
+          "triage_recall": 0.8053691275167785,
+          "cancer_prev_dismissed": 0.01020408163265306,
+          "clopper_pearson_99_ub": 0.015507227348738602,
+          "meets_target_recall": false,
+          "reported_dismissal_rate": null
+        },
+        "bootstrap_95ci": {
+          "auroc": {
+            "mean": 0.699968478886419,
+            "ci95_low": 0.6568451077108781,
+            "ci95_high": 0.7390948613069218
+          },
+          "auprc": {
+            "mean": 0.05756023245943764,
+            "ci95_low": 0.04187289101793153,
+            "ci95_high": 0.07631295187198675
+          },
+          "target_98_sens": {
+            "mean": 0.8464317185590694,
+            "ci95_low": 0.7836246399581042,
+            "ci95_high": 0.9005879059350503
+          },
+          "target_98_dis": {
+            "mean": 0.3857061179277437,
+            "ci95_low": 0.3728698023176551,
+            "ci95_high": 0.39860259032038176
+          },
+          "target_95_sens": {
+            "mean": 0.8058827198534206,
+            "ci95_low": 0.7375886524822695,
+            "ci95_high": 0.863954081632653
+          },
+          "target_95_dis": {
+            "mean": 0.4843954498977505,
+            "ci95_low": 0.4713658827539196,
+            "ci95_high": 0.49744376278118607
+          }
+        },
+        "score_quantiles": {
+          "positive": {
+            "p05": 0.1445068359375,
+            "p25": 0.2119140625,
+            "p50": 0.261474609375,
+            "p75": 0.323974609375,
+            "p95": 0.47529296875,
+            "mean": 0.27432353384542785
+          },
+          "negative": {
+            "p05": 0.1131591796875,
+            "p25": 0.1566162109375,
+            "p50": 0.1966552734375,
+            "p75": 0.254150390625,
+            "p95": 0.3740234375,
+            "mean": 0.2145245507539288
+          }
+        },
+        "fallback_audit": {
+          "n_studies_with_fallback": 0,
+          "pct_studies_with_fallback": 0.0,
+          "excluded_sensitivity_check": null
+        }
+      },
+      "dinov2_rsna": {
+        "stratum": "A_rsna_supervised",
+        "auroc": 0.625204340647154,
+        "auprc": 0.043403985586028856,
+        "target_98": {
+          "threshold": 0.183435708284378,
+          "total_cases": 5868,
+          "total_cancers": 149,
+          "n_dismissed": 561,
+          "n_retained": 5307,
+          "dismissal_rate": 0.09560327198364008,
+          "detected_cancers": 146,
+          "missed_cancers": 3,
+          "triage_recall": 0.9798657718120806,
+          "cancer_prev_dismissed": 0.0053475935828877,
+          "clopper_pearson_99_ub": 0.01779363773639768,
+          "meets_target_recall": false,
+          "reported_dismissal_rate": null
+        },
+        "target_95": {
+          "threshold": 0.2065157741308212,
+          "total_cases": 5868,
+          "total_cancers": 149,
+          "n_dismissed": 1010,
+          "n_retained": 4858,
+          "dismissal_rate": 0.17211997273346966,
+          "detected_cancers": 140,
+          "missed_cancers": 9,
+          "triage_recall": 0.9395973154362416,
+          "cancer_prev_dismissed": 0.00891089108910891,
+          "clopper_pearson_99_ub": 0.018507181045596507,
+          "meets_target_recall": false,
+          "reported_dismissal_rate": null
+        },
+        "bootstrap_95ci": {
+          "auroc": {
+            "mean": 0.6244248147060819,
+            "ci95_low": 0.5813289337793964,
+            "ci95_high": 0.6666083639633917
+          },
+          "auprc": {
+            "mean": 0.045787230545246485,
+            "ci95_low": 0.032842520406284055,
+            "ci95_high": 0.06421154683439634
+          },
+          "target_98_sens": {
+            "mean": 0.9796569677322402,
+            "ci95_low": 0.9539473684210527,
+            "ci95_high": 1.0
+          },
+          "target_98_dis": {
+            "mean": 0.09560523176550785,
+            "ci95_low": 0.08810497614178596,
+            "ci95_high": 0.10293541240627127
+          },
+          "target_95_sens": {
+            "mean": 0.939721352388653,
+            "ci95_low": 0.8967574361122748,
+            "ci95_high": 0.9745222929936306
+          },
+          "target_95_dis": {
+            "mean": 0.1720533401499659,
+            "ci95_low": 0.16240627130197682,
+            "ci95_high": 0.18149284253578732
+          }
+        },
+        "score_quantiles": {
+          "positive": {
+            "p05": 0.20321569144725796,
+            "p25": 0.2533605992794037,
+            "p50": 0.3111919462680816,
+            "p75": 0.3588344156742096,
+            "p95": 0.46724302768707277,
+            "mean": 0.3181510849687077
+          },
+          "negative": {
+            "p05": 0.1618289053440094,
+            "p25": 0.22355367243289945,
+            "p50": 0.2733217775821686,
+            "p75": 0.3318607807159424,
+            "p95": 0.4217410206794738,
+            "mean": 0.2806666962441541
+          }
+        },
+        "fallback_audit": {
+          "n_studies_with_fallback": 0,
+          "pct_studies_with_fallback": 0.0,
+          "excluded_sensitivity_check": null
+        }
+      },
+      "resnet50_rsna": {
+        "stratum": "A_rsna_supervised",
+        "auroc": 0.6363252833191141,
+        "auprc": 0.1035876388427324,
+        "target_98": {
+          "threshold": 0.0009927749633789,
+          "total_cases": 5868,
+          "total_cancers": 149,
+          "n_dismissed": 295,
+          "n_retained": 5573,
+          "dismissal_rate": 0.05027266530334015,
+          "detected_cancers": 145,
+          "missed_cancers": 4,
+          "triage_recall": 0.9731543624161074,
+          "cancer_prev_dismissed": 0.013559322033898305,
+          "clopper_pearson_99_ub": 0.03883345805379733,
+          "meets_target_recall": false,
+          "reported_dismissal_rate": null
+        },
+        "target_95": {
+          "threshold": 0.0069313049316406,
+          "total_cases": 5868,
+          "total_cancers": 149,
+          "n_dismissed": 1127,
+          "n_retained": 4741,
+          "dismissal_rate": 0.19205862304021815,
+          "detected_cancers": 126,
+          "missed_cancers": 23,
+          "triage_recall": 0.8456375838926175,
+          "cancer_prev_dismissed": 0.02040816326530612,
+          "clopper_pearson_99_ub": 0.032488826051919564,
+          "meets_target_recall": false,
+          "reported_dismissal_rate": null
+        },
+        "bootstrap_95ci": {
+          "auroc": {
+            "mean": 0.6365057878488044,
+            "ci95_low": 0.5851598110626117,
+            "ci95_high": 0.685991810507458
+          },
+          "auprc": {
+            "mean": 0.10722468182181807,
+            "ci95_low": 0.06557570309080916,
+            "ci95_high": 0.15988618998429324
+          },
+          "target_98_sens": {
+            "mean": 0.973040390077885,
+            "ci95_low": 0.9444347319347319,
+            "ci95_high": 0.9937116745283019
+          },
+          "target_98_dis": {
+            "mean": 0.05021387184730743,
+            "ci95_low": 0.04447852760736196,
+            "ci95_high": 0.056066802999318335
+          },
+          "target_95_sens": {
+            "mean": 0.8463520173429122,
+            "ci95_low": 0.7857142857142857,
+            "ci95_high": 0.9021200814111261
+          },
+          "target_95_dis": {
+            "mean": 0.1920742160872529,
+            "ci95_low": 0.18200408997955012,
+            "ci95_high": 0.20211315610088615
+          }
+        },
+        "score_quantiles": {
+          "positive": {
+            "p05": 0.0017885208129882401,
+            "p25": 0.02655029296875,
+            "p50": 0.273193359375,
+            "p75": 0.8193359375,
+            "p95": 0.9998046875,
+            "mean": 0.4052687207324393
+          },
+          "negative": {
+            "p05": 0.0009733200073241402,
+            "p25": 0.0112457275390625,
+            "p50": 0.05780029296875,
+            "p75": 0.3101806640625,
+            "p95": 0.9131347656249997,
+            "mean": 0.21381775172654305
+          }
+        },
+        "fallback_audit": {
+          "n_studies_with_fallback": 0,
+          "pct_studies_with_fallback": 0.0,
+          "excluded_sensitivity_check": null
+        }
+      },
+      "gmic_pretrained": {
+        "stratum": "B_pretrained_direct",
+        "auroc": 0.8504866035855989,
+        "auprc": 0.344744356321728,
+        "target_98": {
+          "threshold": 0.0288736540824174,
+          "total_cases": 5868,
+          "total_cancers": 149,
+          "n_dismissed": 1365,
+          "n_retained": 4503,
+          "dismissal_rate": 0.23261758691206544,
+          "detected_cancers": 145,
+          "missed_cancers": 4,
+          "triage_recall": 0.9731543624161074,
+          "cancer_prev_dismissed": 0.0029304029304029304,
+          "clopper_pearson_99_ub": 0.008477903579156816,
+          "meets_target_recall": false,
+          "reported_dismissal_rate": null
+        },
+        "target_95": {
+          "threshold": 0.0466411337256431,
+          "total_cases": 5868,
+          "total_cancers": 149,
+          "n_dismissed": 2194,
+          "n_retained": 3674,
+          "dismissal_rate": 0.37389229720518063,
+          "detected_cancers": 139,
+          "missed_cancers": 10,
+          "triage_recall": 0.9328859060402684,
+          "cancer_prev_dismissed": 0.004557885141294439,
+          "clopper_pearson_99_ub": 0.009160496625027022,
+          "meets_target_recall": false,
+          "reported_dismissal_rate": null
+        },
+        "bootstrap_95ci": {
+          "auroc": {
+            "mean": 0.850590639003188,
+            "ci95_low": 0.8140767867671651,
+            "ci95_high": 0.8844063932106325
+          },
+          "auprc": {
+            "mean": 0.346583162853271,
+            "ci95_low": 0.2666817429370508,
+            "ci95_high": 0.425162066859844
+          },
+          "target_98_sens": {
+            "mean": 0.9733984296476792,
+            "ci95_low": 0.9440482954545455,
+            "ci95_high": 0.9938659658835852
+          },
+          "target_98_dis": {
+            "mean": 0.2326263633265167,
+            "ci95_low": 0.22137014314928424,
+            "ci95_high": 0.24318336741649624
+          },
+          "target_95_sens": {
+            "mean": 0.9330610183306609,
+            "ci95_low": 0.8897046146044624,
+            "ci95_high": 0.9708134222548968
+          },
+          "target_95_dis": {
+            "mean": 0.37394529652351743,
+            "ci95_low": 0.36127726653033404,
+            "ci95_high": 0.38650306748466257
+          }
+        },
+        "score_quantiles": {
+          "positive": {
+            "p05": 0.03729438632726664,
+            "p25": 0.1710259169340133,
+            "p50": 0.4877591133117676,
+            "p75": 0.7988615036010742,
+            "p95": 0.9924481868743896,
+            "mean": 0.4946430825984618
+          },
+          "negative": {
+            "p05": 0.01100442996248601,
+            "p25": 0.03021928854286665,
+            "p50": 0.0646621510386467,
+            "p75": 0.14760097861289975,
+            "p95": 0.408657839894294,
+            "mean": 0.11772808857728036
+          }
+        },
+        "fallback_audit": {
+          "n_studies_with_fallback": 0,
+          "pct_studies_with_fallback": 0.0,
+          "excluded_sensitivity_check": null
+        }
+      },
+      "nyu_fourview_pretrained": {
+        "stratum": "B_pretrained_direct",
+        "auroc": 0.7889843228329917,
+        "auprc": 0.14938474309559116,
+        "target_98": {
+          "threshold": 0.02142770960927,
+          "total_cases": 5868,
+          "total_cancers": 149,
+          "n_dismissed": 110,
+          "n_retained": 5758,
+          "dismissal_rate": 0.01874573960463531,
+          "detected_cancers": 149,
+          "missed_cancers": 0,
+          "triage_recall": 1.0,
+          "cancer_prev_dismissed": 0.0,
+          "clopper_pearson_99_ub": 0.04100093925400217,
+          "meets_target_recall": true,
+          "reported_dismissal_rate": 0.01874573960463531
+        },
+        "target_95": {
+          "threshold": 0.0349914357066154,
+          "total_cases": 5868,
+          "total_cancers": 149,
+          "n_dismissed": 886,
+          "n_retained": 4982,
+          "dismissal_rate": 0.15098841172460806,
+          "detected_cancers": 148,
+          "missed_cancers": 1,
+          "triage_recall": 0.9932885906040269,
+          "cancer_prev_dismissed": 0.001128668171557562,
+          "clopper_pearson_99_ub": 0.007468700789050015,
+          "meets_target_recall": true,
+          "reported_dismissal_rate": 0.15098841172460806
+        },
+        "bootstrap_95ci": {
+          "auroc": {
+            "mean": 0.7894098151352619,
+            "ci95_low": 0.7524489363138368,
+            "ci95_high": 0.8242171162204859
+          },
+          "auprc": {
+            "mean": 0.15405991836607738,
+            "ci95_low": 0.10632563805987362,
+            "ci95_high": 0.2116448104912745
+          },
+          "target_98_sens": {
+            "mean": 1.0,
+            "ci95_low": 1.0,
+            "ci95_high": 1.0
+          },
+          "target_98_dis": {
+            "mean": 0.01876593387866394,
+            "ci95_low": 0.015337423312883436,
+            "ci95_high": 0.022324471710974778
+          },
+          "target_95_sens": {
+            "mean": 0.993308307841746,
+            "ci95_low": 0.978098164448261,
+            "ci95_high": 1.0
+          },
+          "target_95_dis": {
+            "mean": 0.15116768916155418,
+            "ci95_low": 0.14195637355146556,
+            "ci95_high": 0.1603612815269257
+          }
+        },
+        "score_quantiles": {
+          "positive": {
+            "p05": 0.04523295909166332,
+            "p25": 0.0873585864901542,
+            "p50": 0.1573091745376587,
+            "p75": 0.29057177901268,
+            "p95": 0.8307746529579162,
+            "mean": 0.2527453830128148
+          },
+          "negative": {
+            "p05": 0.02529308144003149,
+            "p25": 0.041927570477128,
+            "p50": 0.0622604303061962,
+            "p75": 0.10251263529062266,
+            "p95": 0.2849869638681404,
+            "mean": 0.09432128319524265
+          }
+        },
+        "fallback_audit": {
+          "n_studies_with_fallback": 0,
+          "pct_studies_with_fallback": 0.0,
+          "excluded_sensitivity_check": null
+        }
+      }
+    },
+    "paired_contrasts": {
+      "ce_b5_minus_trust_b5": {
+        "delta_auroc": {
+          "mean": 0.004692092614330774,
+          "ci95_low": 0.00038281416547571173,
+          "ci95_high": 0.008799555864860826
+        },
+        "delta_sens98": {
+          "mean": 0.05352874265375935,
+          "ci95_low": 0.019474275724275677,
+          "ci95_high": 0.09271877956480606
+        },
+        "delta_dis98": {
+          "mean": -0.08992024539877301,
+          "ci95_low": -0.09730743012951598,
+          "ci95_high": -0.08282208588957057
+        },
+        "delta_sens95": {
+          "mean": -0.006524474055926185,
+          "ci95_low": -0.0294161155586495,
+          "ci95_high": 0.014391095818996983
+        },
+        "delta_dis95": {
+          "mean": 0.0033749147920927067,
+          "ci95_low": -0.001022494887525538,
+          "ci95_high": 0.007843387866393995
+        },
+        "mcnemar_cancer_retained_98": {
+          "only_a": 8,
+          "only_b": 0,
+          "p_value": 0.0078125
+        },
+        "mcnemar_dismissed_98": {
+          "only_a": 1,
+          "only_b": 528,
+          "p_value": 6.031678142602706e-157
+        }
+      },
+      "ce_b5_minus_dinov2_rsna": {
+        "delta_auroc": {
+          "mean": 0.08023575679466782,
+          "ci95_low": 0.027675558865383688,
+          "ci95_high": 0.13017609856327733
+        },
+        "delta_sens98": {
+          "mean": -0.07969650651941146,
+          "ci95_low": -0.1351351351351351,
+          "ci95_high": -0.027576823832981462
+        },
+        "delta_dis98": {
+          "mean": 0.20018064076346287,
+          "ci95_low": 0.18592365371506475,
+          "ci95_high": 0.2140422631220177
+        },
+        "delta_sens95": {
+          "mean": -0.1403631065911584,
+          "ci95_low": -0.21583288924416022,
+          "ci95_high": -0.06754504504504515
+        },
+        "delta_dis95": {
+          "mean": 0.31571702453987727,
+          "ci95_low": 0.2997614178595774,
+          "ci95_high": 0.3318038513974096
+        },
+        "mcnemar_cancer_retained_98": {
+          "only_a": 3,
+          "only_b": 15,
+          "p_value": 0.007537841796875
+        },
+        "mcnemar_dismissed_98": {
+          "only_a": 1529,
+          "only_b": 354,
+          "p_value": 1.5281701872757497e-173
+        }
+      },
+      "ce_b5_minus_resnet50_rsna": {
+        "delta_auroc": {
+          "mean": 0.06815478365194537,
+          "ci95_low": 0.012387920161714685,
+          "ci95_high": 0.1236797853014659
+        },
+        "delta_sens98": {
+          "mean": -0.07307992886505622,
+          "ci95_low": -0.12427884615384613,
+          "ci95_high": -0.021735220519236792
+        },
+        "delta_dis98": {
+          "mean": 0.24557200068166327,
+          "ci95_low": 0.23244717109747787,
+          "ci95_high": 0.25835037491479207
+        },
+        "delta_sens95": {
+          "mean": -0.046993771545417666,
+          "ci95_low": -0.13580977427131277,
+          "ci95_high": 0.04081632653061229
+        },
+        "delta_dis95": {
+          "mean": 0.2956961486025903,
+          "ci95_low": 0.28101567825494206,
+          "ci95_high": 0.3110131220177232
+        },
+        "mcnemar_cancer_retained_98": {
+          "only_a": 3,
+          "only_b": 14,
+          "p_value": 0.012725830078125
+        },
+        "mcnemar_dismissed_98": {
+          "only_a": 1594,
+          "only_b": 153,
+          "p_value": 1.7185211136227539e-302
+        }
+      },
+      "ce_b5_minus_gmic_pretrained": {
+        "delta_auroc": {
+          "mean": -0.1459300675024383,
+          "ci95_low": -0.18872616895141459,
+          "ci95_high": -0.10167092614436082
+        },
+        "delta_sens98": {
+          "mean": -0.07343796843485043,
+          "ci95_low": -0.12415948275862071,
+          "ci95_high": -0.026485709306378467
+        },
+        "delta_dis98": {
+          "mean": 0.06315950920245399,
+          "ci95_low": 0.04925017041581459,
+          "ci95_high": 0.07668711656441718
+        },
+        "delta_sens95": {
+          "mean": -0.13370277253316637,
+          "ci95_low": -0.205489524576954,
+          "ci95_high": -0.06336920122131398
+        },
+        "delta_dis95": {
+          "mean": 0.11382506816632583,
+          "ci95_low": 0.09952283571915477,
+          "ci95_high": 0.1281526925698705
+        },
+        "mcnemar_cancer_retained_98": {
+          "only_a": 2,
+          "only_b": 13,
+          "p_value": 0.00738525390625
+        },
+        "mcnemar_dismissed_98": {
+          "only_a": 1046,
+          "only_b": 675,
+          "p_value": 3.4470011373992147e-19
+        }
+      },
+      "ce_b5_minus_nyu_fourview_pretrained": {
+        "delta_auroc": {
+          "mean": -0.08474924363451211,
+          "ci95_low": -0.12897934709594924,
+          "ci95_high": -0.04278532696092248
+        },
+        "delta_sens98": {
+          "mean": -0.10003953878717126,
+          "ci95_low": -0.15189873417721522,
+          "ci95_high": -0.0573248407643312
+        },
+        "delta_dis98": {
+          "mean": 0.2770199386503068,
+          "ci95_low": 0.26499659168370826,
+          "ci95_high": 0.28851823449216085
+        },
+        "delta_sens95": {
+          "mean": -0.19395006204425153,
+          "ci95_low": -0.26278332693046486,
+          "ci95_high": -0.13475177304964536
+        },
+        "delta_dis95": {
+          "mean": 0.336602675528289,
+          "ci95_low": 0.3225971370143149,
+          "ci95_high": 0.34969751192910703
+        },
+        "mcnemar_cancer_retained_98": {
+          "only_a": 0,
+          "only_b": 15,
+          "p_value": 6.103515625e-05
+        },
+        "mcnemar_dismissed_98": {
+          "only_a": 1655,
+          "only_b": 29,
+          "p_value": 0.0
+        }
+      },
+      "trust_b5_minus_dinov2_rsna": {
+        "delta_auroc": {
+          "mean": 0.07554366418033706,
+          "ci95_low": 0.02295901143454189,
+          "ci95_high": 0.12625876223931354
+        },
+        "delta_sens98": {
+          "mean": -0.13322524917317083,
+          "ci95_low": -0.20261658717541076,
+          "ci95_high": -0.07091175668303333
+        },
+        "delta_dis98": {
+          "mean": 0.29010088616223584,
+          "ci95_low": 0.27522154055896386,
+          "ci95_high": 0.3052147239263803
+        },
+        "delta_sens95": {
+          "mean": -0.1338386325352322,
+          "ci95_low": -0.20960447526000628,
+          "ci95_high": -0.06202100077780675
+        },
+        "delta_dis95": {
+          "mean": 0.3123421097477846,
+          "ci95_low": 0.29669393319700066,
+          "ci95_high": 0.32788428766189504
+        },
+        "mcnemar_cancer_retained_98": {
+          "only_a": 3,
+          "only_b": 23,
+          "p_value": 8.797645568847656e-05
+        },
+        "mcnemar_dismissed_98": {
+          "only_a": 2019,
+          "only_b": 317,
+          "p_value": 2.4975297872803584e-302
+        }
+      },
+      "trust_b5_minus_resnet50_rsna": {
+        "delta_auroc": {
+          "mean": 0.0634626910376146,
+          "ci95_low": 0.007080169498139791,
+          "ci95_high": 0.11896458036149728
+        },
+        "delta_sens98": {
+          "mean": -0.12660867151881558,
+          "ci95_low": -0.19178762587317427,
+          "ci95_high": -0.06710290827740499
+        },
+        "delta_dis98": {
+          "mean": 0.3354922460804363,
+          "ci95_low": 0.3220858895705521,
+          "ci95_high": 0.34884543285616904
+        },
+        "delta_sens95": {
+          "mean": -0.04046929748949148,
+          "ci95_low": -0.12741810737033665,
+          "ci95_high": 0.044461152882205486
+        },
+        "delta_dis95": {
+          "mean": 0.29232123381049757,
+          "ci95_low": 0.27793967280163595,
+          "ci95_high": 0.3076048057259713
+        },
+        "mcnemar_cancer_retained_98": {
+          "only_a": 3,
+          "only_b": 22,
+          "p_value": 0.00015652179718017578
+        },
+        "mcnemar_dismissed_98": {
+          "only_a": 2095,
+          "only_b": 127,
+          "p_value": 0.0
+        }
+      },
+      "trust_b5_minus_gmic_pretrained": {
+        "delta_auroc": {
+          "mean": -0.15062216011676907,
+          "ci95_low": -0.19328205815946076,
+          "ci95_high": -0.10632978150155686
+        },
+        "delta_sens98": {
+          "mean": -0.12696671108860977,
+          "ci95_low": -0.18666867469879528,
+          "ci95_high": -0.07191693453747654
+        },
+        "delta_dis98": {
+          "mean": 0.153079754601227,
+          "ci95_low": 0.13820722563053853,
+          "ci95_high": 0.16735259032038172
+        },
+        "delta_sens95": {
+          "mean": -0.12717829847724021,
+          "ci95_low": -0.19581415420023018,
+          "ci95_high": -0.06248922413793109
+        },
+        "delta_dis95": {
+          "mean": 0.11045015337423314,
+          "ci95_low": 0.09594410361281525,
+          "ci95_high": 0.12491479209270617
+        },
+        "mcnemar_cancer_retained_98": {
+          "only_a": 1,
+          "only_b": 20,
+          "p_value": 2.09808349609375e-05
+        },
+        "mcnemar_dismissed_98": {
+          "only_a": 1413,
+          "only_b": 515,
+          "p_value": 2.391553918556222e-96
+        }
+      },
+      "trust_b5_minus_nyu_fourview_pretrained": {
+        "delta_auroc": {
+          "mean": -0.08944133624884287,
+          "ci95_low": -0.1344687408106538,
+          "ci95_high": -0.046050317960704565
+        },
+        "delta_sens98": {
+          "mean": -0.15356828144093057,
+          "ci95_low": -0.21637536004189584,
+          "ci95_high": -0.09941209406494968
+        },
+        "delta_dis98": {
+          "mean": 0.36694018404907974,
+          "ci95_low": 0.3544606339468303,
+          "ci95_high": 0.37968643490115883
+        },
+        "delta_sens95": {
+          "mean": -0.18742558798832534,
+          "ci95_low": -0.25714810924369746,
+          "ci95_high": -0.12878246753246755
+        },
+        "delta_dis95": {
+          "mean": 0.3332277607361963,
+          "ci95_low": 0.31884798909338785,
+          "ci95_high": 0.34628493524199044
+        },
+        "mcnemar_cancer_retained_98": {
+          "only_a": 0,
+          "only_b": 23,
+          "p_value": 2.384185791015625e-07
+        },
+        "mcnemar_dismissed_98": {
+          "only_a": 2171,
+          "only_b": 18,
+          "p_value": 0.0
+        }
+      },
+      "dinov2_rsna_minus_resnet50_rsna": {
+        "delta_auroc": {
+          "mean": -0.012080973142722455,
+          "ci95_low": -0.07036355365756722,
+          "ci95_high": 0.04813578490493702
+        },
+        "delta_sens98": {
+          "mean": 0.006616577654355244,
+          "ci95_low": -0.027787558685446023,
+          "ci95_high": 0.04026845637583898
+        },
+        "delta_dis98": {
+          "mean": 0.04539135991820041,
+          "ci95_low": 0.036123892297205175,
+          "ci95_high": 0.054362644853442395
+        },
+        "delta_sens95": {
+          "mean": 0.09336933504574074,
+          "ci95_low": 0.021571334481710384,
+          "ci95_high": 0.1677864082226498
+        },
+        "delta_dis95": {
+          "mean": -0.02002087593728698,
+          "ci95_low": -0.03357191547375596,
+          "ci95_high": -0.0063053851397409655
+        },
+        "mcnemar_cancer_retained_98": {
+          "only_a": 4,
+          "only_b": 3,
+          "p_value": 1.0
+        },
+        "mcnemar_dismissed_98": {
+          "only_a": 514,
+          "only_b": 248,
+          "p_value": 3.0125430477597456e-22
+        }
+      },
+      "dinov2_rsna_minus_gmic_pretrained": {
+        "delta_auroc": {
+          "mean": -0.2261658242971061,
+          "ci95_low": -0.28296678552210724,
+          "ci95_high": -0.17014944049091194
+        },
+        "delta_sens98": {
+          "mean": 0.006258538084561036,
+          "ci95_low": -0.03108078515687206,
+          "ci95_high": 0.04256079027355614
+        },
+        "delta_dis98": {
+          "mean": -0.13702113156100887,
+          "ci95_low": -0.1503067484662577,
+          "ci95_high": -0.12371336059986372
+        },
+        "delta_sens95": {
+          "mean": 0.0066603340579920066,
+          "ci95_low": -0.05325641025641031,
+          "ci95_high": 0.06428571428571428
+        },
+        "delta_dis95": {
+          "mean": -0.20189195637355148,
+          "ci95_low": -0.21762099522835718,
+          "ci95_high": -0.1855785616905249
+        },
+        "mcnemar_cancer_retained_98": {
+          "only_a": 4,
+          "only_b": 3,
+          "p_value": 1.0
+        },
+        "mcnemar_dismissed_98": {
+          "only_a": 436,
+          "only_b": 1240,
+          "p_value": 3.412656510610254e-89
+        }
+      },
+      "dinov2_rsna_minus_nyu_fourview_pretrained": {
+        "delta_auroc": {
+          "mean": -0.16498500042917993,
+          "ci95_low": -0.21831362488250325,
+          "ci95_high": -0.11352512616725134
+        },
+        "delta_sens98": {
+          "mean": -0.02034303226775978,
+          "ci95_low": -0.046052631578947345,
+          "ci95_high": 0.0
+        },
+        "delta_dis98": {
+          "mean": 0.07683929788684389,
+          "ci95_low": 0.06850715746421268,
+          "ci95_high": 0.08503749147920928
+        },
+        "delta_sens95": {
+          "mean": -0.053586955453093124,
+          "ci95_low": -0.09702010779436147,
+          "ci95_high": -0.013696300437983372
+        },
+        "delta_dis95": {
+          "mean": 0.020885650988411723,
+          "ci95_low": 0.007498295841854129,
+          "ci95_high": 0.034594410361281525
+        },
+        "mcnemar_cancer_retained_98": {
+          "only_a": 0,
+          "only_b": 3,
+          "p_value": 0.25
+        },
+        "mcnemar_dismissed_98": {
+          "only_a": 543,
+          "only_b": 92,
+          "p_value": 9.469884002648879e-79
+        }
+      },
+      "resnet50_rsna_minus_gmic_pretrained": {
+        "delta_auroc": {
+          "mean": -0.21408485115438364,
+          "ci95_low": -0.2718713558185352,
+          "ci95_high": -0.15537907725118263
+        },
+        "delta_sens98": {
+          "mean": -0.00035803956979420763,
+          "ci95_low": -0.038461538461538436,
+          "ci95_high": 0.03649635036496346
+        },
+        "delta_dis98": {
+          "mean": -0.1824124914792093,
+          "ci95_low": -0.19444444444444445,
+          "ci95_high": -0.17024539877300612
+        },
+        "delta_sens95": {
+          "mean": -0.08670900098774874,
+          "ci95_low": -0.15924250713141336,
+          "ci95_high": -0.019224683544303876
+        },
+        "delta_dis95": {
+          "mean": -0.1818710804362645,
+          "ci95_low": -0.1976823449216087,
+          "ci95_high": -0.16700749829584186
+        },
+        "mcnemar_cancer_retained_98": {
+          "only_a": 4,
+          "only_b": 4,
+          "p_value": 1.0
+        },
+        "mcnemar_dismissed_98": {
+          "only_a": 197,
+          "only_b": 1267,
+          "p_value": 1.8860387359421578e-191
+        }
+      },
+      "resnet50_rsna_minus_nyu_fourview_pretrained": {
+        "delta_auroc": {
+          "mean": -0.15290402728645747,
+          "ci95_low": -0.21612559930509107,
+          "ci95_high": -0.09009363078133985
+        },
+        "delta_sens98": {
+          "mean": -0.02695960992211503,
+          "ci95_low": -0.05556526806526809,
+          "ci95_high": -0.006288325471698116
+        },
+        "delta_dis98": {
+          "mean": 0.03144793796864349,
+          "ci95_low": 0.024199045671438314,
+          "ci95_high": 0.038002726653033406
+        },
+        "delta_sens95": {
+          "mean": -0.14695629049883388,
+          "ci95_low": -0.20916632387220627,
+          "ci95_high": -0.08823529411764708
+        },
+        "delta_dis95": {
+          "mean": 0.040906526925698704,
+          "ci95_low": 0.027096114519427394,
+          "ci95_high": 0.05334014996591685
+        },
+        "mcnemar_cancer_retained_98": {
+          "only_a": 0,
+          "only_b": 4,
+          "p_value": 0.125
+        },
+        "mcnemar_dismissed_98": {
+          "only_a": 291,
+          "only_b": 106,
+          "p_value": 4.854166342315956e-21
+        }
+      },
+      "gmic_pretrained_minus_nyu_fourview_pretrained": {
+        "delta_auroc": {
+          "mean": 0.06118082386792618,
+          "ci95_low": 0.025987995640010676,
+          "ci95_high": 0.09751523833311261
+        },
+        "delta_sens98": {
+          "mean": -0.02660157035232082,
+          "ci95_low": -0.05595170454545454,
+          "ci95_high": -0.006134034116414755
+        },
+        "delta_dis98": {
+          "mean": 0.21386042944785277,
+          "ci95_low": 0.20245398773006135,
+          "ci95_high": 0.22443762781186094
+        },
+        "delta_sens95": {
+          "mean": -0.06024728951108514,
+          "ci95_low": -0.10416666666666663,
+          "ci95_high": -0.01935483870967747
+        },
+        "delta_dis95": {
+          "mean": 0.2227776073619632,
+          "ci95_low": 0.21029311520109067,
+          "ci95_high": 0.2353442399454669
+        },
+        "mcnemar_cancer_retained_98": {
+          "only_a": 0,
+          "only_b": 4,
+          "p_value": 0.125
+        },
+        "mcnemar_dismissed_98": {
+          "only_a": 1287,
+          "only_b": 32,
+          "p_value": 0.0
+        }
+      }
+    },
+    "missed_cancer_overlap": {
+      "n_pos": 149,
+      "target_98": {
+        "missed_counts": {
+          "ce_b5": 15,
+          "trust_b5": 23,
+          "dinov2_rsna": 3,
+          "resnet50_rsna": 4,
+          "gmic_pretrained": 4,
+          "nyu_fourview_pretrained": 0
+        },
+        "pairwise_jaccard": {
+          "ce_b5": {
+            "ce_b5": 1.0,
+            "trust_b5": 0.6521739130434783,
+            "dinov2_rsna": 0.0,
+            "resnet50_rsna": 0.05555555555555555,
+            "gmic_pretrained": 0.11764705882352941,
+            "nyu_fourview_pretrained": 0.0
+          },
+          "trust_b5": {
+            "ce_b5": 0.6521739130434783,
+            "trust_b5": 1.0,
+            "dinov2_rsna": 0.0,
+            "resnet50_rsna": 0.038461538461538464,
+            "gmic_pretrained": 0.125,
+            "nyu_fourview_pretrained": 0.0
+          },
+          "dinov2_rsna": {
+            "ce_b5": 0.0,
+            "trust_b5": 0.0,
+            "dinov2_rsna": 1.0,
+            "resnet50_rsna": 0.0,
+            "gmic_pretrained": 0.0,
+            "nyu_fourview_pretrained": 0.0
+          },
+          "resnet50_rsna": {
+            "ce_b5": 0.05555555555555555,
+            "trust_b5": 0.038461538461538464,
+            "dinov2_rsna": 0.0,
+            "resnet50_rsna": 1.0,
+            "gmic_pretrained": 0.0,
+            "nyu_fourview_pretrained": 0.0
+          },
+          "gmic_pretrained": {
+            "ce_b5": 0.11764705882352941,
+            "trust_b5": 0.125,
+            "dinov2_rsna": 0.0,
+            "resnet50_rsna": 0.0,
+            "gmic_pretrained": 1.0,
+            "nyu_fourview_pretrained": 0.0
+          },
+          "nyu_fourview_pretrained": {
+            "ce_b5": 0.0,
+            "trust_b5": 0.0,
+            "dinov2_rsna": 0.0,
+            "resnet50_rsna": 0.0,
+            "gmic_pretrained": 0.0,
+            "nyu_fourview_pretrained": 1.0
+          }
+        },
+        "upset_patterns": {
+          "NONE_MISSED": 119,
+          "ce_b5|trust_b5": 12,
+          "trust_b5": 7,
+          "dinov2_rsna": 3,
+          "resnet50_rsna": 3,
+          "ce_b5|trust_b5|gmic_pretrained": 2,
+          "ce_b5|trust_b5|resnet50_rsna": 1,
+          "gmic_pretrained": 1,
+          "trust_b5|gmic_pretrained": 1
+        }
+      },
+      "target_95": {
+        "missed_counts": {
+          "ce_b5": 30,
+          "trust_b5": 29,
+          "dinov2_rsna": 9,
+          "resnet50_rsna": 23,
+          "gmic_pretrained": 10,
+          "nyu_fourview_pretrained": 1
+        },
+        "pairwise_jaccard": {
+          "ce_b5": {
+            "ce_b5": 1.0,
+            "trust_b5": 0.9032258064516129,
+            "dinov2_rsna": 0.08333333333333333,
+            "resnet50_rsna": 0.08163265306122448,
+            "gmic_pretrained": 0.14285714285714285,
+            "nyu_fourview_pretrained": 0.03333333333333333
+          },
+          "trust_b5": {
+            "ce_b5": 0.9032258064516129,
+            "trust_b5": 1.0,
+            "dinov2_rsna": 0.08571428571428572,
+            "resnet50_rsna": 0.10638297872340426,
+            "gmic_pretrained": 0.18181818181818182,
+            "nyu_fourview_pretrained": 0.0
+          },
+          "dinov2_rsna": {
+            "ce_b5": 0.08333333333333333,
+            "trust_b5": 0.08571428571428572,
+            "dinov2_rsna": 1.0,
+            "resnet50_rsna": 0.03225806451612903,
+            "gmic_pretrained": 0.0,
+            "nyu_fourview_pretrained": 0.0
+          },
+          "resnet50_rsna": {
+            "ce_b5": 0.08163265306122448,
+            "trust_b5": 0.10638297872340426,
+            "dinov2_rsna": 0.03225806451612903,
+            "resnet50_rsna": 1.0,
+            "gmic_pretrained": 0.06451612903225806,
+            "nyu_fourview_pretrained": 0.0
+          },
+          "gmic_pretrained": {
+            "ce_b5": 0.14285714285714285,
+            "trust_b5": 0.18181818181818182,
+            "dinov2_rsna": 0.0,
+            "resnet50_rsna": 0.06451612903225806,
+            "gmic_pretrained": 1.0,
+            "nyu_fourview_pretrained": 0.0
+          },
+          "nyu_fourview_pretrained": {
+            "ce_b5": 0.03333333333333333,
+            "trust_b5": 0.0,
+            "dinov2_rsna": 0.0,
+            "resnet50_rsna": 0.0,
+            "gmic_pretrained": 0.0,
+            "nyu_fourview_pretrained": 1.0
+          }
+        },
+        "upset_patterns": {
+          "NONE_MISSED": 91,
+          "ce_b5|trust_b5": 17,
+          "resnet50_rsna": 17,
+          "dinov2_rsna": 5,
+          "ce_b5|trust_b5|gmic_pretrained": 4,
+          "gmic_pretrained": 4,
+          "ce_b5|trust_b5|dinov2_rsna": 3,
+          "ce_b5|trust_b5|resnet50_rsna": 3,
+          "ce_b5": 1,
+          "ce_b5|nyu_fourview_pretrained": 1,
+          "ce_b5|trust_b5|resnet50_rsna|gmic_pretrained": 1,
+          "dinov2_rsna|resnet50_rsna": 1,
+          "trust_b5|resnet50_rsna|gmic_pretrained": 1
+        }
+      }
+    }
+  },
+  "shift_vs_discrimination": {
+    "ce_b5": {
+      "stratum": "A_rsna_supervised",
+      "delta_auroc_nlbs_minus_rsna": -0.03391715174692389,
+      "delta_sens98_nlbs_minus_rsna": -0.08902846999385539,
+      "neg_median_shift": -0.09198634326457969,
+      "pos_median_shift": -0.2364552617073059,
+      "ks_neg_stat": 0.356812222781993,
+      "ks_neg_pvalue": 3.4084323717199426e-188,
+      "ks_pos_stat": 0.5538335495323274,
+      "ks_pos_pvalue": 3.138017454666337e-17
+    },
+    "trust_b5": {
+      "stratum": "A_rsna_supervised",
+      "delta_auroc_nlbs_minus_rsna": -0.040253111949976494,
+      "delta_sens98_nlbs_minus_rsna": -0.14200860244418656,
+      "neg_median_shift": -0.0969503223896026,
+      "pos_median_shift": -0.19908788800239557,
+      "ks_neg_stat": 0.3798521697403885,
+      "ks_neg_pvalue": 6.2889489939676406e-214,
+      "ks_pos_stat": 0.5648938349149997,
+      "ks_pos_pvalue": 6.0004138250121524e-18
+    },
+    "dinov2_rsna": {
+      "stratum": "A_rsna_supervised",
+      "delta_auroc_nlbs_minus_rsna": -0.00024049877472132053,
+      "delta_sens98_nlbs_minus_rsna": 0.01106028538267223,
+      "neg_median_shift": -0.019380122423171997,
+      "pos_median_shift": -0.02554759383201599,
+      "ks_neg_stat": 0.09933621826852385,
+      "ks_neg_pvalue": 1.0918341638539335e-14,
+      "ks_pos_stat": 0.16815730183655356,
+      "ks_pos_pvalue": 0.06145216116561959
+    },
+    "resnet50_rsna": {
+      "stratum": "A_rsna_supervised",
+      "delta_auroc_nlbs_minus_rsna": -0.012775840832891516,
+      "delta_sens98_nlbs_minus_rsna": -0.005871509524134622,
+      "neg_median_shift": -0.0205078125,
+      "pos_median_shift": 0.03369140625,
+      "ks_neg_stat": 0.057923144078828294,
+      "ks_neg_pvalue": 2.8095478363880006e-05,
+      "ks_pos_stat": 0.12944630299720078,
+      "ks_pos_pvalue": 0.24673683154293352
+    },
+    "gmic_pretrained": {
+      "stratum": "B_pretrained_direct",
+      "delta_auroc_nlbs_minus_rsna": 0.024017908289416412,
+      "delta_sens98_nlbs_minus_rsna": -0.01618078787465016,
+      "neg_median_shift": -0.017515346407890306,
+      "pos_median_shift": 0.1439566612243653,
+      "ks_neg_stat": 0.09210422182010612,
+      "ks_neg_pvalue": 1.09657220062261e-12,
+      "ks_pos_stat": 0.1970369358913088,
+      "ks_pos_pvalue": 0.016930526031480597
+    },
+    "nyu_fourview_pretrained": {
+      "stratum": "B_pretrained_direct",
+      "delta_auroc_nlbs_minus_rsna": 0.020349462950968733,
+      "delta_sens98_nlbs_minus_rsna": 0.030927835051546393,
+      "neg_median_shift": -0.0017749629914760937,
+      "pos_median_shift": -0.00402542948722831,
+      "ks_neg_stat": 0.022883839829152645,
+      "ks_neg_pvalue": 0.3442438339520441,
+      "ks_pos_stat": 0.06622516556291391,
+      "ks_pos_pvalue": 0.9370698464733326
+    }
+  }
+}

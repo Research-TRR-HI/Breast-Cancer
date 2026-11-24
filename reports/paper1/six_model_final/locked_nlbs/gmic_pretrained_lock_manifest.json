@@ -1,0 +1,15 @@
+{
+  "schema_version": "paper1_locked_predictions_v1",
+  "locked_at_utc": "2026-11-24T10:40:42.554753+00:00",
+  "model_id": "gmic_pretrained",
+  "stratum": "B_pretrained_direct",
+  "model_sha256": "3b792e6de22fdccd34a43b4c1cc87a94f5f4fa8aed42722dce4e4badac347991",
+  "frozen_rsna_thresholds": {
+    "target_98": 0.0288736540824174,
+    "target_95": 0.0466411337256431
+  },
+  "n_studies": 6359,
+  "n_studies_with_crop_fallback": 0,
+  "predictions_csv": "gmic_pretrained_locked_nlbs_predictions.csv",
+  "predictions_sha256": "6aa2f7003f14536be32132efa8ad8bc2caf4f80b64c7fa5be9fdc4b9f4eecc00"
+}
