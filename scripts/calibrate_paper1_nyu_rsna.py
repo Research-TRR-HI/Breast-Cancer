@@ -27,6 +27,7 @@ from src.paper1.nyu_fourview_adapter import (
     NYU_STEP1_MANIFEST_SHA256,
     NYU_TTA_EPOCHS_OFFICIAL,
     NYU_TTA_SEED_OFFICIAL,
+    compute_text_lf_sha256,
 )
 from src.paper1.six_model_eval import calibrate_rsna_thresholds_only
 from src.training.calibration import compute_target_recall_threshold, evaluate_dismissal_at_threshold
@@ -76,7 +77,7 @@ def verify_and_calibrate_nyu_rsna_only(
     assert_no_forbidden_columns(case_df.columns, context="nyu_rsna_case_scores")
     fb_json = json.loads(fb_p.read_text(encoding="utf-8"))
 
-    step1_sha = compute_sha256_file(rsna_step1_manifest_csv)
+    step1_sha = compute_text_lf_sha256(rsna_step1_manifest_csv)
     if step1_sha != NYU_STEP1_MANIFEST_SHA256["rsna_val_calib"]:
         raise RuntimeError(f"RSNA Step 1 CSV SHA mismatch: {step1_sha} != {NYU_STEP1_MANIFEST_SHA256['rsna_val_calib']}")
     s1_df = pd.read_csv(rsna_step1_manifest_csv, dtype={"case_id": str, "item_id": str})
