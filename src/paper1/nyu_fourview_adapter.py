@@ -10,10 +10,11 @@ examination scoring from:
 import hashlib
 import importlib
 import json
+import math
 from pathlib import Path
 import sys
 import types
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 import cv2
 import numpy as np
 import pandas as pd
@@ -31,6 +32,10 @@ NYU_INPUT_SIZES = {
 }
 NYU_VIEWS = ("L-CC", "R-CC", "L-MLO", "R-MLO")
 NYU_CACHE_VERSION = "paper1_nyu_uint16_v1"
+NYU_MODEL_ID = "nyu_fourview_pretrained"
+NYU_CKPT_SHA256 = "9a1d97f93493ea2007c00e6c1805dfa634cbc321ecdeba2c2adecd351e86b014"
+NYU_TTA_EPOCHS_OFFICIAL = 10
+NYU_TTA_SEED_OFFICIAL = 0
 
 
 def _ensure_nyu_importable(nyu_repo_dir: Path = NYU_REPO_DEFAULT) -> Dict[str, Any]:
@@ -387,22 +392,18 @@ def select_representative_pilot_exams(
     return sel_rsna_rows, sel_nlbs_rows, meta
 
 
-def score_nyu_fourview_exam(
-    model: torch.nn.Module,
-    nyu_mods: Dict[str, Any],
+def prepare_nyu_exam_tta_tensors(
     view_crops: Dict[str, Dict[str, Any]],
-    device: torch.device,
-    num_tta_epochs: int = 10,
-    seed: int = 0,
-) -> Dict[str, float]:
-    """Score one 4-view exam using official 10-epoch TTA averaging and pandas-2.3-safe CC/MLO mean."""
+    nyu_mods: Dict[str, Any],
+    num_tta_epochs: int = NYU_TTA_EPOCHS_OFFICIAL,
+    seed: int = NYU_TTA_SEED_OFFICIAL,
+) -> Dict[str, np.ndarray]:
+    """Generate exact per-exam 10-epoch TTA stacks using independent RandomState(seed) for batch-invariant TTA."""
     n_load = nyu_mods["loading"]
     rng = np.random.RandomState(seed)
-    use_aug = num_tta_epochs > 1
-
-    # Batch all TTA draws into a single GPU forward pass when possible
+    use_aug = int(num_tta_epochs) > 1
     batch_views: Dict[str, List[np.ndarray]] = {v: [] for v in NYU_VIEWS}
-    for _ in range(num_tta_epochs):
+    for _ in range(int(num_tta_epochs)):
         for v in NYU_VIEWS:
             cropped, _ = n_load.augment_and_normalize_image(
                 image=view_crops[v]["image_f32"],
@@ -415,22 +416,309 @@ def score_nyu_fourview_exam(
                 max_crop_size_noise=100,
             )
             batch_views[v].append(cropped[np.newaxis, ...])
+    return {
+        v: np.ascontiguousarray(np.stack(batch_views[v], axis=0), dtype=np.float32)
+        for v in NYU_VIEWS
+    }
 
+
+def score_nyu_fourview_exam_batch(
+    model: torch.nn.Module,
+    tta_exam_tensors: Sequence[Dict[str, np.ndarray]],
+    device: torch.device,
+) -> List[Dict[str, float]]:
+    """Score a batch of B pre-augmented 4-view exams ([T, 1, H, W] each) cleanly in FP32 eval mode."""
+    if not tta_exam_tensors:
+        return []
+    b_exams = len(tta_exam_tensors)
+    t_epochs = int(tta_exam_tensors[0][NYU_VIEWS[0]].shape[0])
     tensor_batch = {
-        v: torch.from_numpy(np.stack(batch_views[v], axis=0).copy()).to(device)
+        v: torch.from_numpy(np.concatenate([ex[v] for ex in tta_exam_tensors], axis=0)).to(device, non_blocking=True)
         for v in NYU_VIEWS
     }
     with torch.no_grad():
         out = model(tensor_batch)
-    cc_probs = np.exp(out["CC"].cpu().numpy())[:, :, 1]  # [N, 4] -> LB, RB, LM, RM
-    mlo_probs = np.exp(out["MLO"].cpu().numpy())[:, :, 1]
-    mean_4 = np.mean(0.5 * (cc_probs + mlo_probs), axis=0)
+    cc_probs = np.exp(out["CC"].float().cpu().numpy())[:, :, 1].reshape(b_exams, t_epochs, 4)
+    mlo_probs = np.exp(out["MLO"].float().cpu().numpy())[:, :, 1].reshape(b_exams, t_epochs, 4)
+    mean_4 = np.mean(0.5 * (cc_probs + mlo_probs), axis=1)
+    results: List[Dict[str, float]] = []
+    for row in mean_4:
+        lb, rb, lm, rm = [float(x) for x in row]
+        results.append(
+            {
+                "left_benign": lb,
+                "right_benign": rb,
+                "left_malignant": lm,
+                "right_malignant": rm,
+                "exam_score": max(lm, rm),
+            }
+        )
+    return results
 
-    lb, rb, lm, rm = [float(x) for x in mean_4]
-    return {
-        "left_benign": lb,
-        "right_benign": rb,
-        "left_malignant": lm,
-        "right_malignant": rm,
-        "exam_score": max(lm, rm),
+
+def score_nyu_fourview_exam(
+    model: torch.nn.Module,
+    nyu_mods: Dict[str, Any],
+    view_crops: Dict[str, Dict[str, Any]],
+    device: torch.device,
+    num_tta_epochs: int = NYU_TTA_EPOCHS_OFFICIAL,
+    seed: int = NYU_TTA_SEED_OFFICIAL,
+) -> Dict[str, float]:
+    """Score one 4-view exam using official 10-epoch TTA averaging and pandas-2.3-safe CC/MLO mean."""
+    tta_dict = prepare_nyu_exam_tta_tensors(
+        view_crops=view_crops, nyu_mods=nyu_mods, num_tta_epochs=num_tta_epochs, seed=seed
+    )
+    return score_nyu_fourview_exam_batch(model=model, tta_exam_tensors=[tta_dict], device=device)[0]
+
+
+def compute_nyu_case_ids_sha256(case_ids: Sequence[str]) -> str:
+    """Compute canonical SHA-256 digest over ordered examination IDs."""
+    return hashlib.sha256("\n".join(str(x) for x in case_ids).encode("utf-8")).hexdigest()
+
+
+def validate_nyu_step2_cli_and_guard(
+    stage: str,
+    split: str,
+    num_shards: int,
+    batch_exams: int,
+    num_tta_epochs: int,
+    approve_full_infer: bool,
+) -> None:
+    """Validate NYU Step 2 CLI arguments and block unapproved full GPU inference."""
+    valid_stages = ("pilot", "infer")
+    if stage not in valid_stages:
+        raise ValueError(f"Unknown --stage={stage!r}; expected one of {valid_stages}")
+    if split not in ("rsna_val_calib", "nlbs_4view"):
+        raise ValueError(f"Unsupported --split={split!r}; expected 'rsna_val_calib' or 'nlbs_4view'")
+    if int(num_shards) < 1:
+        raise ValueError(f"--num-shards must be >= 1, got {num_shards}")
+    if int(batch_exams) < 1:
+        raise ValueError(f"--batch-exams must be >= 1, got {batch_exams}")
+    if int(num_tta_epochs) != NYU_TTA_EPOCHS_OFFICIAL:
+        raise ValueError(f"Official NYU Step 2 protocol requires --num-tta-epochs=10, got {num_tta_epochs}")
+    if stage == "infer" and not approve_full_infer:
+        raise RuntimeError(
+            "BLOCKED: `--stage infer` requires explicit `--approve-full-infer` confirmation so no full L40S "
+            "inference starts unapproved. Run `--stage pilot` first and request explicit approval."
+        )
+
+
+def validate_nyu_shard_payload(
+    payload: Dict[str, Any],
+    *,
+    expected_case_ids: Sequence[str],
+    batch_exams: int,
+    split_name: str,
+    shard_idx: int,
+    num_shards: int,
+    num_tta_epochs: int = NYU_TTA_EPOCHS_OFFICIAL,
+    tta_seed: int = NYU_TTA_SEED_OFFICIAL,
+    checkpoint_sha256: str = NYU_CKPT_SHA256,
+    preprocess_version: str = NYU_CACHE_VERSION,
+    preprocess_manifest_sha256: str = "",
+) -> Tuple[bool, str]:
+    """Verify NYU Step 2 prediction shard metadata, provenance, completeness, and numerical validity."""
+    if not isinstance(payload, dict):
+        return False, "payload_not_dict"
+    if payload.get("schema_version") != "paper1_nyu_shard_v2":
+        return False, f"schema_mismatch:{payload.get('schema_version')}"
+    if payload.get("model_id") != NYU_MODEL_ID:
+        return False, f"model_id_mismatch:{payload.get('model_id')}"
+    if str(payload.get("checkpoint_sha256", "")).lower() != str(checkpoint_sha256).lower():
+        return False, f"checkpoint_sha256_mismatch:{payload.get('checkpoint_sha256')}"
+    if payload.get("preprocess_version") != preprocess_version:
+        return False, f"preprocess_version_mismatch:{payload.get('preprocess_version')}"
+    if preprocess_manifest_sha256 and payload.get("preprocess_manifest_sha256") != preprocess_manifest_sha256:
+        return False, f"preprocess_manifest_sha256_mismatch:{payload.get('preprocess_manifest_sha256')}"
+    if payload.get("split_name") != split_name:
+        return False, f"split_name_mismatch:{payload.get('split_name')}"
+    if payload.get("shard_idx") != int(shard_idx) or payload.get("num_shards") != int(num_shards):
+        return False, f"shard_spec_mismatch:{payload.get('shard_idx')}/{payload.get('num_shards')}"
+    if payload.get("batch_exams") != int(batch_exams):
+        return False, f"batch_exams_mismatch:{payload.get('batch_exams')}!={int(batch_exams)}"
+    if payload.get("num_tta_epochs") != int(num_tta_epochs) or payload.get("tta_seed") != int(tta_seed):
+        return False, f"tta_spec_mismatch:{payload.get('num_tta_epochs')}/seed={payload.get('tta_seed')}"
+
+    exp_cases = [str(c) for c in expected_case_ids]
+    if payload.get("expected_case_ids_sha256") != compute_nyu_case_ids_sha256(exp_cases):
+        return False, "expected_case_ids_sha256_mismatch"
+
+    records = payload.get("records")
+    if not isinstance(records, list) or len(records) != len(exp_cases):
+        return False, f"records_len_mismatch:{len(records) if isinstance(records, list) else None}!={len(exp_cases)}"
+    rec_cases = [str(r.get("case_id", "")) for r in records]
+    if rec_cases != exp_cases:
+        return False, "record_case_ids_order_or_set_mismatch"
+
+    for idx, rec in enumerate(records):
+        vals = [rec.get(k) for k in ("left_benign", "right_benign", "left_malignant", "right_malignant", "exam_score")]
+        if any(v is None or not math.isfinite(float(v)) for v in vals):
+            return False, f"non_finite_prediction_at_idx_{idx}"
+        lm, rm, es = float(rec["left_malignant"]), float(rec["right_malignant"]), float(rec["exam_score"])
+        if abs(es - max(lm, rm)) > 1e-12:
+            return False, f"exam_score_max_mismatch_at_idx_{idx}"
+        if int(rec.get("n_views", 0) or 0) != len(NYU_VIEWS):
+            return False, f"n_views_mismatch_at_idx_{idx}"
+    return True, ""
+
+
+def finalize_and_lock_nyu_predictions(
+    split_name: str,
+    shard_outputs: Sequence[Dict[str, Any]],
+    expected_step1_df: pd.DataFrame,
+    *,
+    case_out_col: str,
+    batch_exams: int,
+    checkpoint_sha256: str = NYU_CKPT_SHA256,
+    preprocess_version: str = NYU_CACHE_VERSION,
+    out_dir: Path,
+) -> Dict[str, Any]:
+    """Validate 100% 4-view exam coverage across shards, verify finiteness, and SHA-256-lock NYU predictions."""
+    assert_no_forbidden_columns(expected_step1_df.columns, context=f"nyu_lock_{split_name}_step1")
+    exp_df = expected_step1_df.copy()
+    exp_df["case_id"] = exp_df["case_id"].astype(str)
+    exp_cases = set(exp_df["case_id"].tolist())
+    if len(exp_df) != len(exp_cases) * len(NYU_VIEWS):
+        raise ValueError(f"{split_name} Step 1 manifest row count {len(exp_df)} != 4 * {len(exp_cases)} cases")
+
+    all_recs: List[Dict[str, Any]] = []
+    all_fbs: List[Dict[str, Any]] = []
+    shard_meta: List[Dict[str, Any]] = []
+    manifest_shas = set()
+    for o in sorted(shard_outputs, key=lambda x: int(x["shard_idx"])):
+        if str(o.get("checkpoint_sha256", "")).lower() != checkpoint_sha256.lower():
+            raise RuntimeError(f"Shard {o.get('shard_idx')} checkpoint_sha256 mismatch")
+        if o.get("preprocess_version") != preprocess_version:
+            raise RuntimeError(f"Shard {o.get('shard_idx')} preprocess_version mismatch")
+        if o.get("batch_exams") != int(batch_exams):
+            raise RuntimeError(f"Shard {o.get('shard_idx')} batch_exams mismatch")
+        if o.get("num_tta_epochs") != NYU_TTA_EPOCHS_OFFICIAL or o.get("tta_seed") != NYU_TTA_SEED_OFFICIAL:
+            raise RuntimeError(f"Shard {o.get('shard_idx')} TTA config mismatch")
+        if o.get("preprocess_manifest_sha256"):
+            manifest_shas.add(str(o["preprocess_manifest_sha256"]))
+        all_recs.extend(o["records"])
+        all_fbs.extend(o.get("fallback_logs", []))
+        shard_meta.append(
+            {
+                "shard_idx": int(o["shard_idx"]),
+                "num_shards": int(o["num_shards"]),
+                "n_exams": len(o["records"]),
+                "n_images": len(o["records"]) * len(NYU_VIEWS),
+                "n_fallback_views": int(o.get("n_fallback_views", len(o.get("fallback_logs", [])))),
+                "elapsed_sec": o.get("elapsed_sec"),
+                "container_wall_sec": o.get("container_wall_sec"),
+                "model_load_sec": o.get("model_load_sec"),
+                "nvme_stage_sec": o.get("nvme_stage_sec"),
+                "decode_tta_sec": o.get("decode_tta_sec"),
+                "gpu_infer_sec": o.get("gpu_infer_sec"),
+                "estimated_cost_usd": o.get("estimated_cost_usd"),
+                "peak_vram_gb": o.get("peak_vram_gb"),
+                "host_rss_gb": o.get("host_rss_gb"),
+                "expected_case_ids_sha256": o.get("expected_case_ids_sha256"),
+                "resumed_from_cache": bool(o.get("resumed_from_cache", False)),
+            }
+        )
+
+    rec_df = pd.DataFrame(all_recs)
+    assert_no_forbidden_columns(rec_df.columns, context=f"nyu_lock_{split_name}_records")
+    if len(rec_df) != len(exp_cases):
+        raise RuntimeError(f"{split_name} exam count mismatch: {len(rec_df)} != {len(exp_cases)}")
+    if rec_df["case_id"].duplicated().any():
+        raise RuntimeError(f"{split_name} duplicate case_id in NYU predictions")
+    if set(rec_df["case_id"].astype(str)) != exp_cases:
+        raise RuntimeError(f"{split_name} case_id set mismatch vs Step 1 manifest")
+
+    rec_df = rec_df.sort_values("case_id").reset_index(drop=True)
+    case_df = rec_df.rename(columns={"case_id": case_out_col, "exam_score": "score"})[
+        [
+            case_out_col,
+            "score",
+            "left_benign",
+            "right_benign",
+            "left_malignant",
+            "right_malignant",
+            "n_views",
+            "n_crop_fallbacks",
+            "has_crop_fallback",
+        ]
+    ]
+    if not np.all(np.isfinite(case_df["score"].values)):
+        raise RuntimeError(f"{split_name} non-finite exam scores")
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    exam_json_p = out_dir / f"nyu_{split_name}_exam_scores.json"
+    case_csv_p = out_dir / f"nyu_{split_name}_case_scores.csv"
+    fb_json_p = out_dir / f"nyu_{split_name}_fallback_log.json"
+    lock_json_p = out_dir / f"nyu_{split_name}_provenance_lock.json"
+
+    exam_json_p.write_text(
+        json.dumps(
+            {
+                "schema_version": "paper1_nyu_exam_scores_v2",
+                "model_id": NYU_MODEL_ID,
+                "checkpoint_file": "sample_image_model.p",
+                "checkpoint_sha256": checkpoint_sha256,
+                "preprocess_version": preprocess_version,
+                "preprocess_manifest_sha256s": sorted(manifest_shas),
+                "split_name": split_name,
+                "batch_exams": int(batch_exams),
+                "num_tta_epochs": NYU_TTA_EPOCHS_OFFICIAL,
+                "tta_seed": NYU_TTA_SEED_OFFICIAL,
+                "n_exams": int(len(case_df)),
+                "n_images": int(len(case_df) * len(NYU_VIEWS)),
+                "records": rec_df.to_dict(orient="records"),
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    case_df.to_csv(case_csv_p, index=False)
+
+    fb_df = pd.DataFrame(all_fbs)
+    fb_json_p.write_text(
+        json.dumps(
+            {
+                "split_name": split_name,
+                "n_exams": int(len(case_df)),
+                "n_images": int(len(case_df) * len(NYU_VIEWS)),
+                "n_fallback_views": int(len(all_fbs)),
+                "n_fallback_exams": int(fb_df["case_id"].nunique()) if len(all_fbs) else 0,
+                "fallbacks": sorted(all_fbs, key=lambda x: (str(x["case_id"]), str(x["item_id"]))),
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    scores_arr = case_df["score"].values.astype(np.float64)
+    lock_manifest = {
+        "schema_version": "paper1_nyu_step2_lock_v1",
+        "model_id": NYU_MODEL_ID,
+        "checkpoint_file": "sample_image_model.p",
+        "checkpoint_sha256": checkpoint_sha256,
+        "preprocess_version": preprocess_version,
+        "preprocess_manifest_sha256s": sorted(manifest_shas),
+        "split_name": split_name,
+        "batch_exams": int(batch_exams),
+        "num_tta_epochs": NYU_TTA_EPOCHS_OFFICIAL,
+        "tta_seed": NYU_TTA_SEED_OFFICIAL,
+        "label_quarantine_enforced": True,
+        "n_unique_cases": int(len(case_df)),
+        "n_unique_images": int(len(case_df) * len(NYU_VIEWS)),
+        "all_scores_finite": True,
+        "exam_score_summary_label_free": {
+            "min": round(float(np.min(scores_arr)), 6),
+            "median": round(float(np.median(scores_arr)), 6),
+            "p95": round(float(np.percentile(scores_arr, 95)), 6),
+            "max": round(float(np.max(scores_arr)), 6),
+        },
+        "shards": shard_meta,
+        "total_estimated_cost_usd": round(sum(float(s["estimated_cost_usd"] or 0.0) for s in shard_meta), 5),
+        "artifacts": {
+            "exam_scores_json": {"path": str(exam_json_p), "sha256": compute_sha256_file(exam_json_p)},
+            "case_scores_csv": {"path": str(case_csv_p), "sha256": compute_sha256_file(case_csv_p)},
+            "fallback_log_json": {"path": str(fb_json_p), "sha256": compute_sha256_file(fb_json_p)},
+        },
     }
+    lock_json_p.write_text(json.dumps(lock_manifest, indent=2), encoding="utf-8")
+    return lock_manifest
