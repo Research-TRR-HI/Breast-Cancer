@@ -1,0 +1,312 @@
+{
+  "schema_version": "paper1_exp1_phase1_readiness_v1",
+  "generated_at_utc": "2026-11-24T14:18:00Z",
+  "experiment": "Exp 1 — Common RSNA Supervision (GMIC & NYU Four-View Fine-Tuning)",
+  "branch": "paper1-exp1-phase1",
+  "wave": "Phase 1 Wave 1 (Zero-Cost Engineering, Audit & Read-Only Modal Checks)",
+  "recommendation": "CONDITIONAL GO",
+  "item_01_isolation_and_protocol_compliance": {
+    "branch": "paper1-exp1-phase1",
+    "main_modified": false,
+    "memory_modified": false,
+    "protocol_v1_modified": false,
+    "completed_stage_b_c_six_model_modified": false,
+    "paid_gpu_or_cpu_or_transfer_launched": false,
+    "any_volume_deletions_executed": false,
+    "supplementary_protocol_path": "studies/paper1/specialist_finetuning_protocol_v1.md",
+    "scientific_status": "Supplementary exploratory sensitivity experiments (post-observation; malignant-only supervision; zero benign label fabrication; zero NLBS target-label access prior to prediction locking)"
+  },
+  "item_02_modal_account_billing_status": {
+    "profile": "dryousufmozumder",
+    "source": "MEASURED via `modal billing summary --json`, `modal billing report --for \"this month\" --show-resources --json`, `modal app list`",
+    "running_apps_count": 0,
+    "metered_cost_usd": 10.63992262,
+    "metered_breakdown_usd": {
+      "volumes": 6.57408738,
+      "ephemeral_apps": 3.87727081,
+      "network_egress": 0.18583524,
+      "llm_tokens": 0.0
+    },
+    "adjustments_usd": {
+      "free_storage": -6.57408738,
+      "network_egress_allowance": -0.18583524,
+      "credits": -3.88
+    },
+    "billed_cost_usd": 0.0,
+    "starter_monthly_credit_cap_usd": 30.0,
+    "estimated_remaining_credits_usd": 26.12,
+    "credit_reset_utc": "2026-12-01T00:00:00Z",
+    "note": "Exact $3.88 credit usage observed; Starter plan reset assumed 2026-12-01 per Modal monthly cycle."
+  },
+  "item_03_exact_volume_storage_inventory": {
+    "profile": "dryousufmozumder",
+    "source": "MEASURED via Modal SDK `Volume.listdir('/', recursive=True)` ($0.00)",
+    "free_tier_gib": 1024.0,
+    "total_used_gib": 895.7563,
+    "total_used_bytes": 961811001076,
+    "headroom_under_1tib_gib": 128.2437,
+    "current_daily_overage_usd": 0.0,
+    "volumes": {
+      "rsna-mammography-vol": {
+        "files": 214534,
+        "gib": 799.5792,
+        "bytes": 858541630379,
+        "breakdown": {
+          "_transfer_manifests": {"files": 32, "gib": 0.0499},
+          "cache/paper1_gmic_uint16_v1/rsna_train": {"files": 38267, "gib": 214.5180},
+          "cache/paper1_gmic_uint16_v1/rsna_train_calib": {"files": 5489, "gib": 30.7042},
+          "cache/paper1_nyu_uint16_v1/nlbs_4view": {"files": 24751, "gib": 87.7196},
+          "cache/paper1_nyu_uint16_v1/rsna_val_calib": {"files": 9543, "gib": 69.7860},
+          "cache/stage1_nlbs_uint16/png_1520x912": {"files": 26988, "gib": 35.9340},
+          "cache/stage1_nlbs_uint16/shard_diags": {"files": 32, "gib": 0.0046},
+          "cache/stage1_rsna_uint16/png_1520x912": {"files": 54706, "gib": 65.9048},
+          "cache/stage1_rsna_uint16/manifests_and_reports": {"files": 3, "gib": 0.0453},
+          "models/checkpoints": {"files": 4, "gib": 0.0004},
+          "models/mammo_clip": {"files": 1, "gib": 1.5405},
+          "models/paper1": {"files": 4, "gib": 0.2573},
+          "rsna/raw": {"files": 54713, "gib": 293.1100},
+          "rsna/splits_seed42.csv": {"files": 1, "gib": 0.0046}
+        }
+      },
+      "nlbs-mammography-vol": {"files": 0, "gib": 0.0, "bytes": 0},
+      "cvb-data": {"files": 226344, "gib": 14.2900, "bytes": 15343738998},
+      "beef-behavior-data": {"files": 455890, "gib": 56.7679, "bytes": 60954056814},
+      "reid-checkpoints": {"files": 64, "gib": 1.6563, "bytes": 1778393533},
+      "sideview-data": {"files": 160524, "gib": 23.4630, "bytes": 25193181352}
+    }
+  },
+  "item_04_asset_verification": {
+    "dryousufmozumder_present": {
+      "rsna_raw": {"verified": true, "files": 54713, "gib": 293.1100},
+      "stage1_rsna_uint16": {"verified": true, "files": 54709, "gib": 65.9501},
+      "stage1_nlbs_uint16": {"verified": true, "files": 27020, "gib": 35.9386},
+      "paper1_nyu_rsna_val_calib": {"verified": true, "files": 9543, "gib": 69.7860, "has_manifest_and_verify_summary": true},
+      "paper1_nyu_nlbs_4view": {"verified": true, "files": 24751, "gib": 87.7196, "has_manifest_and_verify_summary": true},
+      "paper1_gmic_rsna_train": {"verified_pngs_present": true, "files": 38267, "gib": 214.5180, "has_manifest_and_verify_summary": false},
+      "paper1_gmic_rsna_train_calib": {"verified_pngs_present": true, "files": 5489, "gib": 30.7042, "has_manifest_and_verify_summary": false},
+      "models_paper1": ["dinov2_vits14_pretrain.pth", "resnet50-11ad3fa6.pth", "sample_image_model.p", "sample_model_1.p"],
+      "models_mammo_clip": ["b5-model-best-epoch-7.tar"],
+      "models_checkpoints": ["ce_rsna_seed42_final_epoch20.pt", "ce_rsna_seed42_latest.pt", "trust_rsna_seed42_final_epoch20.pt", "trust_rsna_seed42_latest.pt"]
+    },
+    "hasinishrak2015_gmic_eval_cache": {
+      "rsna_val_calib": {"files": 11001, "gib": 62.0636, "bytes": 66640248693},
+      "nlbs": {"files": 27007, "gib": 97.3070, "bytes": 104482633855},
+      "combined_total": {"files": 38008, "gib": 159.3706, "bytes": 171122882548}
+    }
+  },
+  "item_05_peak_storage_risk_and_sequential_plan": {
+    "current_gib": 895.7563,
+    "free_tier_gib": 1024.0,
+    "headroom_gib": 128.2437,
+    "unmanaged_peak_risk": {
+      "add_gmic_eval_cache_only_gib": 1055.1269,
+      "overage_if_unmanaged_gmic_only_gib": 31.1269,
+      "add_gmic_eval_plus_nyu_train_pngs_gib": 1334.3,
+      "overage_if_unmanaged_all_gib": 310.3,
+      "overage_rate_usd_per_gib_day": 0.003
+    },
+    "safe_sequential_plan_zero_overage": [
+      {"step": 1, "action": "Verify existing GMIC rsna_train + rsna_train_calib PNG cache (writes manifest.csv & verify_summary.json)", "delta_gib": 0.0, "post_gib": 895.76},
+      {"step": 2, "action": "Run GMIC Wave 3 L40S pilot + Phase 2 GMIC training (saves & verifies best_train_calib.pt)", "delta_gib": 0.06, "post_gib": 895.82},
+      {"step": 3, "action": "WITH EXPLICIT USER APPROVAL ONLY: delete cache/paper1_gmic_uint16_v1/{rsna_train,rsna_train_calib}", "delta_gib": -245.22, "post_gib": 650.60},
+      {"step": 4, "action": "Transfer GMIC eval cache (rsna_val_calib + nlbs) from hasinishrak2015 -> dryousufmozumder", "delta_gib": 159.37, "post_gib": 809.97},
+      {"step": 5, "action": "Run GMIC --stage eval (rsna_val_calib -> RSNA calib lock -> nlbs -> SHA-256 lock)", "delta_gib": 0.02, "post_gib": 809.99},
+      {"step": 6, "action": "WITH EXPLICIT USER APPROVAL ONLY: delete cache/paper1_gmic_uint16_v1/{rsna_val_calib,nlbs}", "delta_gib": -159.37, "post_gib": 650.62},
+      {"step": 7, "action": "Build NYU rsna_train + rsna_train_calib native PNG cache (38,124 imgs ~279.2 GiB extrapolated)", "delta_gib": 279.2, "post_gib": 929.82},
+      {"step": 8, "action": "Extract NYU head_only frozen features (~0.18 GiB) & train NYU head_only; optionally reclaim NYU train PNGs if head_only only, keeping rsna_val_calib + nlbs_4view (157.51 GiB) for --stage eval", "delta_gib": 0.2, "post_gib": 930.02}
+    ]
+  },
+  "item_06_worktree_external_dependency_notice": {
+    "issue": "Git-ignored `external/GMIC` and `external/breast_cancer_classifier` do not exist in fresh git worktree checkouts.",
+    "impact": "Running `modal run` directly from a worktree without `external/` fails at `.add_local_dir('external/...')`, and `8` unit tests requiring `external/` skip locally.",
+    "mitigation": "Either symlink/copy `external/` into the worktree or execute `modal run` from the main repo root (merged branch) where `external/` is present."
+  },
+  "item_07_gmic_train_cache_gap": {
+    "finding": "Volume `dryousufmozumder:/cache/paper1_gmic_uint16_v1/{rsna_train,rsna_train_calib}` contains all 43,724 PNGs and 32 shard JSONLs, but `manifest.csv`, `fallback_log.json`, and `verify_summary.json` are missing because `--stage verify --split train_all` was not run.",
+    "fix": "Run `preprocess_paper1_gmic_cpu.py --stage verify --split train_all --num-shards 16` in Wave 2 before GMIC training."
+  },
+  "item_08_gmic_schedule_audit": {
+    "dataset_counts": {"train_imgs": 38251, "train_pts": 8339, "pos_imgs": 807, "neg_imgs": 37444, "train_calib_imgs": 5473, "train_calib_pts": 1192},
+    "legacy_schedule": {"batch_size": 8, "n_pos": 2, "n_neg": 6, "steps_per_epoch": 600, "epochs": 10, "total_draws": 48000},
+    "legacy_coverage_exact": {
+      "avg_pos_exposure_per_epoch": 1.487,
+      "avg_pos_exposure_10ep": 14.87,
+      "expected_unique_pos_1ep": 0.774,
+      "expected_unique_pos_10ep": 1.0,
+      "expected_unique_neg_1ep": 0.0917,
+      "expected_unique_neg_10ep": 0.6177,
+      "expected_unseen_neg_imgs_10ep": 14316
+    },
+    "recommended_schedule": {"batch_size": 16, "n_pos": 4, "n_neg": 12, "steps_per_epoch": 400, "epochs": 8, "eval_batch_size": 16, "early_stopping_patience": 3, "min_epochs": 4, "total_draws": 51200},
+    "recommended_coverage_exact": {
+      "avg_pos_exposure_per_epoch": 1.983,
+      "avg_pos_exposure_8ep": 15.86,
+      "expected_unique_pos_1ep": 0.863,
+      "expected_unique_pos_8ep": 1.0,
+      "expected_unique_neg_1ep": 0.1203,
+      "expected_unique_neg_8ep": 0.6414
+    }
+  },
+  "item_09_gmic_overhead_and_throughput_audit": {
+    "measured_agent4_pilot": {"steps": 16, "batch_size": 8, "imgs_per_sec": 5.1, "peak_vram_gb": 1.078, "train_only_10ep_proj_usd": 6.18},
+    "omitted_overheads_found": [
+      "train_calib validation (5,473 imgs/ep x 10 = 54,730 imgs) previously used single-threaded PNG loading (0.47-1.40h / $1.10-$3.30 extra).",
+      "245.22 GiB NVMe /tmp staging on cold container start (~10-17 min / $0.40-$0.67)."
+    ],
+    "code_fixes_applied": [
+      "Added cross-batch async CPU prefetch (`deque` + `ThreadPoolExecutor(8)`) for both training and `train_calib` validation.",
+      "Added `set_gmic_backbone_eval_mode` keeping frozen BatchNorm layers in `.eval()`.",
+      "Added `eval_batch_size=16`, `early_stopping_patience=3` (`min_epochs=4`), and all-inclusive pilot cost projection."
+    ]
+  },
+  "item_10_gmic_recommended_schedule_cost_projection": {
+    "measured_basis": "Agent 4 L40S pilot 5.1 img/s @ bs=8 (no prefetch); Step 2 pilot 32.52 img/s eval @ bs=8",
+    "extrapolated_bs16_prefetched": {
+      "train_imgs_per_sec_range": [6.5, 10.0],
+      "val_imgs_per_sec_est": 32.5,
+      "nvme_stage_245gib_hr": 0.27,
+      "total_wall_hours_range": [2.0, 2.8],
+      "all_inclusive_usd_range": [4.72, 6.61],
+      "note": "EXTRAPOLATED — gated on Wave 3 `bs=16` pilot measurement."
+    }
+  },
+  "item_11_gmic_eval_blocker_fix": {
+    "critical_bug_fixed": "`run_gmic_finetune_l40s()` previously ignored `stage=='eval'` and fell through into full training.",
+    "fix_summary": "Added `eval_gmic_finetuned_shard` + `load_gmic_finetuned_model_for_eval` with independent SHA-256 verification (preserving pretrained `GMIC_CKPT_SHA256`), `requires_grad=False`, zero optimizer, resumable shards keyed by `ckpt_sha[:12]`, RSNA-first calibration lock gate, and SHA-256 locked predictions."
+  },
+  "item_12_gmic_eval_cache_transfer_plan": {
+    "bundle_all": "dryousuf_gmic_eval_cache",
+    "bundle_rsna_only": "dryousuf_gmic_eval_rsna_val_calib",
+    "bundle_nlbs_only": "dryousuf_gmic_eval_nlbs",
+    "source_profile": "hasinishrak2015",
+    "dest_profile": "dryousufmozumder",
+    "measured_plan_only": {
+      "total_files": 38008,
+      "total_gib": 159.3706,
+      "rsna_val_calib": {"files": 11001, "gib": 62.0636, "cost_50_120_250_mbps": [0.3576, 0.1490, 0.0715]},
+      "nlbs": {"files": 27007, "gib": 97.3070, "cost_50_120_250_mbps": [0.5607, 0.2336, 0.1121]},
+      "combined_cost_usd": {"conservative_50mbps": 0.9182, "baseline_120mbps": 0.3826, "fast_250mbps": 0.1836}
+    }
+  },
+  "item_13_nyu_eligibility_and_preprocessing_fixes": {
+    "verified_4view_eligibility": {
+      "train": {"eligible_pts": 8339, "total_pts": 8339, "imgs": 33356, "pos_exams": 340, "left_mal": 171, "right_mal": 174},
+      "train_calib": {"eligible_pts": 1192, "total_pts": 1192, "imgs": 4768, "pos_exams": 49, "left_mal": 22, "right_mal": 27},
+      "val_calib": {"eligible_pts": 2382, "total_pts": 2382, "imgs": 9528, "pos_exams": 97, "exact_match_vs_frozen_csv": true}
+    },
+    "fixes_applied": [
+      "Extended `scripts/preprocess_paper1_nyu_cpu.py` and `validate_nyu_cli_stage_and_guard` for `rsna_train`, `rsna_train_calib`, and `train_all` (label-free, native 2677x1942 CC / 2974x1748 MLO, no Stage-1 upscaling).",
+      "Fixed fatal `png_native` vs `png` directory mismatch in `scripts/run_paper1_nyu_finetune_modal.py`."
+    ]
+  },
+  "item_14_nyu_head_only_feature_caching_and_bn_audit": {
+    "bn_and_gaussian_noise_finding": "`SplitBreastModel.forward` applies `AllViewsGaussianNoise(0.01)` and `FourViewResNet` `BatchNorm2d` updates when `.training==True`. Added `set_nyu_backbone_eval_mode` so `head_only` keeps `four_view_resnet` + `all_views_gaussian_noise_layer` in `.eval()`.",
+    "feature_cache_design": {
+      "tensor_dim_per_exam_draw": 1024,
+      "bytes_per_exam_draw": 4096,
+      "train_4draws_mib": 130.3,
+      "train_calib_10tta_mib": 46.6,
+      "total_feature_cache_mib": 176.9,
+      "vs_png_cache_gib": 279.2,
+      "parity_vs_full_forward_eval_backbone": "bit-exact (< 1e-6 float32 diff)",
+      "head_only_train_time_cpu_sec": "< 5s for 8 epochs ($0.00 local / ~$0.0001 Modal CPU)"
+    }
+  },
+  "item_15_nyu_eval_blocker_fix": {
+    "critical_bug_fixed": "`run_nyu_finetune_l40s()` previously ignored `stage=='eval'` and fell through into full training.",
+    "fix_summary": "Added `eval_nyu_finetuned_shard` + `load_nyu_finetuned_model_for_eval` preserving 10-TTA (`seed=0`), FP32 non-autocast `eval()`, `requires_grad=False`, zero optimizer, `max(left_mal, right_mal)`, `NYU_STEP1_MANIFEST_SHA256` checks, resumable shards, RSNA-first calibration lock gate, and SHA-256 locked predictions."
+  },
+  "item_16_shared_calibration_and_evaluation_cli": {
+    "modules": ["src/paper1/specialist_eval.py", "scripts/evaluate_paper1_specialist_finetune.py"],
+    "phases": ["calibrate_rsna", "lock_nlbs", "eval_nlbs"],
+    "guarantees": ["RSNA-only 98%/95% calibration prior to NLBS scoring/join", "SHA-256 locked NLBS predictions", "Tamper-abort verification", "Cluster-bootstrap CIs (B=2000 over split_cluster_id)"]
+  },
+  "item_17_unit_test_results": {
+    "command": "python -m unittest discover -s tests -p \"test_paper1_*.py\" -v && test_transfer_*.py",
+    "executed_after_final_edit": true,
+    "paper1_suite": {"total_discovered": 35, "passed": 27, "skipped": 8, "failed": 0, "errors": 0, "skip_reason": "external/ repos & local weights not present in git worktree"},
+    "transfer_suite": {"total_discovered": 8, "passed": 8, "skipped": 0, "failed": 0, "errors": 0},
+    "test_paper1_specialist_finetuning": {"passed": 10, "failed": 0},
+    "test_paper1_nyu_step1_cpu": {"total": 6, "passed": 5, "skipped": 1, "failed": 0}
+  },
+  "item_18_measured_vs_extrapolated_cost_ledger": {
+    "wave1_spend_usd": 0.0,
+    "measured_reference_rates": {
+      "dryousuf_rsna_raw_transfer_wall_mb_s": 181.02,
+      "dryousuf_gmic_pilot_imgs_per_sec": 5.1,
+      "hasinishrak2015_gmic_step2_eval_usd": 1.8101,
+      "hasinishrak2015_nyu_step1_rsna_9528_usd": 0.5488,
+      "hasinishrak2015_nyu_step2_rsna_2382_usd": 0.9180,
+      "hasinishrak2015_nyu_step2_nlbs_6184_usd": 2.3040
+    },
+    "extrapolated_phase1_to_phase2_usd": {
+      "wave2_gmic_verify_train_all_cpu": 0.03,
+      "wave2_gmic_eval_transfer_159gib": 0.38,
+      "wave2_nyu_train_all_cpu_png_38124": 2.25,
+      "wave3_gmic_pilot_bs16": 0.04,
+      "wave3_nyu_pilot_bs4": 0.08,
+      "phase2_gmic_train_8ep_bs16": 5.50,
+      "phase2_gmic_eval_rsna_plus_nlbs": 1.85,
+      "phase2_nyu_extract_head_features_and_train": 1.10,
+      "phase2_nyu_eval_rsna_plus_nlbs_10tta": 3.25,
+      "total_projected_range_usd": [13.5, 17.5],
+      "fits_26_12_remaining_credits": true
+    }
+  },
+  "item_19_wave2_commands": [
+    "$env:MODAL_PROFILE=\"dryousufmozumder\"; modal run scripts/preprocess_paper1_gmic_cpu.py --stage verify --split train_all --num-shards 16",
+    "$env:MODAL_PROFILE=\"dryousufmozumder\"; $env:MODAL_SRC_PROFILES=\"hasinishrak2015\"; modal --profile dryousufmozumder run scripts/transfer_modal_volumes_cloud.py --dst-profile dryousufmozumder --bundle dryousuf_gmic_eval_rsna_val_calib --num-containers 16 --streams-per-container 6 --max-budget-usd 0.60",
+    "$env:MODAL_PROFILE=\"dryousufmozumder\"; modal run scripts/preprocess_paper1_nyu_cpu.py --stage build --split train_all --num-shards 24 --compression 1 --approve-full-build"
+  ],
+  "item_20_wave3_pilot_commands": [
+    "$env:MODAL_PROFILE=\"dryousufmozumder\"; modal run scripts/run_paper1_gmic_finetune_modal.py --stage pilot --strategy partial --batch-size 16 --eval-batch-size 16 --epochs 8 --steps-per-epoch 400 --max-spend-usd 0.50",
+    "$env:MODAL_PROFILE=\"dryousufmozumder\"; modal run scripts/run_paper1_nyu_finetune_modal.py --stage pilot --strategy head_only --batch-exams 4 --epochs 8 --steps-per-epoch 400 --max-spend-usd 0.50"
+  ],
+  "item_21_phase2_commands": [
+    "$env:MODAL_PROFILE=\"dryousufmozumder\"; modal run scripts/run_paper1_gmic_finetune_modal.py --stage train --strategy partial --batch-size 16 --eval-batch-size 16 --epochs 8 --steps-per-epoch 400 --early-stopping-patience 3 --max-spend-usd 9.0 --approve-full-train",
+    "$env:MODAL_PROFILE=\"dryousufmozumder\"; modal run scripts/run_paper1_gmic_finetune_modal.py --stage eval --split rsna_val_calib --batch-size 1 --num-shards 4 --checkpoint-path /rsna_vol/models/paper1/checkpoints/gmic_rsna_partial_seed42_best_train_calib.pt --checkpoint-sha256 <GMIC_BEST_SHA256> --max-spend-usd 1.5 --approve-eval",
+    "python scripts/evaluate_paper1_specialist_finetune.py --model gmic_rsna_finetuned --phase calibrate_rsna --expected-checkpoint-sha256 <GMIC_BEST_SHA256>",
+    "$env:MODAL_PROFILE=\"dryousufmozumder\"; $env:MODAL_SRC_PROFILES=\"hasinishrak2015\"; modal --profile dryousufmozumder run scripts/transfer_modal_volumes_cloud.py --dst-profile dryousufmozumder --bundle dryousuf_gmic_eval_nlbs --num-containers 16 --streams-per-container 6 --max-budget-usd 0.80",
+    "$env:MODAL_PROFILE=\"dryousufmozumder\"; modal run scripts/run_paper1_gmic_finetune_modal.py --stage eval --split nlbs --batch-size 1 --num-shards 4 --checkpoint-path /rsna_vol/models/paper1/checkpoints/gmic_rsna_partial_seed42_best_train_calib.pt --checkpoint-sha256 <GMIC_BEST_SHA256> --max-spend-usd 2.0 --approve-eval",
+    "python scripts/evaluate_paper1_specialist_finetune.py --model gmic_rsna_finetuned --phase lock_nlbs",
+    "python scripts/evaluate_paper1_specialist_finetune.py --model gmic_rsna_finetuned --phase eval_nlbs",
+    "$env:MODAL_PROFILE=\"dryousufmozumder\"; modal run scripts/run_paper1_nyu_finetune_modal.py --stage extract_head_features --batch-exams 4 --max-spend-usd 3.0 --approve-full-train",
+    "$env:MODAL_PROFILE=\"dryousufmozumder\"; modal run scripts/run_paper1_nyu_finetune_modal.py --stage train_cached_head --epochs 8 --batch-exams 16 --steps-per-epoch 400 --max-spend-usd 0.5 --approve-full-train",
+    "$env:MODAL_PROFILE=\"dryousufmozumder\"; modal run scripts/run_paper1_nyu_finetune_modal.py --stage eval --split rsna_val_calib --batch-exams 4 --num-shards 4 --checkpoint-path /rsna_vol/models/paper1/checkpoints/nyu_rsna_head_only_cached_seed42_best_train_calib.pt --checkpoint-sha256 <NYU_BEST_SHA256> --max-spend-usd 2.0 --approve-eval",
+    "python scripts/evaluate_paper1_specialist_finetune.py --model nyu_fourview_rsna_finetuned --phase calibrate_rsna --expected-checkpoint-sha256 <NYU_BEST_SHA256>",
+    "$env:MODAL_PROFILE=\"dryousufmozumder\"; modal run scripts/run_paper1_nyu_finetune_modal.py --stage eval --split nlbs_4view --batch-exams 4 --num-shards 4 --checkpoint-path /rsna_vol/models/paper1/checkpoints/nyu_rsna_head_only_cached_seed42_best_train_calib.pt --checkpoint-sha256 <NYU_BEST_SHA256> --max-spend-usd 3.5 --approve-eval",
+    "python scripts/evaluate_paper1_specialist_finetune.py --model nyu_fourview_rsna_finetuned --phase lock_nlbs",
+    "python scripts/evaluate_paper1_specialist_finetune.py --model nyu_fourview_rsna_finetuned --phase eval_nlbs"
+  ],
+  "item_22_checkpoint_handoff_spec_for_agent3": {
+    "gmic_checkpoint_volume_path": "rsna-mammography-vol:/models/paper1/checkpoints/gmic_rsna_partial_seed42_best_train_calib.pt",
+    "gmic_schema": "paper1_gmic_finetune_ckpt_v1",
+    "gmic_model_id": "gmic_rsna_finetuned",
+    "nyu_checkpoint_volume_path": "rsna-mammography-vol:/models/paper1/checkpoints/nyu_rsna_head_only_cached_seed42_best_train_calib.pt",
+    "nyu_schema": "paper1_nyu_finetune_ckpt_v1",
+    "nyu_model_id": "nyu_fourview_rsna_finetuned",
+    "output_dir": "reports/paper1/expanded/exp1/",
+    "locked_predictions_dir": "reports/paper1/expanded/exp1/predictions_locked/",
+    "artifacts_per_model": [
+      "<model_id>_rsna_calibration.json",
+      "<model_id>_rsna_calibration_lock.json",
+      "predictions_locked/<model_id>_locked_nlbs_predictions.csv",
+      "predictions_locked/<model_id>_lock_manifest.json",
+      "<model_id>_nlbs_evaluation.json"
+    ]
+  },
+  "item_23_risks_and_mitigations": [
+    {"risk": "Storage > 1,024 GiB free tier ($0.003/GiB-day)", "mitigation": "Sequential build/eval/approved-reclaim schedule keeps peak <= 957.82 GiB."},
+    {"risk": "Gitignored external/ absent in worktrees", "mitigation": "Launch modal run from main repo or symlink external/ prior to Wave 2/3."},
+    {"risk": "GMIC overfitting on small repeated positive set", "mitigation": "Differential backbone LR (0.1x), train_calib selection, early stopping patience=3, frozen BN eval mode."},
+    {"risk": "NYU head_only BN/GaussianNoise drift", "mitigation": "set_nyu_backbone_eval_mode + bit-exact frozen feature caching."}
+  ],
+  "item_24_final_gate_recommendation": {
+    "decision": "CONDITIONAL GO",
+    "conditions": [
+      "User approval for Wave 2 (GMIC train_all verify ~$0.03 + RSNA val_calib transfer ~$0.15) and Wave 3 L40S pilots (~$0.12).",
+      "Execute modal run from workspace with external/GMIC and external/breast_cancer_classifier present.",
+      "Follow sequential storage plan (or explicitly approve ~$0.09-$0.93/day storage overage if keeping all caches simultaneously)."
+    ]
+  }
+}
