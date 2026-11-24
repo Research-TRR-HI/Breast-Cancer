@@ -196,6 +196,38 @@ class TestPaper1Preparation(unittest.TestCase):
             self.assertTrue((td_p / "out" / "locked_nlbs_predictions.csv").exists())
             self.assertEqual(res["locked_nlbs_studies"], int(nlbs_df["StudyInstanceUID"].nunique()))
 
+            # Reject mismatched NLBS backbone_sha256
+            bad_sha_pt = td_p / "nlbs_bad_sha.pt"
+            torch.save({"image_ids": nlbs_df["image_uid"].astype(str).tolist(), "embeddings": n_embs, "backbone_sha256": "deadbeef"}, bad_sha_pt)
+            with self.assertRaises(RuntimeError):
+                train_and_lock_dinov2_head(
+                    rsna_emb_pt=r_pt,
+                    nlbs_emb_pt=bad_sha_pt,
+                    splits_csv=ROOT / "datasets/rsna/splits_seed42.csv",
+                    val_calib_2fold_csv=ROOT / "datasets/paper1/rsna_val_calib_2fold_seed42.csv",
+                    nlbs_manifest_csv=n_csv,
+                    out_dir=td_p / "out_bad_sha",
+                    epochs=2,
+                    batch_size=8,
+                    n_boot=10,
+                )
+
+            # Reject incomplete NLBS embeddings (no silent image drops)
+            partial_pt = td_p / "nlbs_partial.pt"
+            torch.save({"image_ids": nlbs_df["image_uid"].astype(str).tolist()[:-1], "embeddings": n_embs[:-1], "backbone_sha256": DINOV2_VITS14_SHA256}, partial_pt)
+            with self.assertRaises(RuntimeError):
+                train_and_lock_dinov2_head(
+                    rsna_emb_pt=r_pt,
+                    nlbs_emb_pt=partial_pt,
+                    splits_csv=ROOT / "datasets/rsna/splits_seed42.csv",
+                    val_calib_2fold_csv=ROOT / "datasets/paper1/rsna_val_calib_2fold_seed42.csv",
+                    nlbs_manifest_csv=n_csv,
+                    out_dir=td_p / "out_partial",
+                    epochs=2,
+                    batch_size=8,
+                    n_boot=10,
+                )
+
     def test_7_resnet50_amp_unscale_clip_and_resume_parity(self):
         import random
         import tempfile
