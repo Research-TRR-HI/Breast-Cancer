@@ -1,9 +1,9 @@
 {
   "schema_version": "paper1_exp1_phase1_readiness_v1",
-  "generated_at_utc": "2026-11-24T14:18:00Z",
+  "generated_at_utc": "2026-11-24T14:50:00Z",
   "experiment": "Exp 1 — Common RSNA Supervision (GMIC & NYU Four-View Fine-Tuning)",
   "branch": "paper1-exp1-phase1",
-  "wave": "Phase 1 Wave 1 (Zero-Cost Engineering, Audit & Read-Only Modal Checks)",
+  "wave": "Phase 1 Wave 1 + Step A Speed/Benchmarking Prep (Zero-Cost Engineering, Audit & Read-Only Modal Checks)",
   "recommendation": "CONDITIONAL GO",
   "item_01_isolation_and_protocol_compliance": {
     "branch": "paper1-exp1-phase1",
@@ -114,6 +114,12 @@
       {"step": 6, "action": "WITH EXPLICIT USER APPROVAL ONLY: delete cache/paper1_gmic_uint16_v1/{rsna_val_calib,nlbs}", "delta_gib": -159.37, "post_gib": 650.62},
       {"step": 7, "action": "Build NYU rsna_train + rsna_train_calib native PNG cache (38,124 imgs ~279.2 GiB extrapolated)", "delta_gib": 279.2, "post_gib": 929.82},
       {"step": 8, "action": "Extract NYU head_only frozen features (~0.18 GiB) & train NYU head_only; optionally reclaim NYU train PNGs if head_only only, keeping rsna_val_calib + nlbs_4view (157.51 GiB) for --stage eval", "delta_gib": 0.2, "post_gib": 930.02}
+    ],
+    "sequential_cleanup_regeneration_costs": [
+      {"cache_tier": "GMIC rsna_train + rsna_train_calib", "files": 43756, "gib": 245.2222, "rebuild_cost_usd_rsna_rate": [3.30, 3.52], "rebuild_cost_usd_mixed_rate": 1.82, "retransfer_cost_usd": null},
+      {"cache_tier": "GMIC eval cache (rsna_val_calib + nlbs)", "files": 38008, "gib": 159.3706, "rebuild_cost_usd_measured": 1.5844, "retransfer_cost_usd_range": [0.25, 0.92]},
+      {"cache_tier": "NYU eval cache (rsna_val_calib + nlbs_4view)", "files": 34294, "gib": 157.5056, "rebuild_cost_usd_measured_net": 1.6203, "rebuild_cost_usd_measured_gross": 1.6834, "retransfer_cost_usd_est": 0.43},
+      {"cache_tier": "NYU train_all (to build: rsna_train + rsna_train_calib)", "files_est": 38125, "gib_extrap": 279.2, "rebuild_cost_usd_extrap": [2.20, 2.44], "retransfer_cost_usd": null}
     ]
   },
   "item_06_worktree_external_dependency_notice": {
@@ -156,7 +162,9 @@
     "code_fixes_applied": [
       "Added cross-batch async CPU prefetch (`deque` + `ThreadPoolExecutor(8)`) for both training and `train_calib` validation.",
       "Added `set_gmic_backbone_eval_mode` keeping frozen BatchNorm layers in `.eval()`.",
-      "Added `eval_batch_size=16`, `early_stopping_patience=3` (`min_epochs=4`), and all-inclusive pilot cost projection."
+      "Added `eval_batch_size=32`, `early_stopping_patience=3` (`min_epochs=4`), and all-inclusive pilot cost projection.",
+      "Added progressive L40S pilot benchmarking (`run_progressive_gmic_benchmark_loop`) over batch sizes `[8,16,32,64,128,256]` and precision modes `['bf16','fp16','tf32']` with clean OOM/instability/drop stopping, `pin_memory=True`, `non_blocking=True`, CUDA fused AdamW, `peak_allocated_vram_gb`, `peak_reserved_vram_gb`, `data_load_sec`, `h2d_sec`, `fwd_bwd_sec`, and `val_imgs_per_sec`.",
+      "Added `scale_steps_and_lr_for_batch_size` and `apply_linear_warmup` to preserve 4,800 image draws/epoch when scaling batch size."
     ]
   },
   "item_10_gmic_recommended_schedule_cost_projection": {
@@ -222,13 +230,60 @@
     "guarantees": ["RSNA-only 98%/95% calibration prior to NLBS scoring/join", "SHA-256 locked NLBS predictions", "Tamper-abort verification", "Cluster-bootstrap CIs (B=2000 over split_cluster_id)"]
   },
   "item_17_unit_test_results": {
-    "command": "python -m unittest discover -s tests -p \"test_paper1_*.py\" -v && test_transfer_*.py",
+    "command": "python -m unittest discover -s tests -p \"test_paper1_*.py\" -v; python -m unittest discover -s tests -p \"test_transfer_*.py\" -v",
     "executed_after_final_edit": true,
-    "paper1_suite": {"total_discovered": 35, "passed": 27, "skipped": 8, "failed": 0, "errors": 0, "skip_reason": "external/ repos & local weights not present in git worktree"},
+    "paper1_suite": {"total_discovered": 55, "passed": 47, "skipped": 8, "failed": 0, "errors": 0, "skip_reason": "external/ repos & local weights not present in git worktree"},
     "transfer_suite": {"total_discovered": 8, "passed": 8, "skipped": 0, "failed": 0, "errors": 0},
-    "test_paper1_specialist_finetuning": {"passed": 10, "failed": 0},
+    "test_paper1_specialist_finetuning": {"passed": 14, "failed": 0},
     "test_paper1_nyu_step1_cpu": {"total": 6, "passed": 5, "skipped": 1, "failed": 0}
   },
+  "section_9_consolidated_wave2_wave3_approval_table": [
+    {
+      "workload": "Wave 2A: GMIC train_all --stage verify --num-shards 16",
+      "account": "dryousufmozumder",
+      "expected_runtime": "~6-8 min CPU-shard (~1 min wall)",
+      "expected_cost_usd": 0.03,
+      "max_authorized_spend_usd": 0.20,
+      "storage_impact": "+0.02 GiB (895.78 GiB, < 1 TiB)",
+      "timeouts_and_cancellation": "1800s/shard; Ctrl+C or modal app stop"
+    },
+    {
+      "workload": "Wave 2B: GMIC Eval Transfer dryousuf_gmic_eval_rsna_val_calib (RSNA-first)",
+      "account": "dryousufmozumder (src: hasinishrak2015)",
+      "expected_runtime": "~5-9 min wall (16 containers x 6 streams)",
+      "expected_cost_usd_range": [0.10, 0.15],
+      "max_authorized_spend_usd": 0.60,
+      "storage_impact": "+62.06 GiB (957.84 GiB, < 1 TiB)",
+      "timeouts_and_cancellation": "1800s + --max-budget-usd 0.60; Ctrl+C or modal app stop"
+    },
+    {
+      "workload": "Wave 2C (Deferred post-GMIC-eval reclaim or overage opt-in): NYU train_all CPU PNGs",
+      "account": "dryousufmozumder",
+      "expected_runtime": "~8-10 CPU-hrs (~25-35 min wall w/ 24 shards)",
+      "expected_cost_usd_range": [2.20, 2.44],
+      "max_authorized_spend_usd": 3.20,
+      "storage_impact": "+279.2 GiB (929.8 GiB after GMIC cleanup)",
+      "timeouts_and_cancellation": "3600s/shard + --max-spend-usd; Ctrl+C or modal app stop"
+    },
+    {
+      "workload": "Wave 3A: GMIC L40S Progressive Pilot (bs 8..256 x bf16/fp16/tf32)",
+      "account": "dryousufmozumder",
+      "expected_runtime": "~3-7 min L40S wall (OOM/drop early stop)",
+      "expected_cost_usd_range": [0.12, 0.28],
+      "max_authorized_spend_usd": 0.75,
+      "storage_impact": "+0.001 GiB (gmic_pilot_benchmark_report.json)",
+      "timeouts_and_cancellation": "14400s + --max-spend-usd 0.75 + OOM/drop stop"
+    },
+    {
+      "workload": "Wave 3B: NYU L40S Progressive Pilot (batch_exams 2..16 extract & 10-TTA + eq check)",
+      "account": "dryousufmozumder",
+      "expected_runtime": "~2-4 min L40S wall",
+      "expected_cost_usd_range": [0.08, 0.16],
+      "max_authorized_spend_usd": 0.60,
+      "storage_impact": "+0.001 GiB (nyu_pilot_benchmark_report.json)",
+      "timeouts_and_cancellation": "14400s + --max-spend-usd 0.60 + OOM/drop stop"
+    }
+  ],
   "item_18_measured_vs_extrapolated_cost_ledger": {
     "wave1_spend_usd": 0.0,
     "measured_reference_rates": {
@@ -259,8 +314,8 @@
     "$env:MODAL_PROFILE=\"dryousufmozumder\"; modal run scripts/preprocess_paper1_nyu_cpu.py --stage build --split train_all --num-shards 24 --compression 1 --approve-full-build"
   ],
   "item_20_wave3_pilot_commands": [
-    "$env:MODAL_PROFILE=\"dryousufmozumder\"; modal run scripts/run_paper1_gmic_finetune_modal.py --stage pilot --strategy partial --batch-size 16 --eval-batch-size 16 --epochs 8 --steps-per-epoch 400 --max-spend-usd 0.50",
-    "$env:MODAL_PROFILE=\"dryousufmozumder\"; modal run scripts/run_paper1_nyu_finetune_modal.py --stage pilot --strategy head_only --batch-exams 4 --epochs 8 --steps-per-epoch 400 --max-spend-usd 0.50"
+    "$env:MODAL_PROFILE=\"dryousufmozumder\"; modal run scripts/run_paper1_gmic_finetune_modal.py --stage pilot --strategy partial --bench-batch-sizes \"8,16,32,64,128,256\" --bench-precisions \"bf16,fp16,tf32\" --lr-scaling sqrt --warmup-steps 100 --epochs 8 --max-spend-usd 0.75",
+    "$env:MODAL_PROFILE=\"dryousufmozumder\"; modal run scripts/run_paper1_nyu_finetune_modal.py --stage pilot --strategy head_only --bench-batch-exams \"2,4,8,16\" --epochs 8 --steps-per-epoch 400 --max-spend-usd 0.60"
   ],
   "item_21_phase2_commands": [
     "$env:MODAL_PROFILE=\"dryousufmozumder\"; modal run scripts/run_paper1_gmic_finetune_modal.py --stage train --strategy partial --batch-size 16 --eval-batch-size 16 --epochs 8 --steps-per-epoch 400 --early-stopping-patience 3 --max-spend-usd 9.0 --approve-full-train",

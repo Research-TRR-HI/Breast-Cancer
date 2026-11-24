@@ -100,8 +100,8 @@ def run_gmic_finetune_l40s(
     strategy: str = "partial",
     epochs: int = 8,
     batch_size: int = 16,
-    eval_batch_size: int = 16,
-    steps_per_epoch: int = 400,
+    eval_batch_size: int = 32,
+    steps_per_epoch: int = 0,
     lr: float = 1e-4,
     backbone_lr_mult: float = 0.1,
     saliency_l1_weight: float = 1e-5,
@@ -110,9 +110,14 @@ def run_gmic_finetune_l40s(
     seed: int = 42,
     resume: bool = True,
     max_spend_usd: float = 10.0,
-    pilot_steps: int = 16,
+    pilot_steps: int = 6,
+    precision: str = "bf16",
+    bench_batch_sizes: str = "8,16,32,64,128,256",
+    bench_precisions: str = "bf16,fp16,tf32",
+    lr_scaling: str = "sqrt",
+    warmup_steps: int = 100,
 ) -> Dict[str, Any]:
-    """Run GMIC L40S pilot or RSNA fine-tuning using native (2944, 1920) uint16 PNGs."""
+    """Run GMIC L40S progressive pilot or RSNA fine-tuning using native (2944, 1920) uint16 PNGs."""
     import numpy as np
     import pandas as pd
     import torch
@@ -121,11 +126,19 @@ def run_gmic_finetune_l40s(
     from src.models.trust_model import aggregate_case_labels, aggregate_case_scores
     from src.paper1.gmic_adapter import GMIC_INPUT_SIZE, build_gmic_model
     from src.paper1.gmic_finetune import (
+        apply_linear_warmup,
+        compute_gmic_schedule_stats,
+        configure_gmic_precision_and_scaler,
         configure_gmic_trainable_params,
         count_trainable_parameters,
+        create_fused_adamw,
         gmic_amp_train_step,
         load_gmic_finetune_checkpoint,
+        parse_int_csv,
+        parse_str_csv,
+        run_progressive_gmic_benchmark_loop,
         save_gmic_finetune_checkpoint,
+        scale_steps_and_lr_for_batch_size,
         set_gmic_backbone_eval_mode,
     )
 
@@ -158,136 +171,139 @@ def run_gmic_finetune_l40s(
     model, _ = build_gmic_model(
         ckpt_in, model_index="1", device=device, gmic_repo_dir=Path("/root/external/GMIC")
     )
-    param_groups = configure_gmic_trainable_params(
-        model, strategy=strategy, base_lr=lr, backbone_lr_mult=backbone_lr_mult
-    )
     param_counts = count_trainable_parameters(model)
-    opt = torch.optim.AdamW(param_groups, weight_decay=1e-4)
-    sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=max(1, epochs))
-    scaler = torch.amp.GradScaler("cuda", enabled=True)
+
+    fair_plan = scale_steps_and_lr_for_batch_size(
+        batch_size,
+        base_batch_size=8,
+        base_steps_per_epoch=600,
+        base_lr=lr,
+        lr_scaling=lr_scaling,
+        base_warmup_steps=warmup_steps,
+    )
+    eff_steps_per_epoch = int(steps_per_epoch) if int(steps_per_epoch) > 0 else fair_plan["steps_per_epoch"]
+    eff_lr = fair_plan["scaled_lr"]
+    eff_warmup_steps = fair_plan["warmup_steps"]
 
     if stage == "pilot":
-        n_pos = max(2, batch_size // 4)
-        sampler = BalancedBatchSampler(
-            labels=train_df["cancer"].values,
-            batch_size=batch_size,
-            n_pos=n_pos,
-            seed=seed,
-            epoch_policy="paper_independent",
-            steps_per_epoch=pilot_steps,
-        )
-        aug_rng = np.random.default_rng(seed + 100)
+        bench_bs_list = parse_int_csv(bench_batch_sizes)
+        bench_prec_list = parse_str_csv(bench_precisions)
         train_ids = train_df["image_id"].astype(str).tolist()
         train_lbls = train_df["cancer"].values.astype(np.float32)
         tc_ids = tc_df["image_id"].astype(str).tolist()
 
-        # Benchmark small NVMe staging (128 train + 64 train_calib) and prefetched train + val loops
-        pilot_train_ids = sorted({train_ids[i] for b in BalancedBatchSampler(
-            labels=train_df["cancer"].values, batch_size=batch_size, n_pos=n_pos,
-            seed=seed, epoch_policy="paper_independent", steps_per_epoch=pilot_steps
-        ) for i in b})
+        pool_tr_n = min(len(train_ids), max(512, max(bench_bs_list) * 2))
+        pool_tc_n = min(len(tc_ids), max(128, max(bench_bs_list)))
+        pilot_train_ids = train_ids[:pool_tr_n]
+        pilot_tc_ids = tc_ids[:pool_tc_n]
         nvme_pilot_tr = Path("/tmp/gmic_pilot_tr")
         nvme_pilot_tc = Path("/tmp/gmic_pilot_tc")
         shutil.rmtree(nvme_pilot_tr, ignore_errors=True)
         shutil.rmtree(nvme_pilot_tc, ignore_errors=True)
         stage_tr_sec = _stage_pngs_nvme(pilot_train_ids, train_png_dir, nvme_pilot_tr)
-        stage_tc_sec = _stage_pngs_nvme(tc_ids[:64], tc_png_dir, nvme_pilot_tc)
+        stage_tc_sec = _stage_pngs_nvme(pilot_tc_ids, tc_png_dir, nvme_pilot_tc)
         staged_bytes = sum((nvme_pilot_tr / f"{i}.png").stat().st_size for i in pilot_train_ids) + sum(
-            (nvme_pilot_tc / f"{i}.png").stat().st_size for i in tc_ids[:64]
+            (nvme_pilot_tc / f"{i}.png").stat().st_size for i in pilot_tc_ids
         )
         stage_mb_s = (staged_bytes / (1024.0**2)) / max(stage_tr_sec + stage_tc_sec, 1e-6)
+        aug_rng = np.random.default_rng(seed + 100)
 
-        torch.cuda.reset_peak_memory_stats(device)
-        t0 = time.perf_counter()
-        set_gmic_backbone_eval_mode(model, strategy)
-        losses: List[float] = []
-        batch_list = list(sampler)
         with ThreadPoolExecutor(max_workers=8) as pool:
-            pending = deque()
-            next_b = 0
-            while next_b < len(batch_list) and len(pending) < 3:
-                idxs = batch_list[next_b]
+
+            def _bench_train_loader(bs: int, step_idx: int) -> Tuple[np.ndarray, np.ndarray]:
+                start = (step_idx * bs) % pool_tr_n
+                idxs = [(start + k) % pool_tr_n for k in range(bs)]
                 flips = [bool(aug_rng.random() < 0.5) for _ in idxs]
-                futs = [pool.submit(_load_gmic_png_tensor, nvme_pilot_tr / f"{train_ids[i]}.png", fl, None) for i, fl in zip(idxs, flips)]
-                # Note: deterministic flip flag passed explicitly so ThreadPool stays race-free
-                pending.append((idxs, futs))
-                next_b += 1
-
-            while pending:
-                idxs, futs = pending.popleft()
-                imgs = [f.result() for f in futs]
-                while next_b < len(batch_list) and len(pending) < 3:
-                    n_idxs = batch_list[next_b]
-                    n_flips = [bool(aug_rng.random() < 0.5) for _ in n_idxs]
-                    n_futs = [pool.submit(_load_gmic_png_tensor, nvme_pilot_tr / f"{train_ids[i]}.png", fl, None) for i, fl in zip(n_idxs, n_flips)]
-                    pending.append((n_idxs, n_futs))
-                    next_b += 1
-                bx = torch.from_numpy(np.stack(imgs, axis=0)).to(device, non_blocking=True)
-                by = torch.tensor([train_lbls[i] for i in idxs], dtype=torch.float32, device=device)
-                ld, _ = gmic_amp_train_step(
-                    model=model,
-                    bx=bx,
-                    by=by,
-                    optimizer=opt,
-                    scaler=scaler,
-                    saliency_l1_weight=saliency_l1_weight,
-                    amp_enabled=True,
+                imgs = list(
+                    pool.map(
+                        lambda it: _load_gmic_png_tensor(nvme_pilot_tr / f"{pilot_train_ids[it[0]]}.png", it[1], None),
+                        zip(idxs, flips),
+                    )
                 )
-                losses.append(ld["loss_total"])
-        train_sec = time.perf_counter() - t0
+                return np.stack(imgs, axis=0), np.asarray([train_lbls[i] for i in idxs], dtype=np.float32)
 
-        # Measure train_calib val throughput
-        model.eval()
-        t_val0 = time.perf_counter()
-        with torch.no_grad(), ThreadPoolExecutor(max_workers=8) as pool:
-            for s0 in range(0, 64, eval_batch_size):
-                chunk = tc_ids[s0 : s0 + eval_batch_size]
-                imgs = list(pool.map(lambda cid: _load_gmic_png_tensor(nvme_pilot_tc / f"{cid}.png", False, None), chunk))
-                bx = torch.from_numpy(np.stack(imgs, axis=0)).to(device, non_blocking=True)
-                _ = model(bx)[:, 1].float().cpu().numpy()
-        val_sec = time.perf_counter() - t_val0
+            def _bench_val_loader(bs: int, step_idx: int) -> np.ndarray:
+                start = (step_idx * bs) % pool_tc_n
+                idxs = [(start + k) % pool_tc_n for k in range(bs)]
+                imgs = list(pool.map(lambda idx: _load_gmic_png_tensor(nvme_pilot_tc / f"{pilot_tc_ids[idx]}.png", False, None), idxs))
+                return np.stack(imgs, axis=0)
 
-        n_imgs = pilot_steps * batch_size
-        imgs_per_sec = n_imgs / max(train_sec, 1e-6)
-        val_imgs_per_sec = 64.0 / max(val_sec, 1e-6)
-        peak_vram_gb = float(torch.cuda.max_memory_allocated(device) / (1024**3))
-        proj_train_hrs = (epochs * steps_per_epoch * batch_size) / max(imgs_per_sec, 1e-6) / 3600.0
-        proj_val_hrs = (epochs * len(tc_ids)) / max(val_imgs_per_sec, 1e-6) / 3600.0
-        proj_stage_hrs = (245.222 * 1024.0 / max(stage_mb_s, 50.0)) / 3600.0
-        proj_total_hrs = proj_train_hrs + proj_val_hrs + proj_stage_hrs + (60.0 / 3600.0)
-        sched_stats = compute_gmic_schedule_stats(
-            n_pos_imgs=int((train_df["cancer"] == 1).sum()),
-            n_neg_imgs=int((train_df["cancer"] == 0).sum()),
-            batch_size=batch_size,
-            steps_per_epoch=steps_per_epoch,
-            epochs=epochs,
-        )
-        return {
+            bench = run_progressive_gmic_benchmark_loop(
+                model=model,
+                batch_loader=_bench_train_loader,
+                device=device,
+                batch_sizes=bench_bs_list,
+                precisions=bench_prec_list,
+                strategy=strategy,
+                base_lr=lr,
+                backbone_lr_mult=backbone_lr_mult,
+                saliency_l1_weight=saliency_l1_weight,
+                warmup_steps=2,
+                bench_steps=max(2, min(int(pilot_steps), 4)),
+                val_loader=_bench_val_loader,
+                val_steps=2,
+            )
+
+        rec = bench.get("recommended")
+        rec_proj: Dict[str, Any] = {}
+        if rec is not None:
+            rec_plan = scale_steps_and_lr_for_batch_size(
+                rec["batch_size"],
+                base_batch_size=8,
+                base_steps_per_epoch=600,
+                base_lr=lr,
+                lr_scaling=lr_scaling,
+                base_warmup_steps=warmup_steps,
+            )
+            proj_train_hrs = (epochs * rec_plan["steps_per_epoch"] * rec["batch_size"]) / max(rec["imgs_per_sec"], 1e-6) / 3600.0
+            val_tps = rec.get("val_imgs_per_sec") or rec["imgs_per_sec"]
+            proj_val_hrs = (epochs * len(tc_ids)) / max(val_tps, 1e-6) / 3600.0
+            proj_stage_hrs = (245.222 * 1024.0 / max(stage_mb_s, 50.0)) / 3600.0
+            proj_total_hrs = proj_train_hrs + proj_val_hrs + proj_stage_hrs + (60.0 / 3600.0)
+            rec_proj = {
+                "recommended_fair_schedule": rec_plan,
+                "projected_train_only_hours": round(proj_train_hrs, 3),
+                "projected_val_hours": round(proj_val_hrs, 3),
+                "projected_nvme_stage_hours": round(proj_stage_hrs, 3),
+                "projected_all_inclusive_hours": round(proj_total_hrs, 3),
+                "projected_all_inclusive_usd": round(proj_total_hrs * L40S_HOURLY_USD, 2),
+                "schedule_coverage_stats": compute_gmic_schedule_stats(
+                    n_pos_imgs=int((train_df["cancer"] == 1).sum()),
+                    n_neg_imgs=int((train_df["cancer"] == 0).sum()),
+                    batch_size=rec["batch_size"],
+                    steps_per_epoch=rec_plan["steps_per_epoch"],
+                    epochs=epochs,
+                ),
+            }
+
+        pilot_report = {
             "stage": "pilot",
             "strategy": strategy,
             "input_size": list(GMIC_INPUT_SIZE),
-            "batch_size": batch_size,
-            "eval_batch_size": eval_batch_size,
             "epochs": epochs,
-            "steps_per_epoch": steps_per_epoch,
-            "pilot_steps": pilot_steps,
-            "n_pilot_images": n_imgs,
-            "param_counts": param_counts,
-            "mean_loss": float(np.mean(losses)),
-            "train_sec": round(train_sec, 3),
-            "imgs_per_sec": round(imgs_per_sec, 2),
-            "val_imgs_per_sec": round(val_imgs_per_sec, 2),
             "nvme_stage_mb_per_sec": round(stage_mb_s, 2),
-            "peak_vram_gb": round(peak_vram_gb, 3),
-            "schedule_coverage_stats": sched_stats,
-            "projected_train_only_hours": round(proj_train_hrs, 3),
-            "projected_val_hours": round(proj_val_hrs, 3),
-            "projected_nvme_stage_hours": round(proj_stage_hrs, 3),
-            "projected_all_inclusive_hours": round(proj_total_hrs, 3),
-            "projected_all_inclusive_usd": round(proj_total_hrs * L40S_HOURLY_USD, 2),
+            "param_counts": param_counts,
+            "sweep_results": bench["sweep_results"],
+            "recommended": rec,
+            **rec_proj,
         }
+        ckpt_dir = RSNA_MOUNT / "models" / "paper1" / "checkpoints"
+        ckpt_dir.mkdir(parents=True, exist_ok=True)
+        (ckpt_dir / "gmic_pilot_benchmark_report.json").write_text(json.dumps(pilot_report, indent=2), encoding="utf-8")
+        RSNA_VOL.commit()
+        return pilot_report
 
     # Full training mode
+    prec_cfg = configure_gmic_precision_and_scaler(precision, device)
+    param_groups = configure_gmic_trainable_params(
+        model, strategy=strategy, base_lr=eff_lr, backbone_lr_mult=backbone_lr_mult
+    )
+    opt, used_fused_adamw = create_fused_adamw(param_groups, weight_decay=1e-4, device=device)
+    target_lrs = [float(pg["lr"]) for pg in opt.param_groups]
+    sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=max(1, epochs))
+    scaler = prec_cfg["scaler"]
+    steps_per_epoch = eff_steps_per_epoch
+
     nvme_train = Path("/tmp/gmic_train_png")
     nvme_tc = Path("/tmp/gmic_tc_png")
     train_ids = train_df["image_id"].astype(str).tolist()
@@ -320,6 +336,7 @@ def run_gmic_finetune_l40s(
     tc_pids = tc_df["patient_id"].astype(str).tolist()
     tc_lbls = tc_df["cancer"].values.astype(int).tolist()
     no_improve_epochs = 0
+    global_step = (start_ep - 1) * steps_per_epoch
 
     for ep in range(start_ep, epochs + 1):
         elapsed_hr = (time.perf_counter() - t_wall0) / 3600.0
@@ -349,8 +366,11 @@ def run_gmic_finetune_l40s(
                     pending.append((n_idxs, n_futs))
                     next_b += 1
 
-                bx = torch.from_numpy(np.stack(imgs, axis=0)).to(device, non_blocking=True)
-                by = torch.tensor([train_lbls[i] for i in idxs], dtype=torch.float32, device=device)
+                if global_step < eff_warmup_steps:
+                    apply_linear_warmup(opt, global_step, eff_warmup_steps, target_lrs)
+
+                bx = torch.from_numpy(np.stack(imgs, axis=0)).pin_memory().to(device, non_blocking=True)
+                by = torch.tensor([train_lbls[i] for i in idxs], dtype=torch.float32).pin_memory().to(device, non_blocking=True)
                 ld, _ = gmic_amp_train_step(
                     model=model,
                     bx=bx,
@@ -358,10 +378,13 @@ def run_gmic_finetune_l40s(
                     optimizer=opt,
                     scaler=scaler,
                     saliency_l1_weight=saliency_l1_weight,
-                    amp_enabled=True,
+                    amp_enabled=prec_cfg["amp_enabled"],
+                    amp_dtype=prec_cfg["amp_dtype"],
                 )
+                global_step += 1
                 ep_losses.append(ld["loss_total"])
-        sched.step()
+        if global_step >= eff_warmup_steps:
+            sched.step()
 
         model.eval()
         tc_scores: List[float] = []
@@ -378,8 +401,9 @@ def run_gmic_finetune_l40s(
                 if next_vc < len(tc_chunks):
                     val_pending.append([pool.submit(_load_gmic_png_tensor, nvme_tc / f"{cid}.png", False, None) for cid in tc_chunks[next_vc]])
                     next_vc += 1
-                bx = torch.from_numpy(np.stack(imgs, axis=0)).to(device, non_blocking=True)
-                probs = model(bx)[:, 1].float().cpu().numpy().tolist()
+                bx = torch.from_numpy(np.stack(imgs, axis=0)).pin_memory().to(device, non_blocking=True)
+                with torch.amp.autocast("cuda", dtype=prec_cfg["amp_dtype"], enabled=prec_cfg["amp_enabled"]):
+                    probs = model(bx)[:, 1].float().cpu().numpy().tolist()
                 tc_scores.extend(float(p) for p in probs)
 
         _, c_scores = aggregate_case_scores(tc_pids, tc_scores)
@@ -674,10 +698,15 @@ def main(
     strategy: str = "partial",
     epochs: int = 8,
     batch_size: int = 16,
-    eval_batch_size: int = 16,
-    steps_per_epoch: int = 400,
+    eval_batch_size: int = 32,
+    steps_per_epoch: int = 0,
     lr: float = 1e-4,
     early_stopping_patience: int = 3,
+    precision: str = "bf16",
+    bench_batch_sizes: str = "8,16,32,64,128,256",
+    bench_precisions: str = "bf16,fp16,tf32",
+    lr_scaling: str = "sqrt",
+    warmup_steps: int = 100,
     split: str = "rsna_val_calib",
     num_shards: int = 4,
     shard_indices: str = "",
@@ -771,5 +800,10 @@ def main(
         lr=lr,
         early_stopping_patience=early_stopping_patience,
         max_spend_usd=max_spend_usd,
+        precision=precision,
+        bench_batch_sizes=bench_batch_sizes,
+        bench_precisions=bench_precisions,
+        lr_scaling=lr_scaling,
+        warmup_steps=warmup_steps,
     )
     print(json.dumps(res, indent=2))
