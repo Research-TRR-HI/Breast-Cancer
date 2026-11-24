@@ -21,14 +21,19 @@ from src.paper1.gmic_adapter import (
 )
 from src.paper1.gmic_finetune import (
     GMIC_FINETUNED_MODEL_ID,
+    apply_linear_warmup,
     compute_gmic_rsna_loss,
     compute_gmic_schedule_stats,
+    configure_gmic_precision_and_scaler,
     configure_gmic_trainable_params,
     count_trainable_parameters,
+    create_fused_adamw,
     gmic_amp_train_step,
     load_gmic_finetune_checkpoint,
     load_gmic_finetuned_model_for_eval,
+    run_progressive_gmic_benchmark_loop,
     save_gmic_finetune_checkpoint,
+    scale_steps_and_lr_for_batch_size,
     set_gmic_backbone_eval_mode,
     validate_gmic_eval_cli_args,
     validate_gmic_finetune_cli_guard,
@@ -41,6 +46,7 @@ from src.paper1.nyu_finetune import (
     forward_nyu_head_from_features,
     load_nyu_finetune_checkpoint,
     load_nyu_finetuned_model_for_eval,
+    run_progressive_nyu_batch_benchmark,
     save_nyu_finetune_checkpoint,
     score_nyu_head_from_tta_features,
     select_rsna_4view_split_exams,
@@ -48,6 +54,7 @@ from src.paper1.nyu_finetune import (
     train_nyu_head_from_cached_features,
     validate_nyu_eval_cli_args,
     validate_nyu_finetune_cli_guard,
+    verify_nyu_multidraw_feature_equivalence,
 )
 from src.paper1.nyu_fourview_adapter import (
     NYU_CKPT_SHA256,
@@ -110,6 +117,17 @@ class _DummyOutputLayer(nn.Module):
         return F.log_softmax(self.fc_layer(x).view(x.shape[0], *self.output_shape), dim=-1)
 
 
+class _DummyAllViewsGaussianNoise(nn.Module):
+    def __init__(self, gaussian_noise_std: float = 0.01) -> None:
+        super().__init__()
+        self.gaussian_noise_std = gaussian_noise_std
+
+    def forward(self, x_dict: dict) -> dict:
+        if self.training and self.gaussian_noise_std > 0:
+            return {k: v + torch.randn_like(v) * self.gaussian_noise_std for k, v in x_dict.items()}
+        return x_dict
+
+
 class _DummyNYU(nn.Module):
     def __init__(self) -> None:
         super().__init__()
@@ -123,7 +141,7 @@ class _DummyNYU(nn.Module):
         self.four_view_resnet.mlo.layer_list = nn.ModuleList([nn.Conv2d(4, 4, 1) for _ in range(5)])
         self.four_view_resnet.mlo.final_bn = nn.BatchNorm2d(4)
         self.four_view_resnet.forward = self._forward_fv
-        self.all_views_gaussian_noise_layer = nn.Identity()
+        self.all_views_gaussian_noise_layer = _DummyAllViewsGaussianNoise(0.01)
         self.all_views_avg_pool = self._pool_views
         self.fc1_cc = nn.Linear(8, 4)
         self.fc1_mlo = nn.Linear(8, 4)
@@ -509,6 +527,107 @@ class TestSpecialistFinetuning(unittest.TestCase):
         self.assertEqual(specs[0].src_profile, "hasinishrak2015")
         self.assertEqual(specs[0].src_prefix, "cache/paper1_gmic_uint16_v1/rsna_val_calib")
         self.assertEqual(specs[1].src_prefix, "cache/paper1_gmic_uint16_v1/nlbs")
+
+    def test_gmic_fair_scaling_precision_and_warmup(self) -> None:
+        p32 = scale_steps_and_lr_for_batch_size(32, base_batch_size=8, base_steps_per_epoch=600, base_lr=1e-4, lr_scaling="sqrt", base_warmup_steps=100)
+        self.assertEqual(p32["steps_per_epoch"], 150)
+        self.assertEqual(p32["actual_draws_per_epoch"], 4800)
+        self.assertAlmostEqual(p32["scaled_lr"], 2e-4, places=9)
+        self.assertEqual(p32["warmup_steps"], 25)
+
+        p16_lin = scale_steps_and_lr_for_batch_size(16, base_batch_size=8, base_steps_per_epoch=600, base_lr=1e-4, lr_scaling="linear", base_warmup_steps=100)
+        self.assertEqual(p16_lin["steps_per_epoch"], 300)
+        self.assertAlmostEqual(p16_lin["scaled_lr"], 2e-4, places=9)
+
+        for prec, expected_dt in (("bf16", torch.bfloat16), ("fp16", torch.float16), ("tf32", torch.float32), ("fp32", torch.float32)):
+            cfg = configure_gmic_precision_and_scaler(prec, torch.device("cpu"))
+            self.assertEqual(cfg["amp_dtype"], expected_dt)
+            self.assertFalse(cfg["amp_enabled"])
+
+        m = _DummyGMIC()
+        groups = configure_gmic_trainable_params(m, strategy="partial", base_lr=2e-4)
+        opt, used_fused = create_fused_adamw(groups, device=torch.device("cpu"))
+        self.assertFalse(used_fused)
+        base_lrs = [pg["lr"] for pg in opt.param_groups]
+        apply_linear_warmup(opt, 0, 4, base_lrs)
+        self.assertAlmostEqual(opt.param_groups[0]["lr"], 0.25 * base_lrs[0], places=9)
+        apply_linear_warmup(opt, 4, 4, base_lrs)
+        self.assertAlmostEqual(opt.param_groups[0]["lr"], base_lrs[0], places=9)
+
+    def test_gmic_progressive_benchmark_and_oom_stop(self) -> None:
+        m = _DummyGMIC()
+        rng = np.random.default_rng(12)
+        attempted: list[tuple[str, int]] = []
+
+        def _loader(bs: int, step: int) -> tuple[np.ndarray, np.ndarray]:
+            attempted.append(("train", bs))
+            if bs >= 8:
+                raise RuntimeError("CUDA out of memory. Simulated OOM at bs=8")
+            x = rng.normal(size=(bs, 1, 16, 16)).astype(np.float32)
+            y = np.asarray([i % 2 for i in range(bs)], dtype=np.float32)
+            return x, y
+
+        def _vloader(bs: int, step: int) -> np.ndarray:
+            return rng.normal(size=(bs, 1, 16, 16)).astype(np.float32)
+
+        res = run_progressive_gmic_benchmark_loop(
+            m,
+            _loader,
+            torch.device("cpu"),
+            batch_sizes=(2, 4, 8, 16),
+            precisions=("bf16", "fp16"),
+            warmup_steps=1,
+            bench_steps=2,
+            val_loader=_vloader,
+            val_steps=1,
+            stop_on_throughput_drop=False,
+        )
+        rows = res["sweep_results"]
+        self.assertTrue(any(r["precision"] == "bf16" and r["batch_size"] == 4 and r["status"] == "ok" for r in rows))
+        self.assertTrue(any(r["precision"] == "bf16" and r["batch_size"] == 8 and r["status"] == "oom" for r in rows))
+        # Must stop before attempting bs=16 after OOM at bs=8
+        self.assertFalse(any(r["batch_size"] == 16 for r in rows))
+        self.assertIsNotNone(res["recommended"])
+        self.assertIn("val_imgs_per_sec", res["recommended"])
+
+    def test_nyu_progressive_exam_benchmark_and_oom_stop(self) -> None:
+        m = _DummyNYU()
+        rng = np.random.default_rng(7)
+
+        def _exam_loader(be: int, step: int) -> dict[str, np.ndarray]:
+            if be >= 4:
+                raise RuntimeError("CUDA out of memory. Simulated NYU OOM at be=4")
+            return {v: rng.normal(size=(be, 1, 8, 8)).astype(np.float32) for v in NYU_VIEWS}
+
+        res = run_progressive_nyu_batch_benchmark(
+            m,
+            _exam_loader,
+            torch.device("cpu"),
+            batch_sizes=(1, 2, 4, 8),
+            mode="extract",
+            warmup_steps=1,
+            bench_steps=2,
+            draws_per_exam=1,
+            stop_on_throughput_drop=False,
+        )
+        rows = res["sweep_results"]
+        self.assertEqual([r["batch_exams"] for r in rows], [1, 2, 4])
+        self.assertEqual(rows[-1]["status"], "oom")
+        self.assertIsNotNone(res["recommended"])
+
+    def test_nyu_multidraw_feature_cache_equivalence(self) -> None:
+        torch.manual_seed(3)
+        mn = _DummyNYU()
+        rng = np.random.default_rng(99)
+        exam_draws = {v: rng.normal(size=(2 * 4, 1, 8, 8)).astype(np.float32) for v in NYU_VIEWS}
+        eq = verify_nyu_multidraw_feature_equivalence(mn, exam_draws, num_draws=4, atol=1e-6)
+        self.assertEqual(eq["n_exams"], 2)
+        self.assertEqual(eq["num_draws"], 4)
+        self.assertLess(eq["max_feature_abs_diff"], 1e-6)
+        self.assertLess(eq["max_score_abs_diff_vs_full_eval"], 1e-6)
+        self.assertLess(eq["max_score_abs_diff_vs_single_draw"], 1e-6)
+        self.assertTrue(eq["batchnorm_running_stats_frozen"])
+        self.assertEqual(eq["gaussian_noise_modules_training_flags"], [False])
 
 
 if __name__ == "__main__":
