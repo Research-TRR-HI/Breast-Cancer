@@ -1,0 +1,18 @@
+{
+  "schema_version": "paper1_exp3_locked_predictions_v1",
+  "locked_at_utc": "2026-11-24T22:06:41.599737+00:00",
+  "dataset_id": "lumina",
+  "model_id": "dinov2_rsna",
+  "model_sha256": "b141c2631ca8e54e5d233239823aafaf18fa3f5d8c62c755339888f41f67d5f5",
+  "inference_manifest_sha256": "f6dd2fc1fc0c3b722320ee7bc5d71d1f91e2a6d9aa1aee8f55826953e7bfd013",
+  "frozen_rsna_thresholds": {
+    "target_98": 0.183435708284378,
+    "target_95": 0.2065157741308212
+  },
+  "frozen_rsna_thresholds_sha256": "361ed7dd28d55a5651d0b65515d1890c19194a48e81b901d4643660b5060cdb1",
+  "n_exams": 468,
+  "n_clusters": 468,
+  "n_exams_with_crop_fallback": 0,
+  "predictions_csv": "dinov2_rsna_locked_lumina_predictions.csv",
+  "predictions_sha256": "56b386ca0504bf63534c4f443b3bdde0a99f1e05213f539ad0f00ae87ea51a4f"
+}
