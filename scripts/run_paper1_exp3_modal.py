@@ -389,6 +389,223 @@ def ingest_lumina_neutral_cpu(ingest_map_csv_content: str) -> Dict[str, Any]:
     return {"dataset_id": "lumina", "neutral_files_written": written, "skipped": skipped}
 
 
+@app.function(
+    image=image,
+    volumes={str(RSNA_MOUNT): RSNA_VOL},
+    cpu=1.0,
+    memory=2048,
+    timeout=14400,
+)
+def prepare_exp3_manifests_and_ingest_cpu(dataset_id: str) -> Dict[str, Any]:
+    """Wave 2 CPU-only (`cpu=1.0, memory=2048`) extraction + manifest builder for LUMINA & CMMD."""
+    import io
+    import zipfile
+    import pandas as pd
+    import pydicom
+    from src.paper1.external_datasets import (
+        build_cmmd_external_manifests,
+        build_lumina_external_manifests,
+        build_lumina_pseudonym_ingest_map,
+        normalize_laterality,
+        normalize_view_position,
+    )
+
+    if dataset_id not in ("lumina", "cmmd"):
+        raise ValueError(f"Unsupported dataset_id={dataset_id!r} for prepare_exp3_manifests_and_ingest_cpu")
+
+    ds_root = RSNA_MOUNT / "external_datasets" / dataset_id
+    raw_dir = ds_root / "raw"
+    ext_root = ds_root / "extracted"
+    man_dir = ds_root / "manifests"
+    ext_root.mkdir(parents=True, exist_ok=True)
+    man_dir.mkdir(parents=True, exist_ok=True)
+    last_commit = time.monotonic()
+
+    if dataset_id == "lumina":
+        # Parse Benign_Cases.xlsx and Malign_Cases.xlsx and match against zip DICOMs
+        clin_rows = []
+        for cls_folder, xlsx_name in (("benign", "Benign_Cases.xlsx"), ("malign", "Malign_Cases.xlsx")):
+            df = pd.read_excel(raw_dir / xlsx_name)
+            df.columns = [str(c).strip() for c in df.columns]
+            for col in ("ID", "PATHOLOGY", "MANUFACTOR"):
+                if col in df.columns:
+                    df[col] = df[col].ffill()
+            df = df.dropna(subset=["VIEW", "RIGHT_OR_LEFT", "PATHOLOGY"]).copy()
+            df["cls_folder"] = cls_folder
+            clin_rows.append(df)
+        clin_all = pd.concat(clin_rows, ignore_index=True)
+        clin_all["ID_str"] = clin_all["ID"].astype(str).str.replace(r"\.0$", "", regex=True).str.strip()
+        clin_all["view_norm"] = clin_all["VIEW"].map(normalize_view_position)
+        clin_all["path_norm"] = clin_all["PATHOLOGY"].astype(str).str.strip().str.upper()
+        clin_all = clin_all[clin_all["path_norm"].isin(["BENIGN", "MALIGN", "MALIGNANT"])].copy()
+
+        # Build lookup by (cls_folder, case_id, lat, view) -> pathology, manufacturer
+        clin_lookup: Dict[tuple, Dict[str, str]] = {}
+        for _, r in clin_all.iterrows():
+            rl = str(r["RIGHT_OR_LEFT"]).strip().upper()
+            lats = ["L", "R"] if rl in ("BILATERAL", "B", "BOTH") else [normalize_laterality(rl)]
+            meta_v = {
+                "pathology": r["path_norm"],
+                "manufacturer": str(r.get("MANUFACTOR", "")),
+            }
+            for lat_c in lats:
+                clin_lookup[(r["cls_folder"], r["ID_str"], lat_c, r["view_norm"])] = meta_v
+
+        # Scan zip members & read DICOM headers to assign exact case/lat/view without path leakage
+        cases_records: List[Dict[str, Any]] = []
+        zip_member_bytes_cache: Dict[str, tuple] = {}
+        for cls_folder, zip_name in (("benign", "LUMINA_RAW_Benign.zip"), ("malign", "LUMINA_RAW_Malign.zip")):
+            zpath = raw_dir / zip_name
+            with zipfile.ZipFile(zpath, "r") as zf:
+                for member in zf.namelist():
+                    if member.endswith("/") or not member.lower().endswith(".dcm"):
+                        continue
+                    parts = [p for p in member.strip("/").split("/") if p]
+                    # Try to find numeric case folder id from path
+                    case_candidates = [p for p in parts[:-1] if p.isdigit()]
+                    case_id = case_candidates[-1] if case_candidates else (parts[-2] if len(parts) >= 2 else Path(member).stem)
+                    raw_bytes = zf.read(member)
+                    ds = pydicom.dcmread(io.BytesIO(raw_bytes), stop_before_pixels=True, force=True)
+                    lat_raw = str(getattr(ds, "ImageLaterality", "") or getattr(ds, "Laterality", "") or "")
+                    view_raw = str(getattr(ds, "ViewPosition", "") or "")
+                    # Fallback to filename hints if DICOM tag missing
+                    stem_up = Path(member).stem.upper()
+                    if not lat_raw:
+                        lat_raw = "L" if ("L" in stem_up or "LEFT" in stem_up) else ("R" if ("R" in stem_up or "RIGHT" in stem_up) else "")
+                    if not view_raw:
+                        view_raw = "MLO" if "MLO" in stem_up else ("CC" if "CC" in stem_up else "")
+                    try:
+                        lat_norm = normalize_laterality(lat_raw)
+                        view_norm = normalize_view_position(view_raw)
+                    except Exception:
+                        continue
+                    meta = clin_lookup.get((cls_folder, str(case_id).lstrip("0") or str(case_id), lat_norm, view_norm))
+                    if meta is None:
+                        meta = clin_lookup.get((cls_folder, str(case_id), lat_norm, view_norm))
+                    if meta is None:
+                        continue
+                    sop_uid = str(getattr(ds, "SOPInstanceUID", "") or Path(member).stem)
+                    phot = str(getattr(ds, "PhotometricInterpretation", "MONOCHROME2"))
+                    cases_records.append(
+                        {
+                            "class_folder": cls_folder,
+                            "case_id": str(case_id),
+                            "image_id": sop_uid,
+                            "laterality": lat_norm,
+                            "view": view_norm,
+                            "image_path": f"{zip_name}::{member}",
+                            "pathology": meta["pathology"],
+                            "manufacturer": meta["manufacturer"],
+                            "photometric_interpretation": phot,
+                        }
+                    )
+                    zip_member_bytes_cache[f"{zip_name}::{member}"] = (zpath, member)
+
+        cases_df = pd.DataFrame(cases_records)
+        if cases_df.empty:
+            raise RuntimeError("No LUMINA DICOM records matched Benign_Cases.xlsx / Malign_Cases.xlsx!")
+        ingest_map = build_lumina_pseudonym_ingest_map(cases_df)
+        inf_df, out_df = build_lumina_external_manifests(cases_df)
+
+        # Write strictly neutral paths to extracted/lumina_neutral/...
+        written = 0
+        skipped = 0
+        for cls_folder, zip_name in (("benign", "LUMINA_RAW_Benign.zip"), ("malign", "LUMINA_RAW_Malign.zip")):
+            sub = ingest_map[ingest_map["source_image_path"].str.startswith(f"{zip_name}::")]
+            if sub.empty:
+                continue
+            with zipfile.ZipFile(raw_dir / zip_name, "r") as zf:
+                for row in sub.to_dict("records"):
+                    member = str(row["source_image_path"]).split("::", 1)[1]
+                    dst = ext_root / str(row["neutral_image_path"])
+                    dst.parent.mkdir(parents=True, exist_ok=True)
+                    if dst.exists() and dst.stat().st_size > 0:
+                        skipped += 1
+                        continue
+                    tmp = dst.with_suffix(".dcm.tmp")
+                    tmp.write_bytes(zf.read(member))
+                    os.replace(tmp, dst)
+                    written += 1
+                    if (time.monotonic() - last_commit) >= 60.0:
+                        RSNA_VOL.commit()
+                        last_commit = time.monotonic()
+
+        inf_df.to_csv(man_dir / "inference_manifest.csv", index=False)
+        out_df.to_csv(man_dir / "outcome_manifest.csv", index=False)
+        RSNA_VOL.commit()
+        return {
+            "dataset_id": "lumina",
+            "n_images": int(len(inf_df)),
+            "n_exams": int(out_df["exam_id"].nunique()),
+            "written": written,
+            "skipped": skipped,
+        }
+
+    # CMMD: extract series_zips/*.zip and build manifests
+    clin_df = pd.read_excel(raw_dir / "CMMD_clinicaldata_revision.xlsx")
+    dcm_rows: List[Dict[str, Any]] = []
+    zip_files = sorted((raw_dir / "series_zips").glob("*.zip"))
+    extracted_n = 0
+    for zpath in zip_files:
+        with zipfile.ZipFile(zpath, "r") as zf:
+            for member in zf.namelist():
+                if member.endswith("/") or not member.lower().endswith(".dcm"):
+                    continue
+                rel_p = f"{zpath.stem}/{Path(member).name}"
+                dst = ext_root / rel_p
+                dst.parent.mkdir(parents=True, exist_ok=True)
+                if not (dst.exists() and dst.stat().st_size > 0):
+                    tmp = dst.with_suffix(".dcm.tmp")
+                    tmp.write_bytes(zf.read(member))
+                    os.replace(tmp, dst)
+                    extracted_n += 1
+                ds = pydicom.dcmread(dst, stop_before_pixels=True, force=True)
+                pid = str(getattr(ds, "PatientID", "")).strip()
+                lat_raw = str(getattr(ds, "ImageLaterality", "") or getattr(ds, "Laterality", "") or "")
+                view_raw = str(getattr(ds, "ViewPosition", "") or "")
+                if not view_raw and hasattr(ds, "ViewCodeSequence") and len(ds.ViewCodeSequence) > 0:
+                    cm = str(getattr(ds.ViewCodeSequence[0], "CodeMeaning", "") or "").lower()
+                    if "cranio" in cm:
+                        view_raw = "CC"
+                    elif "oblique" in cm:
+                        view_raw = "MLO"
+                sop = str(getattr(ds, "SOPInstanceUID", "") or dst.stem)
+                try:
+                    lat_norm = normalize_laterality(lat_raw)
+                    view_norm = normalize_view_position(view_raw) or "UNK"
+                except Exception:
+                    continue
+                dcm_rows.append(
+                    {
+                        "patient_id": pid,
+                        "image_id": sop,
+                        "laterality": lat_norm,
+                        "view": view_norm,
+                        "image_path": rel_p,
+                        "manufacturer": str(getattr(ds, "Manufacturer", "GE MEDICAL SYSTEMS")),
+                        "manufacturer_model": str(getattr(ds, "ManufacturerModelName", "Senographe DS")),
+                        "photometric_interpretation": str(getattr(ds, "PhotometricInterpretation", "MONOCHROME2")),
+                    }
+                )
+        if (time.monotonic() - last_commit) >= 60.0:
+            RSNA_VOL.commit()
+            last_commit = time.monotonic()
+
+    dcm_df = pd.DataFrame(dcm_rows)
+    if dcm_df.empty:
+        raise RuntimeError("No valid CMMD DICOMs extracted from series_zips!")
+    inf_df, out_df = build_cmmd_external_manifests(clin_df, dcm_df)
+    inf_df.to_csv(man_dir / "inference_manifest.csv", index=False)
+    out_df.to_csv(man_dir / "outcome_manifest.csv", index=False)
+    RSNA_VOL.commit()
+    return {
+        "dataset_id": "cmmd",
+        "n_images": int(len(inf_df)),
+        "n_exams": int(out_df["exam_id"].nunique()),
+        "extracted_new": extracted_n,
+    }
+
+
 def get_preprocess_fn_for_cpu_workers(cpu_workers: int = 4) -> Any:
     """Return Modal preprocess function scaled to `cpu_workers` in {2, 4, 8, 16}."""
     if int(cpu_workers) not in ALLOWED_CPU_WORKERS:
@@ -436,14 +653,14 @@ def preprocess_external_dataset_cpu(
         arr_f32, phot, lat_dcm = decode_dicom_array(dcm_path, apply_luts=True)
         eff_lat = lat_dcm if lat_dcm in ("L", "R") else str(row["laterality"])
         res = extract_cropped_mammogram_with_metadata(arr_f32, photometric=phot, laterality=eff_lat)
-        u16 = np.round(np.clip(res["image_01"], 0.0, 1.0) * 65535.0).astype(np.uint16)
+        u16 = res.cropped_uint16
         ok, buf = cv2.imencode(".png", u16, [cv2.IMWRITE_PNG_COMPRESSION, 1])
         if not ok:
             raise RuntimeError(f"PNG encode failed for {img_id}")
         tmp = out_png.with_suffix(".png.tmp")
         tmp.write_bytes(buf.tobytes())
         os.replace(tmp, out_png)
-        return "fallback" if res.get("used_fallback") else "ok"
+        return "fallback" if res.used_fallback_uncropped else "ok"
 
     last_commit = time.monotonic()
     processed = 0
@@ -795,16 +1012,35 @@ def benchmark_pilot_batch_sizes_l40s(
             torch.cuda.synchronize()
         t0 = time.perf_counter()
         probs: List[float] = []
-        with ThreadPoolExecutor(max_workers=8) as pool:
-            for s in range(0, len(img_ids), bs):
-                b_ids = img_ids[s : s + bs]
-                bx = torch.stack(list(pool.map(_prep_one, b_ids)), dim=0).to(device, non_blocking=True)
-                with torch.no_grad(), torch.amp.autocast("cuda", enabled=True):
-                    if model_id in ("ce_b5", "trust_b5", "dinov2_rsna"):
-                        p = torch.sigmoid(loaded["head"](loaded["encoder"](bx)).squeeze(1)).float().cpu().tolist()
-                    else:
-                        p = torch.sigmoid(loaded["model"](bx).squeeze(1)).float().cpu().tolist()
-                probs.extend(p)
+        try:
+            with ThreadPoolExecutor(max_workers=8) as pool:
+                for s in range(0, len(img_ids), bs):
+                    b_ids = img_ids[s : s + bs]
+                    bx = torch.stack(list(pool.map(_prep_one, b_ids)), dim=0).to(device, non_blocking=True)
+                    with torch.no_grad(), torch.amp.autocast("cuda", enabled=True):
+                        if model_id in ("ce_b5", "trust_b5", "dinov2_rsna"):
+                            p = torch.sigmoid(loaded["head"](loaded["encoder"](bx)).squeeze(1)).float().cpu().tolist()
+                        else:
+                            p = torch.sigmoid(loaded["model"](bx).squeeze(1)).float().cpu().tolist()
+                    probs.extend(p)
+        except RuntimeError as exc:
+            err_msg = str(exc)
+            if "out of memory" in err_msg.lower() or "canUse32BitIndexMath" in err_msg:
+                if device.type == "cuda":
+                    torch.cuda.empty_cache()
+                bench_records.append(
+                    {
+                        "batch_size": bs,
+                        "n_images": len(img_ids),
+                        "status": "stopped_limit",
+                        "error": err_msg[:200],
+                        "img_per_sec": 0.0,
+                        "peak_vram_gb": float(torch.cuda.max_memory_allocated(device) / (1024**3)) if device.type == "cuda" else 0.0,
+                        "max_abs_diff": 0.0,
+                    }
+                )
+                break
+            raise
         if device.type == "cuda":
             torch.cuda.synchronize()
         sec = max(1e-6, time.perf_counter() - t0)
@@ -901,6 +1137,60 @@ def main() -> None:
         return
 
     raise RuntimeError("Run cloud stages via `modal run scripts/run_paper1_exp3_modal.py ...` with explicit approval flags.")
+
+
+@app.local_entrypoint()
+def run_cli(
+    stage: str = "preprocess",
+    dataset: str = "lumina",
+    model: str = "resnet50_rsna",
+    manifest_csv: str = "datasets/exp3_meta/lumina_inference_manifest.csv",
+    cpu_workers: int = 8,
+    num_shards: int = 8,
+    pilot_limit: int = 200,
+    pilot_batch_sizes: str = "",
+    max_spend_usd: float = 2.0,
+    approve_preprocess: bool = False,
+) -> None:
+    """Modal CLI entrypoint for Wave 2 `--stage preprocess` and Wave 3 `--stage pilot`."""
+    import pandas as pd
+
+    inf_df = validate_inference_manifest(pd.read_csv(manifest_csv), context=manifest_csv)
+    manifest_text = Path(manifest_csv).read_text(encoding="utf-8")
+
+    if stage == "preprocess":
+        if not approve_preprocess:
+            raise RuntimeError("BLOCKED: `--stage preprocess` requires `--approve-preprocess`.")
+        fn = get_preprocess_fn_for_cpu_workers(cpu_workers)
+        outs = list(fn.starmap([(dataset, manifest_text, s, num_shards, cpu_workers) for s in range(num_shards)]))
+        out_p = Path(f"reports/paper1/expanded/exp3/{dataset}_preprocess_summary.json")
+        out_p.parent.mkdir(parents=True, exist_ok=True)
+        out_p.write_text(json.dumps(outs, indent=2), encoding="utf-8")
+        print(json.dumps(outs, indent=2))
+        return
+
+    if stage == "pilot":
+        models = ["ce_b5", "trust_b5", "dinov2_rsna", "resnet50_rsna"] if model == "all_ready" else [model]
+        results = {}
+        for m_id in models:
+            bs_list = parse_pilot_batch_sizes(pilot_batch_sizes or None, m_id)
+            spec = resolve_model_handoff(m_id)
+            res = benchmark_pilot_batch_sizes_l40s.remote(
+                dataset_id=dataset,
+                model_id=m_id,
+                manifest_csv_content=manifest_text,
+                batch_sizes=bs_list,
+                pilot_limit=pilot_limit,
+                model_spec=spec,
+            )
+            results[m_id] = res
+        out_p = Path(f"reports/paper1/expanded/exp3/{dataset}_pilot_bench.json")
+        out_p.parent.mkdir(parents=True, exist_ok=True)
+        out_p.write_text(json.dumps(results, indent=2), encoding="utf-8")
+        print(json.dumps(results, indent=2))
+        return
+
+    raise ValueError(f"Unsupported run_cli stage={stage!r}; use 'preprocess' or 'pilot'")
 
 
 if __name__ == "__main__":
