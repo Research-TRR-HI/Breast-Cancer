@@ -24,6 +24,7 @@ from src.paper1.nyu_fourview_adapter import (
     build_nyu_fourview_model,
     check_nyu_aggregate_spend_guard,
     compute_nyu_case_ids_sha256,
+    compute_text_lf_sha256,
     finalize_and_lock_nyu_predictions,
     prepare_nyu_exam_tta_tensors,
     score_nyu_fourview_exam,
@@ -166,7 +167,7 @@ class TestNYUStep2Inference(unittest.TestCase):
             "rsna_val_calib",
             rsna_df,
             src_df,
-            actual_manifest_sha256=compute_sha256_file(rsna_man_p),
+            actual_manifest_sha256=compute_text_lf_sha256(rsna_man_p),
             expected_manifest_sha256=NYU_STEP1_MANIFEST_SHA256["rsna_val_calib"],
         )
         with self.assertRaises(RuntimeError):
@@ -267,6 +268,22 @@ class TestNYUStep2Inference(unittest.TestCase):
             self.assertTrue(Path(calib_lock["calibration_json_path"]).exists())
             self.assertIn("target_98", calib_lock["frozen_thresholds"])
             self.assertIn("target_95", calib_lock["frozen_thresholds"])
+
+    def test_5_crlf_vs_lf_csv_manifest_sha256_equivalence(self):
+        for split_name, csv_rel in (
+            ("rsna_val_calib", "reports/paper1/nyu_step1_rsna_val_calib_manifest.csv"),
+            ("nlbs_4view", "reports/paper1/nyu_step1_nlbs_4view_manifest.csv"),
+        ):
+            src_bytes = (ROOT / csv_rel).read_bytes()
+            lf_bytes = src_bytes.replace(b"\r\n", b"\n")
+            crlf_bytes = lf_bytes.replace(b"\n", b"\r\n")
+            with tempfile.TemporaryDirectory() as td:
+                lf_p = Path(td) / "lf.csv"
+                crlf_p = Path(td) / "crlf.csv"
+                lf_p.write_bytes(lf_bytes)
+                crlf_p.write_bytes(crlf_bytes)
+                self.assertEqual(compute_text_lf_sha256(lf_p), NYU_STEP1_MANIFEST_SHA256[split_name])
+                self.assertEqual(compute_text_lf_sha256(crlf_p), NYU_STEP1_MANIFEST_SHA256[split_name])
 
 
 if __name__ == "__main__":
