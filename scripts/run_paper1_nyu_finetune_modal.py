@@ -133,8 +133,9 @@ def run_nyu_finetune_l40s(
     resume: bool = True,
     max_spend_usd: float = 12.0,
     pilot_steps: int = 8,
+    bench_batch_exams: str = "2,4,8,16",
 ) -> Dict[str, Any]:
-    """Run NYU Four-View L40S pilot or RSNA fine-tuning on native cached PNGs."""
+    """Run NYU Four-View L40S progressive pilot or RSNA fine-tuning on native cached PNGs."""
     import numpy as np
     import pandas as pd
     import torch
@@ -144,9 +145,12 @@ def run_nyu_finetune_l40s(
         compute_nyu_rsna_loss,
         configure_nyu_trainable_params,
         load_nyu_finetune_checkpoint,
+        parse_nyu_batch_sizes,
+        run_progressive_nyu_batch_benchmark,
         save_nyu_finetune_checkpoint,
         select_rsna_4view_split_exams,
         set_nyu_backbone_eval_mode,
+        verify_nyu_multidraw_feature_equivalence,
     )
     from src.paper1.nyu_fourview_adapter import (
         NYU_VIEWS,
@@ -198,68 +202,110 @@ def run_nyu_finetune_l40s(
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=max(1, epochs))
 
     if stage == "pilot":
-        sampler = BalancedBatchSampler(
-            labels=train_exams["exam_cancer"].values,
-            batch_size=batch_exams,
-            n_pos=max(1, batch_exams // 4),
-            seed=seed,
-            epoch_policy="paper_independent",
-            steps_per_epoch=pilot_steps,
-        )
-        pids = train_exams["patient_id"].astype(str).tolist()
-        lm_arr = train_exams["left_malignant"].values.astype(int)
-        rm_arr = train_exams["right_malignant"].values.astype(int)
+        from src.paper1.nyu_fourview_adapter import load_nyu_cached_view, prepare_nyu_exam_tta_tensors
 
-        torch.cuda.reset_peak_memory_stats(device)
-        t0 = time.perf_counter()
-        set_nyu_backbone_eval_mode(model, strategy)
-        losses: List[float] = []
-        with ThreadPoolExecutor(max_workers=4) as pool:
-            for step_idx, indices in enumerate(sampler):
+        bench_bs_list = parse_nyu_batch_sizes(bench_batch_exams)
+        pids = train_exams["patient_id"].astype(str).tolist()
+        pool_n = min(len(pids), max(48, max(bench_bs_list) * 3))
+        pilot_pids = pids[:pool_n]
+        pilot_item_ids = [str(r["item_id"]) for p in pilot_pids for r in train_by_pid[p]]
+        nvme_pilot = Path("/tmp/nyu_pilot_png")
+        shutil.rmtree(nvme_pilot, ignore_errors=True)
+        stage_sec = _stage_pngs_nvme(pilot_item_ids, train_cache / "png", nvme_pilot, max_workers=16)
+
+        with ThreadPoolExecutor(max_workers=6) as pool:
+
+            def _extract_loader(be: int, step_idx: int) -> Dict[str, np.ndarray]:
+                start = (step_idx * be) % pool_n
+                batch_pids = [pilot_pids[(start + k) % pool_n] for k in range(be)]
                 ex_list = list(
                     pool.map(
                         lambda it: _prepare_single_draw_exam(
-                            train_by_pid[pids[it[1]]],
-                            train_cache / "png",
-                            nyu_mods,
-                            True,
-                            seed + step_idx * 100 + it[0],
+                            train_by_pid[it[1]], nvme_pilot, nyu_mods, True, seed + step_idx * 100 + it[0]
                         ),
-                        enumerate(indices),
+                        enumerate(batch_pids),
                     )
                 )
-                tensor_batch = {
-                    v: torch.from_numpy(np.concatenate([ex[v] for ex in ex_list], axis=0)).to(device)
-                    for v in NYU_VIEWS
-                }
-                lm_t = torch.tensor([lm_arr[i] for i in indices], dtype=torch.long, device=device)
-                rm_t = torch.tensor([rm_arr[i] for i in indices], dtype=torch.long, device=device)
-                opt.zero_grad(set_to_none=True)
-                out = model(tensor_batch)
-                loss, ld = compute_nyu_rsna_loss(out, lm_t, rm_t)
-                loss.backward()
-                torch.nn.utils.clip_grad_norm_([p for p in model.parameters() if p.requires_grad], 5.0)
-                opt.step()
-                losses.append(ld["loss_total"])
-        train_sec = time.perf_counter() - t0
-        n_ex = pilot_steps * batch_exams
-        ex_per_sec = n_ex / max(train_sec, 1e-6)
-        peak_vram_gb = float(torch.cuda.max_memory_allocated(device) / (1024**3))
-        est_full_hrs = (epochs * (steps_per_epoch * batch_exams + len(tc_exams))) / max(ex_per_sec, 1e-6) / 3600.0
-        return {
+                return {v: np.concatenate([ex[v] for ex in ex_list], axis=0) for v in NYU_VIEWS}
+
+            def _eval10tta_loader(be: int, step_idx: int) -> Dict[str, np.ndarray]:
+                start = (step_idx * be) % pool_n
+                batch_pids = [pilot_pids[(start + k) % pool_n] for k in range(be)]
+
+                def _prep10(p: str) -> Dict[str, np.ndarray]:
+                    vc = {
+                        str(r["view_slot"]): load_nyu_cached_view(
+                            nvme_pilot / f"{r['item_id']}.png",
+                            (int(r["best_center_y"]), int(r["best_center_x"])),
+                        )
+                        for r in train_by_pid[p]
+                    }
+                    return prepare_nyu_exam_tta_tensors(vc, nyu_mods, num_tta_epochs=10, seed=0)
+
+                ex_list = list(pool.map(_prep10, batch_pids))
+                return {v: np.concatenate([ex[v] for ex in ex_list], axis=0) for v in NYU_VIEWS}
+
+            extract_bench = run_progressive_nyu_batch_benchmark(
+                model=model,
+                exam_batch_loader=_extract_loader,
+                device=device,
+                batch_sizes=bench_bs_list,
+                mode="extract",
+                warmup_steps=1,
+                bench_steps=max(2, min(int(pilot_steps), 3)),
+                draws_per_exam=1,
+            )
+            eval_bench = run_progressive_nyu_batch_benchmark(
+                model=model,
+                exam_batch_loader=_eval10tta_loader,
+                device=device,
+                batch_sizes=bench_bs_list,
+                mode="eval",
+                warmup_steps=1,
+                bench_steps=2,
+                draws_per_exam=10,
+            )
+
+        # Verify mathematical equivalence of multi-draw augmented feature caching on L40S
+        eq_draws = []
+        for idx in range(min(2, pool_n)):
+            vc = {
+                str(r["view_slot"]): load_nyu_cached_view(
+                    nvme_pilot / f"{r['item_id']}.png",
+                    (int(r["best_center_y"]), int(r["best_center_x"])),
+                )
+                for r in train_by_pid[pilot_pids[idx]]
+            }
+            eq_draws.append(prepare_nyu_exam_tta_tensors(vc, nyu_mods, num_tta_epochs=4, seed=seed + idx))
+        eq_batch = {v: np.concatenate([d[v] for d in eq_draws], axis=0) for v in NYU_VIEWS}
+        eq_report = verify_nyu_multidraw_feature_equivalence(model, eq_batch, num_draws=4, atol=1e-5)
+
+        rec_ex = extract_bench.get("recommended")
+        rec_ev = eval_bench.get("recommended")
+        est_extract_min = (
+            ((len(train_exams) * 4 + len(tc_exams) * 10) / max(rec_ex["exams_per_sec"], 1e-6)) / 60.0
+            if rec_ex
+            else None
+        )
+        pilot_report = {
             "stage": "pilot",
             "strategy": strategy,
-            "batch_exams": batch_exams,
-            "pilot_steps": pilot_steps,
-            "n_pilot_exams": n_ex,
             "param_counts": {"total": n_total, "trainable": n_train},
-            "mean_loss": float(np.mean(losses)),
-            "train_sec": round(train_sec, 3),
-            "exams_per_sec": round(ex_per_sec, 3),
-            "peak_vram_gb": round(peak_vram_gb, 3),
-            "projected_8ep_all_inclusive_hours": round(est_full_hrs, 3),
-            "projected_8ep_all_inclusive_usd": round(est_full_hrs * L40S_PROD_HOURLY_USD, 2),
+            "nvme_stage_pilot_sec": round(stage_sec, 3),
+            "extract_benchmark": extract_bench,
+            "eval_10tta_benchmark": eval_bench,
+            "multidraw_equivalence": eq_report,
+            "projected_extract_minutes": round(est_extract_min, 2) if est_extract_min is not None else None,
+            "projected_extract_usd": round((est_extract_min / 60.0) * L40S_PROD_HOURLY_USD, 2)
+            if est_extract_min is not None
+            else None,
+            "recommended_eval_batch_exams": rec_ev["batch_exams"] if rec_ev else None,
         }
+        ckpt_dir = RSNA_MOUNT / "models" / "paper1" / "checkpoints"
+        ckpt_dir.mkdir(parents=True, exist_ok=True)
+        (ckpt_dir / "nyu_pilot_benchmark_report.json").write_text(json.dumps(pilot_report, indent=2), encoding="utf-8")
+        RSNA_VOL.commit()
+        return pilot_report
 
     # Full training loop (stage PNGs to NVMe first)
     nvme_train = Path("/tmp/nyu_train_png")
@@ -449,7 +495,13 @@ def extract_nyu_head_features_modal(
                 e_idx = list(range(s0, min(s0 + batch_exams, len(pids))))
                 prepped = list(pool.map(_prep_exam, e_idx))
                 tbatch = {
-                    v: torch.from_numpy(np.concatenate([p[v] for p in prepped], axis=0)).to(device)
+                    v: (
+                        torch.from_numpy(np.concatenate([p[v] for p in prepped], axis=0))
+                        .pin_memory()
+                        .to(device, non_blocking=True)
+                        if device.type == "cuda"
+                        else torch.from_numpy(np.concatenate([p[v] for p in prepped], axis=0)).to(device)
+                    )
                     for v in NYU_VIEWS
                 }
                 h_cc, h_mlo = extract_nyu_backbone_features(model, tbatch)
@@ -797,6 +849,7 @@ def main(
     strategy: str = "head_only",
     epochs: int = 8,
     batch_exams: int = 4,
+    bench_batch_exams: str = "2,4,8,16",
     steps_per_epoch: int = 400,
     lr: float = 1e-4,
     split: str = "rsna_val_calib",
@@ -917,5 +970,6 @@ def main(
         steps_per_epoch=steps_per_epoch,
         lr=lr,
         max_spend_usd=max_spend_usd,
+        bench_batch_exams=bench_batch_exams,
     )
     print(json.dumps(res, indent=2))
