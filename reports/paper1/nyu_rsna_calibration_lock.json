@@ -1,0 +1,16 @@
+{
+  "schema_version": "paper1_nyu_rsna_calib_lock_v1",
+  "generated_at_utc": "2026-11-24T09:07:43.113943+00:00",
+  "model_id": "nyu_fourview_pretrained",
+  "checkpoint_sha256": "9a1d97f93493ea2007c00e6c1805dfa634cbc321ecdeba2c2adecd351e86b014",
+  "rsna_step1_manifest_sha256": "bde6ae3fa12cff0c0d121de2b1344ddc775f1020b3645670b4d62ca00db8f866",
+  "rsna_step2_lock_sha256": "25809eae1562bd6baea68bd4734346821e4733f278d77502199302e0351a1f97",
+  "frozen_thresholds": {
+    "target_98": 0.02142770960927,
+    "target_95": 0.0349914357066154
+  },
+  "calibration_json_path": "reports\\paper1\\nyu_rsna_calibration.json",
+  "calibration_json_sha256": "db30c94206c7cf8a8d13f78ffb4f356c49736551a3a22239388a4d02429b24cd",
+  "calibration_md_path": "reports\\paper1\\nyu_rsna_calibration.md",
+  "calibration_md_sha256": "7977b3afad2d9ac0f43c1f24654b02a6fbba44508c177bef01cb4a15043accfd"
+}
