@@ -46,14 +46,19 @@
   },
   "combined_projected_usd": {
     "wave1_actual": 0.0,
-    "wave2_total": [3.65, 3.97],
-    "wave3_pilots_total": [0.57, 0.77],
-    "phase2_total": [14.55, 20.79],
-    "grand_total_range": [18.60, 27.25]
+    "wave2_plus_wave3_approval_bundle": [2.59, 3.11],
+    "grand_total_range": [18.50, 26.05]
+  },
+  "integration_tests": {
+    "command": "python -m unittest discover -s tests -p \"test_*.py\" -v",
+    "total_discovered": 87,
+    "passed": 85,
+    "skipped": 2,
+    "failed": 0,
+    "errors": 0
   },
   "critical_decisions_required": [
-    "Merge paper1-exp1-phase1, paper1-exp2-phase1, and paper1-exp3-phase1 into main and run full unskipped external/ tests before Wave 2 Modal jobs.",
-    "Exp 2 Model 5 (frcnn_cad disqualified): choose 5 strict non-RSNA models vs adding ianpan/mammoscreen (Category A, RSNA Split 1 pretrained) vs dpetrini/vindr-convnext (BI-RADS >= 3).",
+    "Authorize Wave 2 + Wave 3 bundle (~$2.59-$3.11 combined across dryousufmozumder, tigerwood693, tigerwood697).",
     "Exp 1 sequential cleanup gate: approve deleting GMIC train_all cache (-245.22 GiB) after best checkpoint lock and GMIC eval cache (-159.37 GiB) after NLBS lock to stay < 1,024 GiB ($0.00/day).",
     "Exp 3 IMDB acquisition: IBIA web UI download (or MIDAS request) required since no curl/wget endpoint exists."
   ]
