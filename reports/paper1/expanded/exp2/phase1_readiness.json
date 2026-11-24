@@ -1,104 +1,145 @@
 {
   "experiment": "paper1_exp2_original_pretrained_models",
   "branch": "paper1-exp2-phase1",
-  "base_commit_merged": "409ec2b",
-  "phase": "phase1_continuation_step_a",
-  "cloud_spend_incurred_usd": 0.0,
+  "base_commit_merged": "465d3d4",
+  "phase": "final_phase2_readiness_audit",
+  "audit_cloud_spend_usd": 0.0,
   "modal_profile_target": "tigerwood693",
   "modal_audit": {
     "tigerwood693": {
       "running_apps": 0,
-      "credits_remaining_usd": 25.77,
-      "credits_reset_date": "2026-12-01",
-      "billed_usd": 0.0,
+      "billing_summary": {
+        "metered_cost_usd": 14.79,
+        "volumes_usd": 8.24,
+        "ephemeral_apps_usd": 5.97,
+        "deployed_apps_usd": 0.40,
+        "network_egress_usd": 0.17,
+        "credits_usd": -6.38,
+        "network_egress_allowance_usd": -0.17,
+        "free_storage_usd": -8.24,
+        "billed_cost_usd": 0.0
+      },
       "volumes_count": 9,
-      "storage_used_gib": 224.8539,
-      "storage_files": 410266,
-      "storage_headroom_gib": 799.15,
+      "total_files": 464431,
+      "total_bytes": 364849917225,
+      "total_gib": 339.7930,
       "storage_limit_gib": 1024.0,
+      "free_headroom_gib": 684.2070,
       "daily_storage_cost_usd": 0.0,
-      "preserved_dinov2_cache": "/cache/paper1_dinov2_vits14"
-    },
-    "hasinishrak2015_readonly": {
-      "credits_remaining_usd": 5.97,
-      "nlbs_raw_dicom_path": "nlbs-mammography-vol:/nlbs/extracted",
-      "nlbs_raw_dicom_files": 26988,
-      "nlbs_raw_dicom_gib": 324.448,
-      "gmic_nlbs_png_path": "rsna-mammography-vol:/cache/paper1_gmic_uint16_v1/nlbs",
-      "gmic_nlbs_png_files": 27007,
-      "gmic_nlbs_png_gib": 97.307
+      "volumes": {
+        "rsna-mammography-vol": {
+          "files": 135971,
+          "bytes": 233191388679,
+          "gib": 217.1764,
+          "prefixes": {
+            "/cache/stage1_nlbs_uint16": {"files": 27020, "bytes": 38588761450, "gib": 35.9386},
+            "/cache/stage1_rsna_uint16": {"files": 54709, "bytes": 70813338933, "gib": 65.9501},
+            "/cache/paper1_dinov2_vits14": {"files": 23, "bytes": 254406084, "gib": 0.2369, "intact": true},
+            "/cache/paper1_gmic_uint16_v1": {"files": 27007, "bytes": 104482633855, "gib": 97.3070},
+            "/cache/paper1_exp2_uncropped_1152x896": {"files": 26988, "bytes": 17187881356, "gib": 16.0075},
+            "/models": {"files": 5, "bytes": 1173103648, "gib": 1.0925},
+            "/external_repos": {"files": 150, "bytes": 650747932, "gib": 0.6061},
+            "/_transfer_manifests": {"files": 68, "bytes": 35565969, "gib": 0.0331},
+            "/rsna": {"files": 1, "bytes": 4949452, "gib": 0.0046}
+          }
+        },
+        "medmnist-custom-results": {"files": 3, "bytes": 401479, "gib": 0.0004},
+        "behavior-perception-cache": {"files": 90539, "bytes": 1566805946, "gib": 1.4592},
+        "viewpoint-checkpoints": {"files": 4, "bytes": 268560534, "gib": 0.2501},
+        "viewpoint-real-data": {"files": 893, "bytes": 1959235393, "gib": 1.8247},
+        "behavior-checkpoints": {"files": 6293, "bytes": 1497166591, "gib": 1.3943},
+        "beef-behavior-data": {"files": 4351, "bytes": 55398766251, "gib": 51.5941},
+        "cvb-data": {"files": 226363, "bytes": 15346043642, "gib": 14.2921},
+        "moo-data": {"files": 14, "bytes": 55621548710, "gib": 51.8016}
+      }
     }
   },
-  "eligible_models_locked": [
+  "eligible_models_finalized": [
     {
       "model_id": "gmic_pretrained",
-      "status": "eligible",
+      "status": "eligible_locked_reuse",
       "execution_mode": "reuse_locked_predictions",
       "locked_predictions_path": "reports/paper1/predictions_locked/gmic_nlbs_case_scores.csv",
+      "locked_predictions_sha256": "94521810b9a78e7047a39d71bc54618ea2c7e95600a6f4fba717b79fdb3a6b36",
+      "provenance_lock_path": "reports/paper1/predictions_locked/gmic_nlbs_provenance_lock.json",
+      "provenance_lock_sha256": "4c84005c751fe321e13262e2d2eea4d73d969e527e6cf458183cbe44d02cbc44",
       "source_repo": "https://github.com/nyukat/GMIC",
       "checkpoint": "sample_model_1.p",
+      "checkpoint_sha256": "3b792e6de22fdccd34a43b4c1cc87a94f5f4fa8aed42722dce4e4badac347991",
+      "license": "GNU AGPLv3",
       "primary_metric_category": "C",
       "primary_metrics": ["AUROC", "AUPRC"]
     },
     {
       "model_id": "nyu_fourview_pretrained",
-      "status": "eligible",
+      "status": "eligible_locked_reuse",
       "execution_mode": "reuse_locked_predictions",
       "locked_predictions_path": "reports/paper1/predictions_locked/nyu_nlbs_4view_case_scores.csv",
+      "locked_predictions_sha256": "03e19975edb7a02d297d5b15b672169dd449a86c850488f3f543c5ceddede317",
+      "provenance_lock_path": "reports/paper1/predictions_locked/nyu_nlbs_4view_provenance_lock.json",
+      "provenance_lock_sha256": "aefa55f02dc42639acb2c2ad0b47adc4d7179e6cd1512b831f9f39f535866d3b",
       "source_repo": "https://github.com/nyukat/breast_cancer_classifier",
       "checkpoint": "sample_image_model.p",
-      "caveat": "Single-checkpoint sample_image_model.p vs 100-model ensemble",
+      "checkpoint_sha256": "9a1d97f93493ea2007c00e6c1805dfa634cbc321ecdeba2c2adecd351e86b014",
+      "caveat": "Single-checkpoint sample_image_model.p vs 100-model ensemble; non-clinical research disclaimer",
+      "license": "GNU AGPLv3",
       "primary_metric_category": "C",
       "primary_metrics": ["AUROC", "AUPRC"]
     },
     {
       "model_id": "glam_pretrained",
-      "status": "eligible",
+      "status": "eligible_new_inference",
       "execution_mode": "modal_l40s_inference",
       "source_repo": "https://github.com/nyukat/GLAM",
-      "git_commit": "17a00198",
+      "git_commit": "17a0019860441e2ea8d7b7c7e0aaeada735e871f",
       "checkpoint": "model_joint.ckpt",
-      "checkpoint_size_mb": 101.24,
-      "nlbs_cache_bundle": "glam_nlbs",
+      "checkpoint_bytes": 101239420,
+      "checkpoint_sha256": "a647ba9176b3e11d2dec7252054504f33856bcabb2bbe763432d3d20e7c65aec",
+      "license": "NYU Internal Non-Commercial Research-Only (LICENSE) / AGPL-3.0 (README conflict); no redistribution",
       "nlbs_cache_path": "rsna-mammography-vol:/cache/paper1_gmic_uint16_v1/nlbs",
-      "pilot_batch_sizes": [1, 2, 4],
+      "pilot_bench": {
+        "recommended_batch_size": 4,
+        "imgs_per_sec": 11.674,
+        "exams_per_sec": 2.918,
+        "vram_allocated_gb": 1.1056,
+        "vram_reserved_gb": 1.9121,
+        "projected_full_nlbs_min": 35.32,
+        "projected_full_nlbs_usd": 1.3901
+      },
       "primary_metric_category": "C",
       "primary_metrics": ["AUROC", "AUPRC"]
     },
     {
       "model_id": "end2end_cbis_ddsm",
-      "status": "eligible",
+      "status": "eligible_new_inference",
       "execution_mode": "modal_l40s_inference",
       "source_repo": "https://github.com/lishen/end2end-all-conv",
-      "git_commit": "58401e22",
-      "checkpoint": "ddsm_resnet50_s10_[512-512-1024]x2.h5",
-      "parity_note": "Keras 2.0.5 -> PyTorch parity required in Wave 2",
-      "recommended_cache_mode": "option_b1_uncropped_1152x896",
+      "git_commit": "58401e220a2dd5120b373eef40e9737d7ce8d56c",
+      "checkpoint": "end2end_cbis_ddsm_ts.pt",
+      "checkpoint_bytes": 163494943,
+      "checkpoint_sha256": "1c93c4c3ff7f997cc235140340181995d0219162cecd0bf495381b777a2389be",
+      "keras_to_torchscript_max_abs_diff": 4.51e-10,
+      "license": "CC BY-NC-SA 4.0 (Non-Commercial Terms of Use; MSIP commercial contact)",
       "nlbs_cache_path": "rsna-mammography-vol:/cache/paper1_exp2_uncropped_1152x896/nlbs",
-      "pilot_batch_sizes": [4, 8, 16, 32],
-      "primary_metric_category": "C",
-      "primary_metrics": ["AUROC", "AUPRC"]
-    },
-    {
-      "model_id": "petrini_twoview_efnb3",
-      "status": "eligible",
-      "execution_mode": "modal_l40s_inference",
-      "source_repo": "https://github.com/dpetrini/multiple-view",
-      "git_commit": "2331b545",
-      "hf_repo": "https://huggingface.co/dpetrini/cbis-ddsm-efficientnetb3-multiple-view",
-      "hf_commit": "eafc5d16",
-      "license": "MIT",
-      "checkpoint_size_mb": 516.95,
-      "checkpoint_sha256": "82add40900054835f23737d9f3a01922275f1e4dcfd3156a0f7059cb58147071",
-      "input_contract": "strict [CC_RGB, MLO_RGB] with chest-wall-left orientation",
-      "recommended_cache_mode": "option_b1_uncropped_1152x896",
-      "nlbs_cache_path": "rsna-mammography-vol:/cache/paper1_exp2_uncropped_1152x896/nlbs",
-      "pilot_batch_sizes": [2, 4, 8, 16],
+      "pilot_bench": {
+        "recommended_batch_size": 32,
+        "imgs_per_sec": 29.385,
+        "exams_per_sec": 7.346,
+        "vram_allocated_gb": 6.3919,
+        "vram_reserved_gb": 7.1777,
+        "projected_full_nlbs_min": 14.03,
+        "projected_full_nlbs_usd": 0.5523
+      },
       "primary_metric_category": "C",
       "primary_metrics": ["AUROC", "AUPRC"]
     }
   ],
   "excluded_models": [
+    {
+      "model_id": "petrini_twoview_efnb3",
+      "status": "blocked_upstream",
+      "reason": "Both HuggingFace and Google Drive checkpoints (2024-10-01 and 2024-07-01 .pt) truncated at 88.0 MiB (nz_end=92,274,688) with ~405 MiB zero-padding and no ZIP EOCD PK\\x05\\x06."
+    },
     {
       "model_id": "frcnn_cad",
       "status": "disqualified",
@@ -125,68 +166,29 @@
     "primary_metrics": ["AUROC", "AUPRC"],
     "rsna_calibration_allowed": false,
     "arbitrary_05_cutoff_allowed": false,
+    "no_uncalibrated_dismissal_claims": true,
     "label_quarantine_manifests": [
       "datasets/paper1/nlbs_4view_common_cohort_label_free.csv",
       "datasets/nlbs/inference_manifest_stage_c.csv"
     ]
   },
-  "nlbs_cache_reconciliation": {
-    "glam_nlbs_transfer": {
-      "bundle": "glam_nlbs",
-      "source": "hasinishrak2015:rsna-mammography-vol/cache/paper1_gmic_uint16_v1/nlbs",
-      "destination": "tigerwood693:rsna-mammography-vol/cache/paper1_gmic_uint16_v1/nlbs",
-      "size_gib": 97.31,
-      "estimated_cost_usd": 0.25
-    },
-    "uncropped_options_for_end2end_and_petrini": {
-      "option_a_raw_dicom_transfer": {
-        "size_gib": 324.45,
-        "estimated_cost_usd_range": [1.15, 1.75],
-        "recommended": false
-      },
-      "option_b1_streamed_uncropped_1152x896": {
-        "size_gib_estimate_range": [30.0, 38.0],
-        "estimated_cost_usd_range": [0.38, 0.55],
-        "source_delta_usd": 0.0,
-        "recommended": true
-      },
-      "option_b2_stage1_cropped_1520x912": {
-        "size_gib": 35.94,
-        "additional_cost_usd": 0.0,
-        "risk": "Cropped background shifts pixel mean vs uncropped CBIS-DDSM training",
-        "recommended": false
-      }
-    },
-    "peak_storage_projection_gib": 358.7
+  "phase2_projection_tigerwood693": {
+    "glam_pretrained_min": 35.32,
+    "glam_pretrained_usd": 1.3901,
+    "end2end_cbis_ddsm_min": 14.03,
+    "end2end_cbis_ddsm_usd": 0.5523,
+    "combined_infer_min": 49.35,
+    "combined_infer_usd": 1.9424,
+    "combined_with_staging_overhead_usd_range": [1.94, 2.15]
   },
-  "cost_projections_usd": {
-    "wave2_data_and_weights": [0.68, 0.90],
-    "wave3_l40s_progressive_pilots": [0.20, 0.35],
-    "wave2_plus_wave3_approval_request": [0.88, 1.25],
-    "phase2_full_nlbs_inference": [1.15, 2.25],
-    "combined_exp2_total": [2.03, 3.50]
-  },
-  "approval_gate": {
-    "status": "pending_parent_approval",
-    "wave2_commands": [
-      "python scripts/transfer_modal_volumes_cloud.py --dst-profile tigerwood693 --bundle glam_nlbs --plan-only",
-      "MODAL_PROFILE=tigerwood693 modal --profile tigerwood693 run scripts/transfer_modal_volumes_cloud.py --dst-profile tigerwood693 --bundle glam_nlbs",
-      "MODAL_PROFILE=tigerwood693 python scripts/run_paper1_exp2_modal.py --stage build_uncropped_cache --model-id end2end_cbis_ddsm --cache-mode uncropped_1152x896 --approve-wave2-download"
-    ],
-    "wave3_commands": [
-      "MODAL_PROFILE=tigerwood693 python scripts/run_paper1_exp2_modal.py --stage pilot --model-id glam_pretrained --pilot-batch-sizes 1,2,4 --approve-pilot",
-      "MODAL_PROFILE=tigerwood693 python scripts/run_paper1_exp2_modal.py --stage pilot --model-id end2end_cbis_ddsm --cache-mode uncropped_1152x896 --pilot-batch-sizes 4,8,16,32 --approve-pilot",
-      "MODAL_PROFILE=tigerwood693 python scripts/run_paper1_exp2_modal.py --stage pilot --model-id petrini_twoview_efnb3 --cache-mode uncropped_1152x896 --pilot-batch-sizes 2,4,8,16 --approve-pilot"
-    ],
-    "phase2_commands": [
-      "MODAL_PROFILE=tigerwood693 python scripts/run_paper1_exp2_modal.py --stage infer --model-id glam_pretrained --split nlbs_full --approve-full-infer",
-      "MODAL_PROFILE=tigerwood693 python scripts/run_paper1_exp2_modal.py --stage infer --model-id end2end_cbis_ddsm --cache-mode uncropped_1152x896 --split nlbs_full --approve-full-infer",
-      "MODAL_PROFILE=tigerwood693 python scripts/run_paper1_exp2_modal.py --stage infer --model-id petrini_twoview_efnb3 --cache-mode uncropped_1152x896 --split nlbs_full --approve-full-infer"
-    ]
-  },
+  "phase2_commands": [
+    "MODAL_PROFILE=tigerwood693 python scripts/run_paper1_exp2_modal.py --stage infer --model-id glam_pretrained --split nlbs_full --batch-size 4 --num-shards 4 --approve-full-infer",
+    "MODAL_PROFILE=tigerwood693 python scripts/run_paper1_exp2_modal.py --stage infer --model-id end2end_cbis_ddsm --split nlbs_full --cache-mode uncropped_1152x896 --batch-size 32 --num-shards 4 --approve-full-infer"
+  ],
+  "eval_script_status": "not_yet_authored (post-lock Category C AUROC/AUPRC eval script to follow Phase 2 lock)",
   "local_tests": {
     "status": "passed",
-    "test_paper1_exp2_adapters": "8/8 ok",
-    "test_transfer_modal_volumes_cloud": "8/8 ok"
+    "command": "python -m unittest discover -s tests -p \"test_paper1_exp2_adapters.py\" -v",
+    "result": "Ran 8 tests in 0.963s — OK (note: `python -m unittest tests/test_paper1_exp2_adapters.py -v` requires tests/__init__.py; direct `python tests/test_paper1_exp2_adapters.py -v` and `unittest discover` both run cleanly)"
   }
 }
