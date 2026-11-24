@@ -1,0 +1,205 @@
+{
+  "shards": [
+    {
+      "split_name": "rsna_train_pilot",
+      "shard_idx": 0,
+      "num_shards": 8,
+      "total_exams_in_shard": 25,
+      "total_images_in_shard": 100,
+      "skipped_resumed": 0,
+      "rejected_corrupt_resumed": 0,
+      "newly_processed": 100,
+      "n_fallbacks": 0,
+      "loop_wall_sec": 117.67,
+      "container_wall_sec": 122.26,
+      "host_rss_gb": 5.457,
+      "cost_usd": 0.00539
+    },
+    {
+      "split_name": "rsna_train_pilot",
+      "shard_idx": 1,
+      "num_shards": 8,
+      "total_exams_in_shard": 25,
+      "total_images_in_shard": 100,
+      "skipped_resumed": 0,
+      "rejected_corrupt_resumed": 0,
+      "newly_processed": 100,
+      "n_fallbacks": 0,
+      "loop_wall_sec": 91.91,
+      "container_wall_sec": 94.48,
+      "host_rss_gb": 5.421,
+      "cost_usd": 0.00416
+    },
+    {
+      "split_name": "rsna_train_pilot",
+      "shard_idx": 2,
+      "num_shards": 8,
+      "total_exams_in_shard": 25,
+      "total_images_in_shard": 100,
+      "skipped_resumed": 0,
+      "rejected_corrupt_resumed": 0,
+      "newly_processed": 100,
+      "n_fallbacks": 0,
+      "loop_wall_sec": 107.36,
+      "container_wall_sec": 111.39,
+      "host_rss_gb": 5.469,
+      "cost_usd": 0.00491
+    },
+    {
+      "split_name": "rsna_train_pilot",
+      "shard_idx": 3,
+      "num_shards": 8,
+      "total_exams_in_shard": 25,
+      "total_images_in_shard": 100,
+      "skipped_resumed": 0,
+      "rejected_corrupt_resumed": 0,
+      "newly_processed": 100,
+      "n_fallbacks": 6,
+      "loop_wall_sec": 100.83,
+      "container_wall_sec": 103.69,
+      "host_rss_gb": 5.407,
+      "cost_usd": 0.00457
+    },
+    {
+      "split_name": "rsna_train_pilot",
+      "shard_idx": 4,
+      "num_shards": 8,
+      "total_exams_in_shard": 25,
+      "total_images_in_shard": 100,
+      "skipped_resumed": 0,
+      "rejected_corrupt_resumed": 0,
+      "newly_processed": 100,
+      "n_fallbacks": 0,
+      "loop_wall_sec": 108.6,
+      "container_wall_sec": 112.53,
+      "host_rss_gb": 5.453,
+      "cost_usd": 0.00496
+    },
+    {
+      "split_name": "rsna_train_pilot",
+      "shard_idx": 5,
+      "num_shards": 8,
+      "total_exams_in_shard": 25,
+      "total_images_in_shard": 100,
+      "skipped_resumed": 0,
+      "rejected_corrupt_resumed": 0,
+      "newly_processed": 100,
+      "n_fallbacks": 0,
+      "loop_wall_sec": 84.62,
+      "container_wall_sec": 87.74,
+      "host_rss_gb": 5.469,
+      "cost_usd": 0.00387
+    },
+    {
+      "split_name": "rsna_train_pilot",
+      "shard_idx": 6,
+      "num_shards": 8,
+      "total_exams_in_shard": 25,
+      "total_images_in_shard": 100,
+      "skipped_resumed": 0,
+      "rejected_corrupt_resumed": 0,
+      "newly_processed": 100,
+      "n_fallbacks": 0,
+      "loop_wall_sec": 116.51,
+      "container_wall_sec": 119.77,
+      "host_rss_gb": 5.404,
+      "cost_usd": 0.00528
+    },
+    {
+      "split_name": "rsna_train_pilot",
+      "shard_idx": 7,
+      "num_shards": 8,
+      "total_exams_in_shard": 25,
+      "total_images_in_shard": 100,
+      "skipped_resumed": 0,
+      "rejected_corrupt_resumed": 0,
+      "newly_processed": 100,
+      "n_fallbacks": 2,
+      "loop_wall_sec": 114.86,
+      "container_wall_sec": 119.21,
+      "host_rss_gb": 5.7,
+      "cost_usd": 0.00525
+    }
+  ],
+  "verify_shards": [
+    {
+      "shard_idx": 0,
+      "verified_count": 100,
+      "rejected": 0,
+      "wall_sec": 65.42,
+      "cost_usd": 0.00115
+    },
+    {
+      "shard_idx": 1,
+      "verified_count": 100,
+      "rejected": 0,
+      "wall_sec": 66.71,
+      "cost_usd": 0.00117
+    },
+    {
+      "shard_idx": 2,
+      "verified_count": 100,
+      "rejected": 0,
+      "wall_sec": 39.12,
+      "cost_usd": 0.00069
+    },
+    {
+      "shard_idx": 3,
+      "verified_count": 100,
+      "rejected": 0,
+      "wall_sec": 43.27,
+      "cost_usd": 0.00076
+    },
+    {
+      "shard_idx": 4,
+      "verified_count": 100,
+      "rejected": 0,
+      "wall_sec": 115.45,
+      "cost_usd": 0.00203
+    },
+    {
+      "shard_idx": 5,
+      "verified_count": 100,
+      "rejected": 0,
+      "wall_sec": 107.48,
+      "cost_usd": 0.00189
+    },
+    {
+      "shard_idx": 6,
+      "verified_count": 100,
+      "rejected": 0,
+      "wall_sec": 38.84,
+      "cost_usd": 0.00068
+    },
+    {
+      "shard_idx": 7,
+      "verified_count": 100,
+      "rejected": 0,
+      "wall_sec": 45.26,
+      "cost_usd": 0.0008
+    }
+  ],
+  "total_shard_compute_usd": 0.0384,
+  "total_verify_shard_compute_usd": 0.0092,
+  "total_compute_usd": 0.0476,
+  "verify": {
+    "split_name": "rsna_train_pilot",
+    "n_images": 800,
+    "n_exams": 200,
+    "n_fallback_views": 8,
+    "n_fallback_exams": 3,
+    "pixel_spot_checked": 100,
+    "total_storage_gib": 5.913,
+    "manifest_sha256": "18625f367d16a71f8f00edd2d5e00a64a62c1cb71c8888612729d71f01cd2594",
+    "by_view_slot": {
+      "L-CC": 200,
+      "L-MLO": 200,
+      "R-CC": 200,
+      "R-MLO": 200
+    },
+    "by_photometric": {
+      "MONOCHROME1": 156,
+      "MONOCHROME2": 644
+    }
+  }
+}
