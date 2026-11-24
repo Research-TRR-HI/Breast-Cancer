@@ -311,10 +311,15 @@ def validate_nyu_cli_stage_and_guard(
         raise ValueError(f"--num-shards must be >= 1, got {num_shards}")
     if split == "all":
         splits = ["rsna_val_calib", "nlbs_4view"]
-    elif split in ("rsna_val_calib", "nlbs_4view"):
+    elif split == "train_all":
+        splits = ["rsna_train", "rsna_train_calib"]
+    elif split in ("rsna_val_calib", "nlbs_4view", "rsna_train", "rsna_train_calib"):
         splits = [split]
     else:
-        raise ValueError(f"Unsupported --split={split!r}; expected 'rsna_val_calib', 'nlbs_4view', or 'all'")
+        raise ValueError(
+            f"Unsupported --split={split!r}; expected 'rsna_val_calib', 'nlbs_4view', 'rsna_train', "
+            "'rsna_train_calib', 'all', or 'train_all'"
+        )
 
     if stage == "build" and not approve_full_build:
         raise RuntimeError(
@@ -592,6 +597,7 @@ def validate_nyu_shard_payload(
     num_shards: int,
     num_tta_epochs: int = NYU_TTA_EPOCHS_OFFICIAL,
     tta_seed: int = NYU_TTA_SEED_OFFICIAL,
+    model_id: str = NYU_MODEL_ID,
     checkpoint_sha256: str = NYU_CKPT_SHA256,
     preprocess_version: str = NYU_CACHE_VERSION,
     preprocess_manifest_sha256: str = "",
@@ -601,7 +607,7 @@ def validate_nyu_shard_payload(
         return False, "payload_not_dict"
     if payload.get("schema_version") != "paper1_nyu_shard_v2":
         return False, f"schema_mismatch:{payload.get('schema_version')}"
-    if payload.get("model_id") != NYU_MODEL_ID:
+    if payload.get("model_id") != model_id:
         return False, f"model_id_mismatch:{payload.get('model_id')}"
     if str(payload.get("checkpoint_sha256", "")).lower() != str(checkpoint_sha256).lower():
         return False, f"checkpoint_sha256_mismatch:{payload.get('checkpoint_sha256')}"
@@ -650,6 +656,8 @@ def finalize_and_lock_nyu_predictions(
     *,
     case_out_col: str,
     batch_exams: int,
+    model_id: str = NYU_MODEL_ID,
+    checkpoint_file: str = "sample_image_model.p",
     checkpoint_sha256: str = NYU_CKPT_SHA256,
     preprocess_version: str = NYU_CACHE_VERSION,
     expected_manifest_sha256: Optional[str] = None,
@@ -668,6 +676,8 @@ def finalize_and_lock_nyu_predictions(
     shard_meta: List[Dict[str, Any]] = []
     manifest_shas = set()
     for o in sorted(shard_outputs, key=lambda x: int(x["shard_idx"])):
+        if o.get("model_id") != model_id:
+            raise RuntimeError(f"Shard {o.get('shard_idx')} model_id mismatch: {o.get('model_id')} != {model_id}")
         if str(o.get("checkpoint_sha256", "")).lower() != checkpoint_sha256.lower():
             raise RuntimeError(f"Shard {o.get('shard_idx')} checkpoint_sha256 mismatch")
         if o.get("preprocess_version") != preprocess_version:
@@ -741,8 +751,8 @@ def finalize_and_lock_nyu_predictions(
         json.dumps(
             {
                 "schema_version": "paper1_nyu_exam_scores_v2",
-                "model_id": NYU_MODEL_ID,
-                "checkpoint_file": "sample_image_model.p",
+                "model_id": model_id,
+                "checkpoint_file": checkpoint_file,
                 "checkpoint_sha256": checkpoint_sha256,
                 "preprocess_version": preprocess_version,
                 "preprocess_manifest_sha256s": sorted(manifest_shas),
@@ -779,8 +789,8 @@ def finalize_and_lock_nyu_predictions(
     scores_arr = case_df["score"].values.astype(np.float64)
     lock_manifest = {
         "schema_version": "paper1_nyu_step2_lock_v1",
-        "model_id": NYU_MODEL_ID,
-        "checkpoint_file": "sample_image_model.p",
+        "model_id": model_id,
+        "checkpoint_file": checkpoint_file,
         "checkpoint_sha256": checkpoint_sha256,
         "preprocess_version": preprocess_version,
         "preprocess_manifest_sha256s": sorted(manifest_shas),
