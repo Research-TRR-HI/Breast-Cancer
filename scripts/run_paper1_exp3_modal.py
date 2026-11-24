@@ -52,6 +52,28 @@ REQUIRED_MODAL_PROFILE = "tigerwood697"
 RSNA_VOL = modal.Volume.from_name("rsna-mammography-vol")
 RSNA_MOUNT = Path("/rsna_vol")
 L40S_HOURLY_USD = 2.3618  # 1x L40S ($1.95) + 6 vCPU ($0.2838) + 16 GiB RAM ($0.1280)
+ALLOWED_CPU_WORKERS = (2, 4, 8, 16)
+DEFAULT_PILOT_BATCH_SIZES: Dict[str, tuple[int, ...]] = {
+    "ce_b5": (16, 32, 64),
+    "trust_b5": (16, 32, 64),
+    "dinov2_rsna": (32, 64, 128),
+    "resnet50_rsna": (32, 64, 128),
+    "gmic_rsna_finetuned": (1, 4, 8),
+    "nyu_fourview_rsna_finetuned": (1, 2, 4),
+}
+CHECKPOINT_SYNC_COMMANDS: List[str] = [
+    # 1. DINOv2 ViT-S/14 backbone (from hasinishrak2015/tigerwood693 -> tigerwood697) + RSNA head (local -> tigerwood697)
+    "$env:MODAL_PROFILE='hasinishrak2015'; modal volume get rsna-mammography-vol models/paper1/dinov2_vits14_pretrain.pth models/paper1/dinov2_vits14_pretrain.pth",
+    "$env:MODAL_PROFILE='tigerwood697'; modal volume put rsna-mammography-vol models/paper1/dinov2_vits14_pretrain.pth /models/paper1/dinov2_vits14_pretrain.pth",
+    "$env:MODAL_PROFILE='tigerwood697'; modal volume put rsna-mammography-vol reports/paper1/dinov2_head/dinov2_vits14_head_seed42.pt /models/paper1/checkpoints/dinov2_vits14_head_seed42.pt",
+    # 2. Mammo-CLIP B5 backbone + CE-only & TRUST Epoch-20 RSNA checkpoints (from hasinishrak74001 -> tigerwood697)
+    "$env:MODAL_PROFILE='hasinishrak74001'; modal volume get rsna-mammography-vol models/mammo_clip/b5-model-best-epoch-7.tar models/mammo_clip/b5-model-best-epoch-7.tar",
+    "$env:MODAL_PROFILE='hasinishrak74001'; modal volume get rsna-mammography-vol models/checkpoints/stage_b_rsna/ce_rsna_seed42_final_epoch20.pt models/checkpoints/stage_b_rsna/ce_rsna_seed42_final_epoch20.pt",
+    "$env:MODAL_PROFILE='hasinishrak74001'; modal volume get rsna-mammography-vol models/checkpoints/stage_b_rsna/trust_rsna_seed42_final_epoch20.pt models/checkpoints/stage_b_rsna/trust_rsna_seed42_final_epoch20.pt",
+    "$env:MODAL_PROFILE='tigerwood697'; modal volume put rsna-mammography-vol models/mammo_clip/b5-model-best-epoch-7.tar /models/mammo_clip/b5-model-best-epoch-7.tar",
+    "$env:MODAL_PROFILE='tigerwood697'; modal volume put rsna-mammography-vol models/checkpoints/stage_b_rsna/ce_rsna_seed42_final_epoch20.pt /models/checkpoints/stage_b_rsna/ce_rsna_seed42_final_epoch20.pt",
+    "$env:MODAL_PROFILE='tigerwood697'; modal volume put rsna-mammography-vol models/checkpoints/stage_b_rsna/trust_rsna_seed42_final_epoch20.pt /models/checkpoints/stage_b_rsna/trust_rsna_seed42_final_epoch20.pt",
+]
 
 app = modal.App(APP_NAME)
 
@@ -82,6 +104,42 @@ def enforce_tigerwood697_profile(dry_run: bool = False) -> str:
     return prof or "dry_run"
 
 
+def parse_pilot_batch_sizes(raw: Optional[str], model_id: str) -> List[int]:
+    """Parse progressive pilot batch-size sweep list (or return model-specific defaults)."""
+    if not raw or not str(raw).strip():
+        return list(DEFAULT_PILOT_BATCH_SIZES.get(model_id, (16, 32, 64)))
+    out: List[int] = []
+    for part in str(raw).split(","):
+        val = int(part.strip())
+        if val < 1:
+            raise ValueError(f"Batch size must be >= 1, got {val}")
+        if val not in out:
+            out.append(val)
+    if not out:
+        raise ValueError("Empty pilot batch size list")
+    return sorted(out)
+
+
+def select_optimal_pilot_batch_size(
+    bench_records: List[Dict[str, Any]],
+    max_parity_diff: float = 1e-3,
+) -> Dict[str, Any]:
+    """Select fastest parity-verified batch size from progressive L40S pilot benchmark records."""
+    if not bench_records:
+        raise ValueError("No pilot benchmark records provided.")
+    valid = [r for r in bench_records if float(r.get("max_abs_diff", 0.0)) <= float(max_parity_diff)]
+    if not valid:
+        raise RuntimeError(f"No pilot batch size satisfied max_abs_diff <= {max_parity_diff}")
+    best = max(valid, key=lambda r: float(r["img_per_sec"]))
+    return {
+        "recommended_batch_size": int(best["batch_size"]),
+        "img_per_sec": float(best["img_per_sec"]),
+        "peak_vram_gb": float(best.get("peak_vram_gb", 0.0)),
+        "max_abs_diff": float(best.get("max_abs_diff", 0.0)),
+        "all_candidates": bench_records,
+    }
+
+
 def validate_exp3_cli_guards(
     *,
     stage: str,
@@ -92,6 +150,8 @@ def validate_exp3_cli_guards(
     approve_full_infer: bool,
     max_spend_usd: float,
     pilot_limit: int,
+    cpu_workers: int = 4,
+    pilot_batch_sizes: Optional[str] = None,
 ) -> None:
     """Enforce zero-cost approval gates and budget caps before any cloud execution."""
     if stage not in ("dry_run", "download", "preprocess", "pilot", "infer"):
@@ -100,6 +160,10 @@ def validate_exp3_cli_guards(
         raise ValueError(f"Unknown dataset_id={dataset_id!r}; expected {sorted(DATASET_REGISTRY)}")
     if model_id not in RSNA_SUPERVISED_MODELS and model_id != "all":
         raise ValueError(f"Unknown model_id={model_id!r}; expected {RSNA_SUPERVISED_MODELS} or 'all'")
+    if int(cpu_workers) not in ALLOWED_CPU_WORKERS:
+        raise ValueError(f"--cpu-workers must be one of {ALLOWED_CPU_WORKERS}, got {cpu_workers}")
+    if pilot_batch_sizes is not None:
+        parse_pilot_batch_sizes(pilot_batch_sizes, model_id if model_id != "all" else "resnet50_rsna")
     if float(max_spend_usd) <= 0.0:
         raise ValueError(f"max_spend_usd must be > 0, got {max_spend_usd}")
     if stage == "pilot" and not (50 <= int(pilot_limit) <= 500):
@@ -275,6 +339,69 @@ def download_external_dataset_cpu(
 @app.function(
     image=image,
     volumes={str(RSNA_MOUNT): RSNA_VOL},
+    cpu=1.0,
+    memory=2048,
+    timeout=14400,
+)
+def ingest_lumina_neutral_cpu(ingest_map_csv_content: str) -> Dict[str, Any]:
+    """Isolated Wave-2 CPU unzip (`cpu=1.0, memory=2048`) writing LUMINA files strictly to neutral paths.
+
+    Extracts Benign.zip & Malign.zip to `extracted/lumina_neutral/<lumina_case_XXXX>/<lumina_img_YYYYY>.dcm`
+    so zero `Benign/` or `Malign/` folder names exist anywhere on the inference mount.
+    """
+    import io
+    import zipfile
+    import pandas as pd
+
+    map_df = pd.read_csv(io.StringIO(ingest_map_csv_content))
+    raw_dir = RSNA_MOUNT / "external_datasets" / "lumina" / "raw"
+    ext_root = RSNA_MOUNT / "external_datasets" / "lumina" / "extracted"
+    ext_root.mkdir(parents=True, exist_ok=True)
+
+    lookup = {str(r["source_image_path"]).lstrip("/"): str(r["neutral_image_path"]) for r in map_df.to_dict("records")}
+    written = 0
+    skipped = 0
+    last_commit = time.monotonic()
+
+    for cls_zip in ("LUMINA_RAW_Benign.zip", "LUMINA_RAW_Malign.zip"):
+        zpath = raw_dir / cls_zip
+        if not zpath.exists():
+            raise FileNotFoundError(f"Missing raw LUMINA archive: {zpath}")
+        with zipfile.ZipFile(zpath, "r") as zf:
+            for member in zf.namelist():
+                norm_m = member.lstrip("/")
+                if norm_m not in lookup:
+                    continue
+                dst = ext_root / lookup[norm_m]
+                dst.parent.mkdir(parents=True, exist_ok=True)
+                if dst.exists() and dst.stat().st_size > 0:
+                    skipped += 1
+                    continue
+                tmp = dst.with_suffix(dst.suffix + ".tmp")
+                tmp.write_bytes(zf.read(member))
+                os.replace(tmp, dst)
+                written += 1
+                if (time.monotonic() - last_commit) >= 60.0:
+                    RSNA_VOL.commit()
+                    last_commit = time.monotonic()
+
+    RSNA_VOL.commit()
+    return {"dataset_id": "lumina", "neutral_files_written": written, "skipped": skipped}
+
+
+def get_preprocess_fn_for_cpu_workers(cpu_workers: int = 4) -> Any:
+    """Return Modal preprocess function scaled to `cpu_workers` in {2, 4, 8, 16}."""
+    if int(cpu_workers) not in ALLOWED_CPU_WORKERS:
+        raise ValueError(f"cpu_workers must be in {ALLOWED_CPU_WORKERS}, got {cpu_workers}")
+    return preprocess_external_dataset_cpu.with_options(
+        cpu=float(cpu_workers),
+        memory=max(4096, int(cpu_workers) * 2048),
+    )
+
+
+@app.function(
+    image=image,
+    volumes={str(RSNA_MOUNT): RSNA_VOL},
     cpu=4.0,
     memory=8192,
     timeout=14400,
@@ -284,6 +411,7 @@ def preprocess_external_dataset_cpu(
     manifest_csv_content: str,
     shard_idx: int = 0,
     num_shards: int = 1,
+    worker_threads: int = 4,
 ) -> Dict[str, Any]:
     """Wave 2 CPU-only Stage-1 `1520x912` uint16 PNG cache builder with atomic resumable writes."""
     import io
@@ -299,22 +427,15 @@ def preprocess_external_dataset_cpu(
     cache_dir.mkdir(parents=True, exist_ok=True)
     raw_root = RSNA_MOUNT / "external_datasets" / dataset_id / "extracted"
 
-    last_commit = time.monotonic()
-    processed = 0
-    skipped = 0
-    fallbacks = 0
-    for row in shard_df.to_dict("records"):
+    def _one_row(row: Dict[str, Any]) -> str:
         img_id = str(row["image_id"])
         out_png = cache_dir / f"{img_id}.png"
         if out_png.exists() and out_png.stat().st_size > 0:
-            skipped += 1
-            continue
+            return "skipped"
         dcm_path = raw_root / str(row["image_path"])
         arr_f32, phot, lat_dcm = decode_dicom_array(dcm_path, apply_luts=True)
         eff_lat = lat_dcm if lat_dcm in ("L", "R") else str(row["laterality"])
         res = extract_cropped_mammogram_with_metadata(arr_f32, photometric=phot, laterality=eff_lat)
-        if res.get("used_fallback"):
-            fallbacks += 1
         u16 = np.round(np.clip(res["image_01"], 0.0, 1.0) * 65535.0).astype(np.uint16)
         ok, buf = cv2.imencode(".png", u16, [cv2.IMWRITE_PNG_COMPRESSION, 1])
         if not ok:
@@ -322,10 +443,24 @@ def preprocess_external_dataset_cpu(
         tmp = out_png.with_suffix(".png.tmp")
         tmp.write_bytes(buf.tobytes())
         os.replace(tmp, out_png)
-        processed += 1
-        if (time.monotonic() - last_commit) >= 60.0:
-            RSNA_VOL.commit()
-            last_commit = time.monotonic()
+        return "fallback" if res.get("used_fallback") else "ok"
+
+    last_commit = time.monotonic()
+    processed = 0
+    skipped = 0
+    fallbacks = 0
+    rows = shard_df.to_dict("records")
+    with ThreadPoolExecutor(max_workers=max(1, int(worker_threads))) as pool:
+        for status in pool.map(_one_row, rows):
+            if status == "skipped":
+                skipped += 1
+            else:
+                processed += 1
+                if status == "fallback":
+                    fallbacks += 1
+            if (time.monotonic() - last_commit) >= 60.0:
+                RSNA_VOL.commit()
+                last_commit = time.monotonic()
 
     RSNA_VOL.commit()
     return {
@@ -593,6 +728,119 @@ def infer_external_dataset_shard_l40s(
     }
 
 
+@app.function(
+    image=image,
+    volumes={str(RSNA_MOUNT): RSNA_VOL},
+    gpu="L40S",
+    cpu=6.0,
+    memory=16384,
+    ephemeral_disk=524288,
+    timeout=3600,
+)
+def benchmark_pilot_batch_sizes_l40s(
+    dataset_id: str,
+    model_id: str,
+    manifest_csv_content: str,
+    model_spec: Dict[str, Any],
+    batch_sizes: Sequence[int],
+    pilot_limit: int = 200,
+    max_spend_usd: float = 1.0,
+) -> Dict[str, Any]:
+    """Wave 3 progressive batch-size L40S pilot measuring img/s, peak VRAM, parity, and full-run cost."""
+    import io
+    import cv2
+    import numpy as np
+    import pandas as pd
+    import torch
+    from src.data.preprocessing import prepare_tensor_from_cropped
+    from src.paper1.dinov2_model import prepare_dinov2_tensor_from_uint16
+    from src.paper1.resnet50_model import prepare_resnet50_tensor_from_uint16
+
+    RSNA_VOL.reload()
+    df = validate_inference_manifest(pd.read_csv(io.StringIO(manifest_csv_content)), context=f"pilot_bs_{dataset_id}_{model_id}")
+    total_dataset_imgs = int(len(df))
+    sub_df = df.iloc[: int(pilot_limit)].copy().reset_index(drop=True)
+    img_ids = sub_df["image_id"].astype(str).tolist()
+    png_dir = RSNA_MOUNT / "cache" / f"stage1_{dataset_id}_uint16" / "png_1520x912"
+
+    # Stage pilot PNGs onto local /tmp NVMe once so batch-size timing is clean
+    nvme_dir = Path(f"/tmp/pilot_bs_{dataset_id}")
+    nvme_dir.mkdir(parents=True, exist_ok=True)
+    for iid in img_ids:
+        src_p = png_dir / f"{iid}.png"
+        dst_p = nvme_dir / f"{iid}.png"
+        if not dst_p.exists():
+            shutil.copy2(src_p, dst_p)
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    loaded = _load_model_for_inference(model_id, model_spec, device)
+
+    def _prep_one(iid: str) -> torch.Tensor:
+        arr = cv2.imread(str(nvme_dir / f"{iid}.png"), cv2.IMREAD_UNCHANGED)
+        if model_id in ("ce_b5", "trust_b5"):
+            return prepare_tensor_from_cropped(arr)
+        if model_id == "dinov2_rsna":
+            return prepare_dinov2_tensor_from_uint16(arr)
+        return prepare_resnet50_tensor_from_uint16(arr)
+
+    baseline_probs: Optional[np.ndarray] = None
+    bench_records: List[Dict[str, Any]] = []
+    t_wall0 = time.perf_counter()
+
+    for bs in sorted(int(b) for b in batch_sizes):
+        if ((time.perf_counter() - t_wall0) / 3600.0) * L40S_HOURLY_USD > float(max_spend_usd):
+            raise RuntimeError(f"Pilot budget cap ${max_spend_usd:.2f} exceeded before batch_size={bs}")
+        if device.type == "cuda":
+            torch.cuda.reset_peak_memory_stats(device)
+            torch.cuda.synchronize()
+        t0 = time.perf_counter()
+        probs: List[float] = []
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            for s in range(0, len(img_ids), bs):
+                b_ids = img_ids[s : s + bs]
+                bx = torch.stack(list(pool.map(_prep_one, b_ids)), dim=0).to(device, non_blocking=True)
+                with torch.no_grad(), torch.amp.autocast("cuda", enabled=True):
+                    if model_id in ("ce_b5", "trust_b5", "dinov2_rsna"):
+                        p = torch.sigmoid(loaded["head"](loaded["encoder"](bx)).squeeze(1)).float().cpu().tolist()
+                    else:
+                        p = torch.sigmoid(loaded["model"](bx).squeeze(1)).float().cpu().tolist()
+                probs.extend(p)
+        if device.type == "cuda":
+            torch.cuda.synchronize()
+        sec = max(1e-6, time.perf_counter() - t0)
+        arr_p = np.asarray(probs, dtype=np.float64)
+        if baseline_probs is None:
+            baseline_probs = arr_p
+            max_diff = 0.0
+        else:
+            max_diff = float(np.max(np.abs(arr_p - baseline_probs)))
+        peak_gb = float(torch.cuda.max_memory_allocated(device) / (1024**3)) if device.type == "cuda" else 0.0
+        img_s = len(img_ids) / sec
+        proj_sec = total_dataset_imgs / max(img_s, 1e-6)
+        proj_usd = (proj_sec / 3600.0) * L40S_HOURLY_USD
+        bench_records.append(
+            {
+                "batch_size": bs,
+                "n_images": len(img_ids),
+                "elapsed_sec": round(sec, 3),
+                "img_per_sec": round(img_s, 2),
+                "peak_vram_gb": round(peak_gb, 3),
+                "max_abs_diff": max_diff,
+                "projected_full_dataset_sec": round(proj_sec, 1),
+                "projected_full_dataset_usd": round(proj_usd, 4),
+            }
+        )
+
+    rec = select_optimal_pilot_batch_size(bench_records)
+    return {
+        "dataset_id": dataset_id,
+        "model_id": model_id,
+        "pilot_limit": int(pilot_limit),
+        "total_dataset_images": total_dataset_imgs,
+        **rec,
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Paper 1 Exp 3 Universal Modal Inference Entrypoint.")
     parser.add_argument("--stage", required=True, choices=["dry_run", "download", "preprocess", "pilot", "infer"])
@@ -602,6 +850,8 @@ def main() -> None:
     parser.add_argument("--handoff-json", type=Path, default=None)
     parser.add_argument("--out-lock-dir", type=Path, default=Path("reports/paper1/expanded/exp3/locked_preds"))
     parser.add_argument("--pilot-limit", type=int, default=200)
+    parser.add_argument("--pilot-batch-sizes", type=str, default=None, help="Comma-separated progressive batch sizes for --stage pilot (e.g. 16,32,64,128).")
+    parser.add_argument("--cpu-workers", type=int, default=4, choices=list(ALLOWED_CPU_WORKERS), help="CPU vCPUs per Wave 2 preprocessing container (2, 4, 8, or 16).")
     parser.add_argument("--num-shards", type=int, default=4)
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--max-spend-usd", type=float, default=5.0)
@@ -619,6 +869,8 @@ def main() -> None:
         approve_full_infer=args.approve_full_infer,
         max_spend_usd=args.max_spend_usd,
         pilot_limit=args.pilot_limit,
+        cpu_workers=args.cpu_workers,
+        pilot_batch_sizes=args.pilot_batch_sizes,
     )
     prof = enforce_tigerwood697_profile(dry_run=(args.stage == "dry_run"))
     import pandas as pd
@@ -635,7 +887,15 @@ def main() -> None:
             "n_images": int(len(inf_df)),
             "n_exams": int(inf_df["exam_id"].nunique()),
             "n_common_4view_exams": int(c4v_df["exam_id"].nunique()),
-            "models": {m: {"thresholds": get_frozen_thresholds(m, {m: resolved_specs[m]["frozen_rsna_thresholds"]})} for m in models},
+            "cpu_workers_per_container": int(args.cpu_workers),
+            "checkpoint_sync_commands": CHECKPOINT_SYNC_COMMANDS,
+            "models": {
+                m: {
+                    "thresholds": get_frozen_thresholds(m, {m: resolved_specs[m]["frozen_rsna_thresholds"]}),
+                    "pilot_batch_sizes": parse_pilot_batch_sizes(args.pilot_batch_sizes, m),
+                }
+                for m in models
+            },
         }
         print(json.dumps(plan, indent=2))
         return
