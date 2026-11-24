@@ -65,7 +65,7 @@ def _build_hasin2015_readonly_secret() -> modal.Secret:
 SRC_2015_SECRET = _build_hasin2015_readonly_secret()
 app = modal.App(APP_NAME)
 
-image = (
+base_image = (
     modal.Image.debian_slim(python_version=PINNED_MODAL_PYTHON_VERSION)
     .apt_install("libgl1-mesa-glx", "libglib2.0-0", "git")
     .pip_install(
@@ -73,7 +73,12 @@ image = (
         "h5py==3.13.0",
         "imageio==2.37.0",
         "tqdm==4.67.1",
+        "timm==1.0.15",
     )
+)
+
+image = (
+    base_image
     .add_local_python_source("src")
     .add_local_file(
         "datasets/paper1/nlbs_4view_common_cohort_label_free.csv",
@@ -111,7 +116,7 @@ def validate_exp2_cli_and_guard(
     max_total_spend_usd: float,
 ) -> None:
     """Validate CLI parameters and block unapproved Wave 2 cache builds, Wave 3 pilots, or Phase 2 runs."""
-    valid_stages = ("plan", "build_uncropped_cache", "pilot", "infer")
+    valid_stages = ("plan", "download_weights", "build_uncropped_cache", "pilot", "infer")
     if stage not in valid_stages:
         raise ValueError(f"Unknown --stage={stage!r}; expected {valid_stages}")
     spec = assert_model_eligible(model_id)
@@ -132,9 +137,9 @@ def validate_exp2_cli_and_guard(
     if float(max_total_spend_usd) <= 0.0:
         raise ValueError(f"--max-total-spend-usd must be > 0, got {max_total_spend_usd}")
 
-    if stage == "build_uncropped_cache" and not approve_wave2_download:
+    if stage in ("build_uncropped_cache", "download_weights") and not approve_wave2_download:
         raise RuntimeError(
-            "BLOCKED: `--stage build_uncropped_cache` requires explicit `--approve-wave2-download`."
+            f"BLOCKED: `--stage {stage}` requires explicit `--approve-wave2-download`."
         )
     if stage == "pilot" and not approve_pilot:
         raise RuntimeError(
@@ -210,6 +215,7 @@ def build_uncropped_1152x896_cache_shard(
         src_vol = modal.Volume.from_name("nlbs-mammography-vol", client=client)
         written = 0
         skipped = 0
+        failed: List[Dict[str, str]] = []
         total_bytes = 0
         t0 = time.perf_counter()
         last_commit = t0
@@ -223,11 +229,26 @@ def build_uncropped_1152x896_cache_shard(
             rel = str(row["dicom_rel_path"]).lstrip("/")
             src_path = rel if rel.startswith("nlbs/extracted/") else f"nlbs/extracted/{rel}"
             local_dcm = tmp_dcm / f"{uid}.dcm"
-            with open(local_dcm, "wb") as f:
-                async for chunk in src_vol.read_file.aio(src_path):
-                    f.write(chunk)
-            arr_f32, phot, lat_dcm = decode_dicom_array(local_dcm, apply_luts=True)
-            local_dcm.unlink(missing_ok=True)
+            last_err = ""
+            decoded = None
+            for attempt in range(3):
+                try:
+                    with open(local_dcm, "wb") as f:
+                        async for chunk in src_vol.read_file.aio(src_path):
+                            f.write(chunk)
+                    decoded = decode_dicom_array(local_dcm, apply_luts=True)
+                    break
+                except Exception as exc:
+                    last_err = str(exc)
+                    await asyncio.sleep(1.0 * (attempt + 1))
+                finally:
+                    local_dcm.unlink(missing_ok=True)
+            if decoded is None:
+                failed.append({"image_uid": uid, "src_path": src_path, "error": last_err})
+                if len(failed) > 25:
+                    raise RuntimeError(f"Too many Option B1 decode failures in shard {shard_idx}: {failed[:3]}")
+                continue
+            arr_f32, phot, lat_dcm = decoded
             u16 = prepare_uncropped_1152x896_from_array(
                 arr_f32, photometric=phot, laterality=lat_dcm or str(row["laterality"])
             )
@@ -244,6 +265,8 @@ def build_uncropped_1152x896_cache_shard(
             "num_shards": num_shards,
             "written": written,
             "skipped": skipped,
+            "failed_count": len(failed),
+            "failed": failed,
             "total_gib": round(total_bytes / (1024.0**3), 4),
             "elapsed_sec": round(elapsed, 3),
             "estimated_cost_usd": round((elapsed / 3600.0) * CPU_CACHE_WORKER_HOURLY_USD, 5),
@@ -252,11 +275,121 @@ def build_uncropped_1152x896_cache_shard(
     return asyncio.run(_run_shard())
 
 
+DEFAULT_EXP2_CKPT_REL_PATHS: Dict[str, str] = {
+    "glam_pretrained": "models/exp2/glam_model_joint.ckpt",
+    "petrini_twoview_efnb3": "models/exp2/petrini_twoview_efnb3.pt",
+    "end2end_cbis_ddsm": "models/exp2/end2end_cbis_ddsm_ts.pt",
+}
+
+
+def _resolve_ckpt_rel_path(model_id: str, checkpoint_rel_path: str) -> str:
+    return checkpoint_rel_path.strip() or DEFAULT_EXP2_CKPT_REL_PATHS[model_id]
+
+
+weights_image = (
+    base_image.apt_install("git-lfs")
+    .pip_install("gdown==5.2.0", "huggingface_hub==0.29.3")
+    .add_local_python_source("src")
+)
+
+
+@app.function(
+    image=weights_image,
+    volumes={str(RSNA_MOUNT): RSNA_VOL},
+    cpu=1.0,
+    memory=2048,
+    timeout=1800,
+)
+def download_exp2_weights_cpu() -> Dict[str, Any]:
+    """Wave 2 CPU-only (1 vCPU / 2 GiB) download of GLAM, Petrini, and End2End checkpoints & repos."""
+    import hashlib
+    import subprocess
+    import h5py
+    from huggingface_hub import hf_hub_download
+
+    models_dir = RSNA_MOUNT / "models" / "exp2"
+    repos_dir = RSNA_MOUNT / "external_repos"
+    models_dir.mkdir(parents=True, exist_ok=True)
+    repos_dir.mkdir(parents=True, exist_ok=True)
+
+    def _sha256(p: Path) -> str:
+        h = hashlib.sha256()
+        with open(p, "rb") as f:
+            for chunk in iter(lambda: f.read(1024 * 1024), b""):
+                h.update(chunk)
+        return h.hexdigest()
+
+    # 1. nyukat/GLAM (Git LFS model_joint.ckpt)
+    glam_dir = repos_dir / "GLAM"
+    if not (glam_dir / ".git").exists():
+        subprocess.run(["git", "clone", "https://github.com/nyukat/GLAM.git", str(glam_dir)], check=True)
+    subprocess.run(["git", "-C", str(glam_dir), "checkout", "17a0019860441e2ea8d7b7c7e0aaeada735e871f"], check=True)
+    subprocess.run(["git", "-C", str(glam_dir), "lfs", "pull", "--include=models/model_joint.ckpt"], check=True)
+    glam_ckpt = models_dir / "glam_model_joint.ckpt"
+    shutil.copy2(glam_dir / "models" / "model_joint.ckpt", glam_ckpt)
+
+    # 2. dpetrini/multiple-view + HF checkpoint
+    pet_dir = repos_dir / "multiple-view"
+    if not (pet_dir / ".git").exists():
+        subprocess.run(["git", "clone", "https://github.com/dpetrini/multiple-view.git", str(pet_dir)], check=True)
+    subprocess.run(["git", "-C", str(pet_dir), "checkout", "2331b545ebdbd5e8c1da58e13b5dd14ba80d33c2"], check=True)
+    pet_ckpt = models_dir / "petrini_twoview_efnb3.pt"
+    if not pet_ckpt.exists() or pet_ckpt.stat().st_size == 0:
+        dl = hf_hub_download(
+            repo_id="dpetrini/cbis-ddsm-efficientnetb3-multiple-view",
+            filename="2024-10-01-14h36m_50ep_best_model_AUC_08643_Best_2-Views-CBIS-EFB3-CVUBP.pt",
+        )
+        shutil.copy2(dl, pet_ckpt)
+    pet_sha = _sha256(pet_ckpt)
+    expected_pet_sha = "82add40900054835f23737d9f3a01922275f1e4dcfd3156a0f7059cb58147071"
+    if pet_sha != expected_pet_sha:
+        raise RuntimeError(f"Petrini SHA-256 mismatch: {pet_sha} != {expected_pet_sha}")
+
+    # Commit GLAM + Petrini immediately before Google Drive download
+    RSNA_VOL.commit()
+
+    # 3. lishen/end2end-all-conv (.h5 directly via drive.usercontent.google.com + resourcekey)
+    e2e_h5 = models_dir / "ddsm_resnet50_s10_[512-512-1024]x2.h5"
+    if not e2e_h5.exists() or e2e_h5.stat().st_size == 0:
+        import urllib.request
+
+        tmp_h5 = Path("/tmp/ddsm_resnet50_s10.h5")
+        e2e_url = (
+            "https://drive.usercontent.google.com/download"
+            "?id=0B1PVLadG_dCKSUJYdzNyZjVsZHc&export=download&confirm=t&resourcekey=0-HX8iGPkxcTKR6jlOphO_Ug"
+        )
+        req = urllib.request.Request(e2e_url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=180) as resp, open(tmp_h5, "wb") as out_f:
+            shutil.copyfileobj(resp, out_f, length=1024 * 1024)
+        if not tmp_h5.exists() or tmp_h5.stat().st_size < 100_000_000:
+            raise RuntimeError(f"End2End .h5 download incomplete: {tmp_h5.stat().st_size if tmp_h5.exists() else 0} bytes")
+        shutil.copy2(tmp_h5, e2e_h5)
+
+    h5_layers: List[str] = []
+    with h5py.File(e2e_h5, "r") as hf:
+        mw = hf["model_weights"] if "model_weights" in hf else hf
+        h5_layers = sorted(list(mw.keys()))[:25]
+
+    RSNA_VOL.commit()
+    return {
+        "glam_ckpt": str(glam_ckpt),
+        "glam_sha256": _sha256(glam_ckpt),
+        "glam_bytes": glam_ckpt.stat().st_size,
+        "petrini_ckpt": str(pet_ckpt),
+        "petrini_sha256": pet_sha,
+        "petrini_bytes": pet_ckpt.stat().st_size,
+        "end2end_h5": str(e2e_h5),
+        "end2end_h5_sha256": _sha256(e2e_h5),
+        "end2end_h5_bytes": e2e_h5.stat().st_size,
+        "end2end_h5_top_layers": h5_layers,
+    }
+
+
 def _load_model_for_exp2(model_id: str, checkpoint_rel_path: str, device: torch.device) -> Any:
     import torch
     from src.paper1.exp2_adapters import build_glam_model, build_petrini_twoview_model, verify_checkpoint_sha256
 
-    ckpt_path = RSNA_MOUNT / checkpoint_rel_path
+    ckpt_path = RSNA_MOUNT / _resolve_ckpt_rel_path(model_id, checkpoint_rel_path)
     spec = assert_model_eligible(model_id)
     if model_id == "glam_pretrained":
         model, ckpt_sha = build_glam_model(
@@ -330,7 +463,7 @@ def _run_batch_forward(
     elif model_id == "end2end_cbis_ddsm":
         with torch.no_grad():
             out = model(batch_t.to(device, non_blocking=True)).float()
-            probs = (torch.softmax(out, dim=-1)[:, 1] if out.shape[-1] == 2 else out.reshape(-1)).cpu().numpy()
+            probs = (out[:, 1] if out.shape[-1] == 2 else out.reshape(-1)).cpu().numpy()
     else:
         probs = score_twoview_batch(model, batch_t, device)
     torch.cuda.synchronize(device)
@@ -596,7 +729,7 @@ def main() -> None:
     parser.add_argument(
         "--stage",
         default="plan",
-        choices=["plan", "build_uncropped_cache", "pilot", "infer"],
+        choices=["plan", "download_weights", "build_uncropped_cache", "pilot", "infer"],
     )
     parser.add_argument("--model-id", required=True, choices=sorted(EXP2_MODEL_REGISTRY.keys()))
     parser.add_argument("--split", default="nlbs_4view", choices=["nlbs_4view", "nlbs_full"])
@@ -658,6 +791,11 @@ def main() -> None:
         return
 
     with app.run():
+        if args.stage == "download_weights":
+            res = download_exp2_weights_cpu.remote()
+            print(json.dumps(res, indent=2))
+            return
+
         if args.stage == "build_uncropped_cache":
             df = load_exp2_nlbs_manifest(Path("datasets/nlbs/inference_manifest_stage_c.csv"), model_id="end2end_cbis_ddsm")
             rows = df[["image_uid", "laterality", "dicom_rel_path"]].to_dict(orient="records")
