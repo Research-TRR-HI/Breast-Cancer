@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import io
 import json
 import os
 from pathlib import Path
@@ -17,12 +18,19 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from run_paper1_exp3_modal import (
+    build_exp3_dry_run_plan,
+    enforce_dataset_model_eligibility,
     enforce_tigerwood697_profile,
+    orchestrate_external_inference,
     parse_pilot_batch_sizes,
+    resolve_exp3_model_selection,
+    resolve_inference_batch_size,
     resolve_model_handoff,
+    run_cli as modal_run_cli,
     select_optimal_pilot_batch_size,
     validate_exp3_cli_guards,
 )
+from src.evaluation.stage_c_eval import compute_sha256_file
 from src.paper1.external_datasets import (
     INFERENCE_MANIFEST_COLUMNS,
     assert_lumina_neutral_inference_manifest,
@@ -70,6 +78,33 @@ def _make_4view_rows(dataset_id: str, exam_id: str, cluster_id: str, start_idx: 
             }
         )
     return rows
+
+
+def _make_synth_manifests(dataset_id: str, n_exams: int = 6) -> tuple[pd.DataFrame, pd.DataFrame]:
+    inf_rows = []
+    out_rows = []
+    cohort_role = "diagnostic_biopsy_enriched" if dataset_id in ("cmmd", "lumina") else "screening"
+    pop_ok = dataset_id == "nlbs"
+    for idx in range(n_exams):
+        exam_id = f"{dataset_id}_e{idx}"
+        cluster_id = f"{dataset_id}_c{idx}"
+        inf_rows.extend(_make_4view_rows(dataset_id, exam_id, cluster_id, start_idx=idx * 4))
+        y = 1 if idx < max(1, n_exams // 2) else 0
+        out_rows.append(
+            {
+                "dataset_id": dataset_id,
+                "cluster_id": cluster_id,
+                "exam_id": exam_id,
+                "outcome_label": y,
+                "label_source": "histopathology",
+                "cohort_role": cohort_role,
+                "population_screening_dismissal_allowed": pop_ok,
+                "laterality_scope": "exam",
+                "modality_subtype": "FFDM",
+                "eligibility_flags": "{}",
+            }
+        )
+    return pd.DataFrame(inf_rows), pd.DataFrame(out_rows)
 
 
 class TestPaper1Exp3Universal(unittest.TestCase):
@@ -516,6 +551,300 @@ class TestPaper1Exp3Universal(unittest.TestCase):
                     pilot_limit=200,
                     cpu_workers=bad_cpu,
                 )
+
+    def test_11_exp3_model_selection_and_verified_batch_sizes(self):
+        self.assertEqual(
+            resolve_exp3_model_selection("all_ready"),
+            ["ce_b5", "trust_b5", "dinov2_rsna", "resnet50_rsna"],
+        )
+        self.assertEqual(
+            resolve_exp3_model_selection("agent1_handoff"),
+            ["gmic_rsna_finetuned", "nyu_fourview_rsna_finetuned"],
+        )
+        self.assertEqual(len(resolve_exp3_model_selection("all")), 6)
+        self.assertEqual(
+            resolve_exp3_model_selection("ce_b5, resnet50_rsna, ce_b5"),
+            ["ce_b5", "resnet50_rsna"],
+        )
+        with self.assertRaises(ValueError):
+            resolve_exp3_model_selection("unknown_model")
+
+        self.assertEqual(resolve_inference_batch_size("cmmd", "ce_b5"), 32)
+        self.assertEqual(resolve_inference_batch_size("cmmd", "dinov2_rsna"), 32)
+        self.assertEqual(resolve_inference_batch_size("lumina", "dinov2_rsna"), 128)
+        self.assertEqual(resolve_inference_batch_size("lumina", "resnet50_rsna"), 32)
+        self.assertEqual(resolve_inference_batch_size("lumina", "dinov2_rsna", batch_size=64), 64)
+
+    def test_12_lumina_nyu_hard_block_and_cmmd_4view_restriction(self):
+        inf_l, _ = _make_synth_manifests("lumina", n_exams=6)
+        # Single-view full mode succeeds
+        elig_sv = enforce_dataset_model_eligibility("lumina", "ce_b5", inf_l, cohort_mode="full")
+        self.assertEqual(len(elig_sv), len(inf_l))
+        # NYU 4-view and common_4view mode are strictly hard-blocked on LUMINA
+        with self.assertRaises(ValueError):
+            enforce_dataset_model_eligibility("lumina", "nyu_fourview_rsna_finetuned", inf_l)
+        with self.assertRaises(ValueError):
+            enforce_dataset_model_eligibility("lumina", "ce_b5", inf_l, cohort_mode="common_4view")
+
+        # Synthetic CMMD mix: 4 complete 4-view exams + 2 unilateral 2-view exams
+        inf_c, out_c = _make_synth_manifests("cmmd", n_exams=6)
+        drop_mask = (inf_c["exam_id"].isin(["cmmd_e4", "cmmd_e5"])) & (inf_c["laterality"] == "R")
+        inf_c_mix = inf_c[~drop_mask].reset_index(drop=True)
+        elig_nyu = enforce_dataset_model_eligibility("cmmd", "nyu_fourview_rsna_finetuned", inf_c_mix)
+        self.assertEqual(elig_nyu["exam_id"].nunique(), 4)
+        self.assertEqual(len(elig_nyu), 16)
+
+        # evaluate_external_dataset also rejects common_4view on lumina
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _, out_l = _make_synth_manifests("lumina", n_exams=6)
+            out_l_p = root / "lumina_out.csv"
+            out_l.to_csv(out_l_p, index=False)
+            ex_scores = pd.DataFrame(
+                {"exam_id": out_l["exam_id"], "cluster_id": out_l["cluster_id"], "score": 0.2}
+            )
+            lock_external_predictions(
+                dataset_id="lumina",
+                model_id="ce_b5",
+                exam_scores_df=ex_scores,
+                expected_exam_ids=out_l["exam_id"].tolist(),
+                thresholds={"target_98": 0.096, "target_95": 0.124},
+                model_sha256="c" * 64,
+                inference_manifest_sha256="d" * 64,
+                out_dir=root / "locked",
+            )
+            with self.assertRaises(ValueError):
+                evaluate_external_dataset(
+                    dataset_id="lumina",
+                    lock_dir=root / "locked",
+                    outcome_manifest_csv=out_l_p,
+                    model_ids=["ce_b5"],
+                    n_boot=10,
+                    cohort_mode="common_4view",
+                )
+
+    def test_13_orchestrate_external_inference_4shard_resume_and_guards(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            inf_c, _ = _make_synth_manifests("cmmd", n_exams=8)
+            manifest_p = root / "cmmd_inf.csv"
+            inf_c.to_csv(manifest_p, index=False)
+            lock_dir = root / "locked"
+            expected_sha = resolve_model_handoff("ce_b5")["expected_sha256"]["checkpoint"]
+
+            calls = []
+
+            def fake_shard_runner(**kwargs):
+                calls.append(kwargs["shard_idx"])
+                df = pd.read_csv(io.StringIO(kwargs["manifest_csv_content"]))
+                s_idx = kwargs["shard_idx"]
+                n_s = kwargs["num_shards"]
+                sub = df.iloc[s_idx::n_s]
+                recs = [
+                    {"item_id": str(iid), "score": 0.15 + 0.01 * i, "crop_fallback": False}
+                    for i, iid in enumerate(sub["image_id"].astype(str))
+                ]
+                return {
+                    "dataset_id": kwargs["dataset_id"],
+                    "model_id": kwargs["model_id"],
+                    "shard_idx": s_idx,
+                    "num_shards": n_s,
+                    "checkpoint_sha256": expected_sha,
+                    "preprocess_version": str(df["preprocess_version"].iloc[0]),
+                    "n_records": len(recs),
+                    "elapsed_sec": 0.0 if s_idx in (0, 1) else 0.5,
+                    "resumed_from_cache": bool(s_idx in (0, 1)),
+                    "records": recs,
+                }
+
+            res = orchestrate_external_inference(
+                dataset_id="cmmd",
+                model_arg="ce_b5",
+                manifest_csv=manifest_p,
+                out_lock_dir=lock_dir,
+                num_shards=4,
+                shard_runner=fake_shard_runner,
+                skip_profile_check=True,
+            )
+            self.assertEqual(calls, [0, 1, 2, 3])
+            meta = res["models"]["ce_b5"]
+            self.assertEqual(meta["resumed_shards"], 2)
+            self.assertEqual(meta["batch_size"], 32)
+            locked_exams = pd.read_csv(meta["exam_scores_csv"])
+            locked_imgs = pd.read_csv(meta["image_scores_csv"])
+            self.assertEqual(len(locked_exams), 8)
+            self.assertEqual(len(locked_imgs), 32)
+            self.assertEqual(compute_sha256_file(Path(meta["exam_scores_csv"])), meta["predictions_sha256"])
+
+            # Guard 1: missing item_id in a shard fails immediately
+            def broken_missing_runner(**kwargs):
+                out = fake_shard_runner(**kwargs)
+                if kwargs["shard_idx"] == 2:
+                    out["records"] = out["records"][:-1]
+                return out
+
+            with self.assertRaises(ValueError):
+                orchestrate_external_inference(
+                    dataset_id="cmmd",
+                    model_arg="ce_b5",
+                    manifest_csv=manifest_p,
+                    out_lock_dir=lock_dir,
+                    num_shards=4,
+                    shard_runner=broken_missing_runner,
+                    skip_profile_check=True,
+                )
+
+            # Guard 2: checkpoint SHA-256 mismatch fails immediately
+            def broken_sha_runner(**kwargs):
+                out = fake_shard_runner(**kwargs)
+                out["checkpoint_sha256"] = "0" * 64
+                return out
+
+            with self.assertRaises(ValueError):
+                orchestrate_external_inference(
+                    dataset_id="cmmd",
+                    model_arg="ce_b5",
+                    manifest_csv=manifest_p,
+                    out_lock_dir=lock_dir,
+                    num_shards=4,
+                    shard_runner=broken_sha_runner,
+                    skip_profile_check=True,
+                )
+
+            # Guard 3: duplicate item_id inside a shard fails immediately
+            def broken_dup_runner(**kwargs):
+                out = fake_shard_runner(**kwargs)
+                if kwargs["shard_idx"] == 0 and out["records"]:
+                    out["records"].append(dict(out["records"][0]))
+                return out
+
+            with self.assertRaises(ValueError):
+                orchestrate_external_inference(
+                    dataset_id="cmmd",
+                    model_arg="ce_b5",
+                    manifest_csv=manifest_p,
+                    out_lock_dir=lock_dir,
+                    num_shards=4,
+                    shard_runner=broken_dup_runner,
+                    skip_profile_check=True,
+                )
+
+    def test_14_agent1_handoff_and_nlbs_reuse_and_dry_run_cli(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            inf_c, out_c = _make_synth_manifests("cmmd", n_exams=6)
+            drop_mask = (inf_c["exam_id"] == "cmmd_e5") & (inf_c["laterality"] == "R")
+            inf_c = inf_c[~drop_mask].reset_index(drop=True)
+            cmmd_inf_p = root / "cmmd_inf.csv"
+            cmmd_out_p = root / "cmmd_out.csv"
+            inf_c.to_csv(cmmd_inf_p, index=False)
+            out_c.to_csv(cmmd_out_p, index=False)
+
+            handoff_p = root / "agent1_handoff.json"
+            handoff_payload = {
+                "gmic_rsna_finetuned": {
+                    "model_id": "gmic_rsna_finetuned",
+                    "schema_version": "paper1_gmic_finetune_ckpt_v1",
+                    "checkpoint_path": "/rsna_vol/models/paper1/checkpoints/gmic_rsna_finetuned.pt",
+                    "checkpoint_sha256": "a" * 64,
+                    "rsna_val_calib_thresholds": {"target_98": 0.111, "target_95": 0.222},
+                },
+                "nyu_fourview_rsna_finetuned": {
+                    "model_id": "nyu_fourview_rsna_finetuned",
+                    "schema_version": "paper1_nyu_finetune_ckpt_v1",
+                    "checkpoint_path": "/rsna_vol/models/paper1/checkpoints/nyu_rsna_finetuned.pt",
+                    "checkpoint_sha256": "b" * 64,
+                    "rsna_val_calib_thresholds": {"target_98": 0.333, "target_95": 0.444},
+                },
+            }
+            handoff_p.write_text(json.dumps(handoff_payload), encoding="utf-8")
+
+            plan = build_exp3_dry_run_plan(
+                dataset_id="cmmd",
+                model_arg="agent1_handoff",
+                manifest_csv=cmmd_inf_p,
+                handoff_json=handoff_p,
+                num_shards=4,
+                dry_run_profile=True,
+            )
+            self.assertEqual(plan["models"]["gmic_rsna_finetuned"]["eligible_exams"], 6)
+            self.assertEqual(plan["models"]["nyu_fourview_rsna_finetuned"]["eligible_exams"], 5)
+            self.assertEqual(plan["models"]["nyu_fourview_rsna_finetuned"]["thresholds"]["target_98"], 0.333)
+
+            def handoff_runner(**kwargs):
+                df = pd.read_csv(io.StringIO(kwargs["manifest_csv_content"]))
+                s_idx = kwargs["shard_idx"]
+                n_s = kwargs["num_shards"]
+                req_4v = bool(kwargs["model_spec"].get("requires_4view"))
+                if req_4v:
+                    ids = sorted(df["exam_id"].astype(str).unique().tolist())[s_idx::n_s]
+                else:
+                    ids = df["image_id"].astype(str).tolist()[s_idx::n_s]
+                return {
+                    "dataset_id": "cmmd",
+                    "model_id": kwargs["model_id"],
+                    "shard_idx": s_idx,
+                    "num_shards": n_s,
+                    "checkpoint_sha256": kwargs["model_spec"]["expected_sha256"]["checkpoint"],
+                    "preprocess_version": str(df["preprocess_version"].iloc[0]),
+                    "elapsed_sec": 0.25,
+                    "resumed_from_cache": False,
+                    "records": [{"item_id": x, "score": 0.4, "crop_fallback": False} for x in ids],
+                }
+
+            inf_out = orchestrate_external_inference(
+                dataset_id="cmmd",
+                model_arg="agent1_handoff",
+                manifest_csv=cmmd_inf_p,
+                handoff_json=handoff_p,
+                out_lock_dir=root / "locked",
+                num_shards=4,
+                shard_runner=handoff_runner,
+                skip_profile_check=True,
+            )
+            self.assertEqual(inf_out["models"]["gmic_rsna_finetuned"]["n_exams"], 6)
+            self.assertEqual(inf_out["models"]["nyu_fourview_rsna_finetuned"]["n_exams"], 5)
+
+            # Verify run_cli dry_run succeeds at $0 and infer blocks without approve_full_infer
+            cli_fn = getattr(modal_run_cli, "raw_f", modal_run_cli)
+            cli_fn(stage="dry_run", dataset="cmmd", model="all_ready", manifest_csv=str(cmmd_inf_p))
+            with self.assertRaises(RuntimeError):
+                cli_fn(
+                    stage="infer",
+                    dataset="cmmd",
+                    model="all_ready",
+                    manifest_csv=str(cmmd_inf_p),
+                    approve_full_infer=False,
+                )
+
+            # Verify NLBS $0 reuse if completed assets exist + isolated multi-dataset eval
+            six_lock = ROOT / "reports/paper1/six_model_final/locked_nlbs"
+            nlbs_em = ROOT / "datasets/nlbs/exam_manifest.csv"
+            if six_lock.exists() and nlbs_em.exists():
+                nlbs_res = orchestrate_external_inference(
+                    dataset_id="nlbs",
+                    model_arg="all_ready",
+                    out_lock_dir=root / "locked",
+                    nlbs_reuse_root=six_lock,
+                    nlbs_exam_manifest_csv=nlbs_em,
+                    skip_profile_check=True,
+                )
+                self.assertEqual(nlbs_res["mode"], "zero_cost_reuse")
+                self.assertEqual(sorted(nlbs_res["models"].keys()), ["ce_b5", "dinov2_rsna", "resnet50_rsna", "trust_b5"])
+
+            # Evaluate CMMD separately -> report forbids pooling
+            ev_c = evaluate_external_dataset(
+                dataset_id="cmmd",
+                lock_dir=root / "locked",
+                outcome_manifest_csv=cmmd_out_p,
+                model_ids=["gmic_rsna_finetuned", "nyu_fourview_rsna_finetuned"],
+                common_4view_exam_ids=[f"cmmd_e{i}" for i in range(5)],
+                n_boot=20,
+            )
+            self.assertFalse(ev_c["population_screening_dismissal_allowed"])
+            self.assertEqual(ev_c["common_4view_cohort"]["n_exams"], 5)
+            rep = generate_multi_dataset_report({"cmmd": ev_c}, out_dir=root / "eval_out")
+            self.assertFalse(rep["pooled_analysis_performed"])
 
 
 if __name__ == "__main__":
