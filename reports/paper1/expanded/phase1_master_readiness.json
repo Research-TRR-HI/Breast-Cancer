@@ -1,0 +1,60 @@
+{
+  "schema_version": "paper1_expanded_phase1_master_v1",
+  "generated_at_utc": "2026-11-24T14:22:00Z",
+  "repo_head_main": "bad3689",
+  "phase1_cloud_spend_usd": 0.0,
+  "accounts": {
+    "dryousufmozumder": {
+      "experiment": "exp1_common_rsna_supervision",
+      "branch": "paper1-exp1-phase1",
+      "credits_remaining_usd": 26.12,
+      "billed_cost_usd": 0.0,
+      "running_apps": 0,
+      "storage_gib": 895.7563,
+      "free_tier_headroom_gib": 128.2437,
+      "wave2_est_usd": [2.40, 2.62],
+      "wave3_pilot_est_usd": 0.12,
+      "phase2_est_usd": [11.15, 13.04],
+      "total_projected_usd": [13.50, 17.50]
+    },
+    "tigerwood693": {
+      "experiment": "exp2_original_pretrained",
+      "branch": "paper1-exp2-phase1",
+      "credits_remaining_usd": 25.77,
+      "billed_cost_usd": 0.0,
+      "running_apps": 0,
+      "storage_gib": 224.8539,
+      "free_tier_headroom_gib": 799.1461,
+      "wave2_est_usd": [0.25, 0.35],
+      "wave3_pilot_est_usd": [0.20, 0.40],
+      "phase2_est_usd": [1.70, 3.45],
+      "total_projected_usd": [2.15, 4.20]
+    },
+    "tigerwood697": {
+      "experiment": "exp3_multiple_external_datasets",
+      "branch": "paper1-exp3-phase1",
+      "credits_remaining_usd": 25.48,
+      "billed_cost_usd": 0.0,
+      "running_apps": 0,
+      "storage_gib": 165.26,
+      "free_tier_headroom_gib": 858.74,
+      "wave2_est_usd": [1.00, 1.00],
+      "wave3_pilot_est_usd": [0.25, 0.25],
+      "phase2_est_usd": [1.70, 4.30],
+      "total_projected_usd": [2.95, 5.55]
+    }
+  },
+  "combined_projected_usd": {
+    "wave1_actual": 0.0,
+    "wave2_total": [3.65, 3.97],
+    "wave3_pilots_total": [0.57, 0.77],
+    "phase2_total": [14.55, 20.79],
+    "grand_total_range": [18.60, 27.25]
+  },
+  "critical_decisions_required": [
+    "Merge paper1-exp1-phase1, paper1-exp2-phase1, and paper1-exp3-phase1 into main and run full unskipped external/ tests before Wave 2 Modal jobs.",
+    "Exp 2 Model 5 (frcnn_cad disqualified): choose 5 strict non-RSNA models vs adding ianpan/mammoscreen (Category A, RSNA Split 1 pretrained) vs dpetrini/vindr-convnext (BI-RADS >= 3).",
+    "Exp 1 sequential cleanup gate: approve deleting GMIC train_all cache (-245.22 GiB) after best checkpoint lock and GMIC eval cache (-159.37 GiB) after NLBS lock to stay < 1,024 GiB ($0.00/day).",
+    "Exp 3 IMDB acquisition: IBIA web UI download (or MIDAS request) required since no curl/wget endpoint exists."
+  ]
+}
