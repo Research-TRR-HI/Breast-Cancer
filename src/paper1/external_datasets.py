@@ -10,6 +10,7 @@ Provides:
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -129,6 +130,23 @@ def assert_no_forbidden_columns(columns: Iterable[str], context: str = "datafram
         )
 
 
+_LUMINA_LEAKAGE_SUBSTRINGS: Tuple[str, ...] = ("benign", "malign")
+
+
+def assert_lumina_neutral_inference_manifest(df: pd.DataFrame, context: str = "lumina_inference") -> None:
+    """Strictly forbid any `benign`/`malign` class-revealing substrings in LUMINA inference manifests."""
+    for col in df.columns:
+        vals = df[col].fillna("").astype(str).str.lower()
+        for tok in _LUMINA_LEAKAGE_SUBSTRINGS:
+            hits = vals[vals.str.contains(tok, regex=False)]
+            if not hits.empty:
+                raise ValueError(
+                    f"TARGET-LABEL QUARANTINE VIOLATION in {context}.{col}: "
+                    f"found class-revealing substring {tok!r} (sample={hits.iloc[0]!r}). "
+                    "LUMINA inference manifests must use neutral pseudonymous IDs and neutral paths only."
+                )
+
+
 def _assert_clean_acquisition_meta(series: pd.Series, context: str) -> None:
     """Ensure JSON-serialized acquisition_meta contains no outcome/BI-RADS/pathology keys."""
     for idx, val in enumerate(series):
@@ -200,7 +218,10 @@ def validate_inference_manifest(df: pd.DataFrame, context: str = "inference_mani
         raise ValueError(f"{context}: exam_id spans multiple cluster_ids: {bad}")
 
     _assert_clean_acquisition_meta(out["acquisition_meta"], context=context)
-    return out.sort_values(["dataset_id", "exam_id", "laterality", "view", "image_id"], kind="mergesort").reset_index(drop=True)
+    sorted_out = out.sort_values(["dataset_id", "exam_id", "laterality", "view", "image_id"], kind="mergesort").reset_index(drop=True)
+    if sorted_out["dataset_id"].iloc[0] == "lumina":
+        assert_lumina_neutral_inference_manifest(sorted_out, context=context)
+    return sorted_out
 
 
 def validate_outcome_manifest(df: pd.DataFrame, context: str = "outcome_manifest") -> pd.DataFrame:
@@ -584,12 +605,15 @@ def build_cmmd_external_manifests(
     return validate_inference_manifest(inf_df, "cmmd_inf"), validate_outcome_manifest(out_df, "cmmd_out")
 
 
-def build_lumina_external_manifests(
+def _assign_lumina_pseudonyms(
     cases_df: pd.DataFrame,
-    preprocess_version: str = "trust_sec3_2_v2",
-    is_harmonized: bool = False,
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """Build LUMINA manifests with strict benign/malign ID namespacing (`lumina_benign_<ID>` / `lumina_malign_<ID>`)."""
+    pseudonym_seed: str = "paper1_exp3_lumina_v1",
+) -> pd.DataFrame:
+    """Deterministically map raw LUMINA Benign/Malign cases to class-blind neutral pseudonymous IDs.
+
+    Sorts cases by salted SHA-256 digest so benign and malignant cases are deterministically
+    interleaved and `lumina_case_XXXX` / `lumina_img_XXXXX` never reveal class order or folder name.
+    """
     req = {"class_folder", "case_id", "image_id", "laterality", "view", "image_path", "pathology"}
     missing = sorted(req - set(cases_df.columns))
     if missing:
@@ -605,9 +629,54 @@ def build_lumina_external_manifests(
     if not df["path_norm"].isin(["BENIGN", "MALIGN", "MALIGNANT"]).all():
         raise ValueError("LUMINA pathology must be BENIGN or MALIGN/MALIGNANT (filter '-' rows cleanly).")
     df["outcome_label"] = df["path_norm"].map(lambda x: 0 if x == "BENIGN" else 1)
+    df["raw_case_key"] = df["cls_tag"] + "::" + df["case_id"].astype(str).str.strip()
 
-    df["ns_exam_id"] = "lumina_" + df["cls_tag"] + "_" + df["case_id"].astype(str).str.strip()
-    df["ns_image_id"] = "lumina_" + df["cls_tag"] + "_" + df["image_id"].astype(str).str.strip()
+    # Deterministic salted SHA-256 permutation across benign & malign cases (zero class order leakage)
+    unique_keys = sorted(
+        df["raw_case_key"].unique().tolist(),
+        key=lambda k: hashlib.sha256(f"{pseudonym_seed}:{k}".encode("utf-8")).hexdigest(),
+    )
+    case_map = {k: f"lumina_case_{idx:04d}" for idx, k in enumerate(unique_keys, start=1)}
+    df["ns_exam_id"] = df["raw_case_key"].map(case_map)
+    df["_lat_norm"] = df["laterality"].map(normalize_laterality)
+    df["_view_norm"] = df["view"].map(normalize_view_position)
+
+    df = df.sort_values(["ns_exam_id", "_lat_norm", "_view_norm", "image_id"], kind="mergesort").reset_index(drop=True)
+    df["ns_image_id"] = [f"lumina_img_{i:05d}" for i in range(1, len(df) + 1)]
+    df["neutral_image_path"] = [
+        f"lumina_neutral/{row['ns_exam_id']}/{row['ns_image_id']}{Path(str(row['image_path'])).suffix or '.dcm'}"
+        for row in df.to_dict("records")
+    ]
+    return df
+
+
+def build_lumina_pseudonym_ingest_map(
+    cases_df: pd.DataFrame,
+    pseudonym_seed: str = "paper1_exp3_lumina_v1",
+) -> pd.DataFrame:
+    """Build isolated Wave-2 ingestion rename map (`source_image_path` -> `neutral_image_path`).
+
+    Used ONLY during isolated raw archive extraction to materialize neutral files on disk before
+    constructing `INFERENCE_MANIFEST`; never mounted into model inference.
+    """
+    mapped = _assign_lumina_pseudonyms(cases_df, pseudonym_seed=pseudonym_seed)
+    return mapped[
+        ["ns_exam_id", "ns_image_id", "image_path", "neutral_image_path", "cls_tag", "case_id", "outcome_label"]
+    ].rename(columns={"image_path": "source_image_path", "ns_exam_id": "exam_id", "ns_image_id": "image_id"})
+
+
+def build_lumina_external_manifests(
+    cases_df: pd.DataFrame,
+    preprocess_version: str = "trust_sec3_2_v2",
+    is_harmonized: bool = False,
+    pseudonym_seed: str = "paper1_exp3_lumina_v1",
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Build LUMINA manifests with class-blind neutral pseudonymous IDs (`lumina_case_XXXX`).
+
+    Zero `benign` or `malign` substrings ever appear in `INFERENCE_MANIFEST` IDs, paths, or
+    `acquisition_meta`. Ground-truth labels & original folder provenance stay strictly in `OUTCOME_MANIFEST`.
+    """
+    df = _assign_lumina_pseudonyms(cases_df, pseudonym_seed=pseudonym_seed)
 
     acq = [
         json.dumps(
@@ -627,9 +696,9 @@ def build_lumina_external_manifests(
             "cluster_id": df["ns_exam_id"],
             "exam_id": df["ns_exam_id"],
             "image_id": df["ns_image_id"],
-            "laterality": df["laterality"],
-            "view": df["view"],
-            "image_path": df["image_path"],
+            "laterality": df["_lat_norm"],
+            "view": df["_view_norm"],
+            "image_path": df["neutral_image_path"],
             "acquisition_meta": acq,
             "preprocess_version": preprocess_version,
         }
@@ -653,6 +722,8 @@ def build_lumina_external_manifests(
                         "manufacturers": mfgs,
                         "energy_harmonized": bool(is_harmonized),
                         "pathology_confirmed": True,
+                        "source_class_folder": str(grp["cls_tag"].iloc[0]),
+                        "source_case_id": str(grp["case_id"].iloc[0]),
                     },
                     sort_keys=True,
                 ),
