@@ -36,6 +36,12 @@ NYU_MODEL_ID = "nyu_fourview_pretrained"
 NYU_CKPT_SHA256 = "9a1d97f93493ea2007c00e6c1805dfa634cbc321ecdeba2c2adecd351e86b014"
 NYU_TTA_EPOCHS_OFFICIAL = 10
 NYU_TTA_SEED_OFFICIAL = 0
+NYU_STEP1_MANIFEST_SHA256 = {
+    "rsna_val_calib": "bde6ae3fa12cff0c0d121de2b1344ddc775f1020b3645670b4d62ca00db8f866",
+    "nlbs_4view": "e941df848f2baeac58bbe35b11e4b5ec4e30074c28b893b59f18258008beec65",
+}
+NYU_PILOT_HOURLY_USD = 2.4258       # 1x L40S ($1.95) + 6 vCPU ($0.2838) + 24 GiB RAM ($0.1920)
+NYU_PRODUCTION_HOURLY_USD = 2.5844  # 1x L40S ($1.95) + 8 vCPU ($0.3784) + 32 GiB RAM ($0.2560)
 
 
 def _ensure_nyu_importable(nyu_repo_dir: Path = NYU_REPO_DEFAULT) -> Dict[str, Any]:
@@ -483,6 +489,7 @@ def validate_nyu_step2_cli_and_guard(
     batch_exams: int,
     num_tta_epochs: int,
     approve_full_infer: bool,
+    max_total_spend_usd: Optional[float] = None,
 ) -> None:
     """Validate NYU Step 2 CLI arguments and block unapproved full GPU inference."""
     valid_stages = ("pilot", "infer")
@@ -496,11 +503,77 @@ def validate_nyu_step2_cli_and_guard(
         raise ValueError(f"--batch-exams must be >= 1, got {batch_exams}")
     if int(num_tta_epochs) != NYU_TTA_EPOCHS_OFFICIAL:
         raise ValueError(f"Official NYU Step 2 protocol requires --num-tta-epochs=10, got {num_tta_epochs}")
+    if max_total_spend_usd is not None and float(max_total_spend_usd) <= 0.0:
+        raise ValueError(f"--max-total-spend-usd must be > 0, got {max_total_spend_usd}")
     if stage == "infer" and not approve_full_infer:
         raise RuntimeError(
             "BLOCKED: `--stage infer` requires explicit `--approve-full-infer` confirmation so no full L40S "
             "inference starts unapproved. Run `--stage pilot` first and request explicit approval."
         )
+
+
+def verify_nyu_step1_against_frozen_source(
+    split_name: str,
+    step1_df: pd.DataFrame,
+    source_df: pd.DataFrame,
+    *,
+    actual_manifest_sha256: str = "",
+    expected_manifest_sha256: Optional[str] = None,
+) -> None:
+    """Enforce frozen Step-1 manifest SHA-256 and exact 4-view item/case/slot identity match vs label-free source CSV."""
+    assert_no_forbidden_columns(step1_df.columns, context=f"step1_check_{split_name}")
+    assert_no_forbidden_columns(source_df.columns, context=f"source_check_{split_name}")
+    exp_sha = NYU_STEP1_MANIFEST_SHA256[split_name] if expected_manifest_sha256 is None else expected_manifest_sha256
+    if exp_sha and actual_manifest_sha256 and str(actual_manifest_sha256).lower() != str(exp_sha).lower():
+        raise RuntimeError(
+            f"{split_name}: Step 1 manifest SHA-256 mismatch: {actual_manifest_sha256} != {exp_sha}"
+        )
+
+    case_col = "patient_id" if split_name == "rsna_val_calib" else "StudyInstanceUID"
+    item_col = "image_id" if split_name == "rsna_val_calib" else "image_uid"
+    s1_keys = set(
+        zip(
+            step1_df["case_id"].astype(str),
+            step1_df["item_id"].astype(str),
+            step1_df["view_slot"].astype(str),
+        )
+    )
+    src_keys = set(
+        zip(
+            source_df[case_col].astype(str),
+            source_df[item_col].astype(str),
+            source_df["view_slot"].astype(str),
+        )
+    )
+    if len(step1_df) != len(source_df) or s1_keys != src_keys:
+        raise RuntimeError(
+            f"{split_name}: Step 1 manifest 4-view identity mismatch vs frozen source CSV "
+            f"({len(s1_keys)} vs {len(src_keys)})"
+        )
+    bad_views = set(step1_df["view_slot"].astype(str)) - set(NYU_VIEWS)
+    if bad_views:
+        raise RuntimeError(f"{split_name}: unexpected view_slot values {sorted(bad_views)}")
+
+
+def check_nyu_aggregate_spend_guard(
+    completed_shards: Sequence[Dict[str, Any]],
+    *,
+    max_total_spend_usd: float,
+    next_wave_projected_usd: float = 0.0,
+    context: str = "nyu_step2",
+) -> float:
+    """Enforce aggregate spending cap across all shards (accounting only for newly incurred non-resumed spend)."""
+    incurred = sum(
+        0.0 if bool(o.get("resumed_from_cache", False)) else float(o.get("estimated_cost_usd", 0.0) or 0.0)
+        for o in completed_shards
+    )
+    projected_total = incurred + float(next_wave_projected_usd)
+    if incurred > float(max_total_spend_usd) or projected_total > float(max_total_spend_usd):
+        raise RuntimeError(
+            f"AGGREGATE COST GUARD STOP ({context}): incurred=${incurred:.4f} + next_wave=${next_wave_projected_usd:.4f} "
+            f"= ${projected_total:.4f} exceeds cap ${float(max_total_spend_usd):.4f}."
+        )
+    return round(incurred, 5)
 
 
 def validate_nyu_shard_payload(
@@ -517,7 +590,7 @@ def validate_nyu_shard_payload(
     preprocess_version: str = NYU_CACHE_VERSION,
     preprocess_manifest_sha256: str = "",
 ) -> Tuple[bool, str]:
-    """Verify NYU Step 2 prediction shard metadata, provenance, completeness, and numerical validity."""
+    """Verify NYU Step 2 prediction shard metadata, FP32 precision, provenance, completeness, and numerical validity."""
     if not isinstance(payload, dict):
         return False, "payload_not_dict"
     if payload.get("schema_version") != "paper1_nyu_shard_v2":
@@ -530,6 +603,8 @@ def validate_nyu_shard_payload(
         return False, f"preprocess_version_mismatch:{payload.get('preprocess_version')}"
     if preprocess_manifest_sha256 and payload.get("preprocess_manifest_sha256") != preprocess_manifest_sha256:
         return False, f"preprocess_manifest_sha256_mismatch:{payload.get('preprocess_manifest_sha256')}"
+    if payload.get("precision") != "fp32":
+        return False, f"precision_mismatch:{payload.get('precision')}!=fp32"
     if payload.get("split_name") != split_name:
         return False, f"split_name_mismatch:{payload.get('split_name')}"
     if payload.get("shard_idx") != int(shard_idx) or payload.get("num_shards") != int(num_shards):
@@ -571,9 +646,10 @@ def finalize_and_lock_nyu_predictions(
     batch_exams: int,
     checkpoint_sha256: str = NYU_CKPT_SHA256,
     preprocess_version: str = NYU_CACHE_VERSION,
+    expected_manifest_sha256: Optional[str] = None,
     out_dir: Path,
 ) -> Dict[str, Any]:
-    """Validate 100% 4-view exam coverage across shards, verify finiteness, and SHA-256-lock NYU predictions."""
+    """Validate 100% 4-view exam coverage across shards, verify FP32/finiteness, and SHA-256-lock NYU predictions."""
     assert_no_forbidden_columns(expected_step1_df.columns, context=f"nyu_lock_{split_name}_step1")
     exp_df = expected_step1_df.copy()
     exp_df["case_id"] = exp_df["case_id"].astype(str)
@@ -590,12 +666,16 @@ def finalize_and_lock_nyu_predictions(
             raise RuntimeError(f"Shard {o.get('shard_idx')} checkpoint_sha256 mismatch")
         if o.get("preprocess_version") != preprocess_version:
             raise RuntimeError(f"Shard {o.get('shard_idx')} preprocess_version mismatch")
+        if o.get("precision") != "fp32":
+            raise RuntimeError(f"Shard {o.get('shard_idx')} precision mismatch: {o.get('precision')} != fp32")
         if o.get("batch_exams") != int(batch_exams):
             raise RuntimeError(f"Shard {o.get('shard_idx')} batch_exams mismatch")
         if o.get("num_tta_epochs") != NYU_TTA_EPOCHS_OFFICIAL or o.get("tta_seed") != NYU_TTA_SEED_OFFICIAL:
             raise RuntimeError(f"Shard {o.get('shard_idx')} TTA config mismatch")
         if o.get("preprocess_manifest_sha256"):
             manifest_shas.add(str(o["preprocess_manifest_sha256"]))
+        if expected_manifest_sha256 and str(o.get("preprocess_manifest_sha256", "")) != expected_manifest_sha256:
+            raise RuntimeError(f"Shard {o.get('shard_idx')} preprocess_manifest_sha256 mismatch")
         all_recs.extend(o["records"])
         all_fbs.extend(o.get("fallback_logs", []))
         shard_meta.append(
