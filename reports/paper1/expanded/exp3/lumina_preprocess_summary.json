@@ -1,0 +1,58 @@
+[
+  {
+    "dataset_id": "lumina",
+    "shard_idx": 0,
+    "processed": 161,
+    "skipped": 0,
+    "fallbacks": 0
+  },
+  {
+    "dataset_id": "lumina",
+    "shard_idx": 1,
+    "processed": 161,
+    "skipped": 0,
+    "fallbacks": 0
+  },
+  {
+    "dataset_id": "lumina",
+    "shard_idx": 2,
+    "processed": 161,
+    "skipped": 0,
+    "fallbacks": 0
+  },
+  {
+    "dataset_id": "lumina",
+    "shard_idx": 3,
+    "processed": 161,
+    "skipped": 0,
+    "fallbacks": 0
+  },
+  {
+    "dataset_id": "lumina",
+    "shard_idx": 4,
+    "processed": 161,
+    "skipped": 0,
+    "fallbacks": 0
+  },
+  {
+    "dataset_id": "lumina",
+    "shard_idx": 5,
+    "processed": 160,
+    "skipped": 0,
+    "fallbacks": 0
+  },
+  {
+    "dataset_id": "lumina",
+    "shard_idx": 6,
+    "processed": 160,
+    "skipped": 0,
+    "fallbacks": 0
+  },
+  {
+    "dataset_id": "lumina",
+    "shard_idx": 7,
+    "processed": 160,
+    "skipped": 0,
+    "fallbacks": 0
+  }
+]
