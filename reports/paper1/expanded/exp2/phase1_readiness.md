@@ -1,129 +1,107 @@
-# Paper 1 — Experiment 2 (Original Pretrained Mammography Models) Phase 1 Readiness & Wave 2–3 Approval Request
+# Paper 1 — Experiment 2 (Original Pretrained Mammography Models) Final Phase 2 Readiness Audit
 
-**Branch:** `paper1-exp2-phase1` (merged `main` at `409ec2b`)  
-**Phase / Gate:** Phase 1 Continuation — Step A / Wave 2–3 Prep (`$0.00` cloud spend executed; zero Modal GPU/transfer containers launched)  
+**Branch:** `paper1-exp2-phase1` (merged `main` at `465d3d4`)  
+**Gate:** Final Phase 2 Readiness Audit — Ready for Phase 2 Approval (`$0.00` additional spend during audit)  
 **Target Modal Profile:** `tigerwood693` (explicit `MODAL_PROFILE=tigerwood693`, never `modal profile activate`)
 
 ---
 
-## 1. Executive Summary & Locked Model Cohort (5 Eligible, 1 Disqualified, 3 Rejected)
+## 1. Finalized Eligible Cohort (4 Active Models, 1 Blocked Upstream, 1 Disqualified, 3 Rejected)
 
-Experiment 2 evaluates off-the-shelf, publicly released pretrained mammography models on the quarantined NLBS cohort without RSNA-derived threshold calibration and without altering existing DINOv2 assets on `tigerwood693`.
+Experiment 2 evaluates **4 active eligible pretrained mammography models** on NLBS without RSNA supervision or RSNA threshold calibration. `petrini_twoview_efnb3` is formally marked `blocked_upstream` (never silently dropped from provenance) due to verified upstream file corruption on both HuggingFace and Google Drive; `frcnn_cad` remains `disqualified`; no invalid 5th/6th model is forced.
 
-### Locked Eligible Models (5 Models)
+### Active Phase 2 Eligible Models (4 Models)
 
-| # | Model ID | Source Repo / Weights | NLBS Execution Mode | NLBS Input Cache / Resolution | Primary Metric Policy |
-|---|---|---|---|---|---|
-| 1 | `gmic_pretrained` | `nyukat/GMIC` (`sample_model_1.p`) | **Reuse locked predictions** (`reports/paper1/predictions_locked/gmic_nlbs_case_scores.csv`) | N/A (locked `$0.00`) | **Category C** (AUROC & AUPRC primary) |
-| 2 | `nyu_fourview_pretrained` | `nyukat/breast_cancer_classifier` (`sample_image_model.p`) | **Reuse locked predictions** (`reports/paper1/predictions_locked/nyu_nlbs_4view_case_scores.csv`; single-checkpoint vs ensemble caveat documented) | N/A (locked `$0.00`) | **Category C** (AUROC & AUPRC primary) |
-| 3 | `glam_pretrained` | `nyukat/GLAM` (`17a00198...`, `model_joint.ckpt`, `101.24 MB`) | **New Modal L40S inference** | `glam_nlbs` bundle (`paper1_gmic_uint16_v1/nlbs`, `27,007` files, `97.31 GiB`, `2944x1920` uint16 PNG) | **Category C** (AUROC & AUPRC primary) |
-| 4 | `end2end_cbis_ddsm` | `lishen/end2end-all-conv` (`58401e22...`, `ddsm_resnet50_s10_[512-512-1024]x2.h5`, CBIS-DDSM whole-mammogram classifier; Keras 2.0.5 -> PyTorch parity) | **New Modal L40S inference** | **Option B1 (Recommended):** `cache/paper1_exp2_uncropped_1152x896/nlbs` (`~30–38 GiB`, uncropped `1152x896` uint16 PNG) | **Category C** (AUROC & AUPRC primary) |
-| 5 | `petrini_twoview_efnb3` | `dpetrini/multiple-view` (`2331b545...`) & HF `dpetrini/cbis-ddsm-efficientnetb3-multiple-view` (`eafc5d16...`, MIT, `516.95 MB`, SHA-256 `82add40900054835f23737d9f3a01922275f1e4dcfd3156a0f7059cb58147071`) | **New Modal L40S inference** | **Option B1 (Recommended):** `cache/paper1_exp2_uncropped_1152x896/nlbs` (`~30–38 GiB`, strict `[CC_RGB, MLO_RGB]`, chest-wall-left) | **Category C** (AUROC & AUPRC primary) |
+| # | Model ID | Source Repo & Commit | Checkpoint & SHA-256 | NLBS Execution Mode & Cache | Output Semantics & Aggregation | Primary Metric Policy |
+|---|---|---|---|---|---|---|
+| 1 | `gmic_pretrained` | `nyukat/GMIC` (`594029ef...`) | `sample_model_1.p` (`3b792e6d...`) | **Reuse locked ($0.00):** `reports/paper1/predictions_locked/gmic_nlbs_case_scores.csv` (`6,359` exams, `26,988` imgs, SHA-256 `94521810b9a78e7047a39d71bc54618ea2c7e95600a6f4fba717b79fdb3a6b36`) | Malignant class probability (`[:, 1]`), exam `max` | **Category C** (AUROC & AUPRC primary) |
+| 2 | `nyu_fourview_pretrained` | `nyukat/breast_cancer_classifier` (`6176ebea...`) | `sample_image_model.p` (`9a1d97f9...`; single-checkpoint vs 100-model ensemble caveat) | **Reuse locked ($0.00):** `reports/paper1/predictions_locked/nyu_nlbs_4view_case_scores.csv` (`6,184` common 4-view exams, `24,736` imgs, `10-TTA`, SHA-256 `03e19975edb7a02d297d5b15b672169dd449a86c850488f3f543c5ceddede317`) | Breast malignant probabilities, exam `max(L, R)` | **Category C** (AUROC & AUPRC primary) |
+| 3 | `glam_pretrained` | `nyukat/GLAM` (`17a00198...`) | `model_joint.ckpt` (`96.55 MiB`, SHA-256 `a647ba9176b3e11d2dec7252054504f33856bcabb2bbe763432d3d20e7c65aec`) | **New L40S inference:** `cache/paper1_gmic_uint16_v1/nlbs` (`27,007` files, `97.3070 GiB`, `2944x1920` uint16 PNG) | Softmax malignant prob (`model(x)[:, 1]`), exam `max` | **Category C** (AUROC & AUPRC primary) |
+| 4 | `end2end_cbis_ddsm` | `lishen/end2end-all-conv` (`58401e22...`) | `end2end_cbis_ddsm_ts.pt` (`155.92 MiB`, SHA-256 `1c93c4c3ff7f997cc235140340181995d0219162cecd0bf495381b777a2389be`; Keras->TorchScript `max_abs_diff=4.51e-10`) | **New L40S inference:** `cache/paper1_exp2_uncropped_1152x896/nlbs` (`26,988` files, `16.0075 GiB`, uncropped `1152x896` uint16 PNG) | Keras `Dense(2, softmax)[:, 1]` direct output (no double-softmax), exam `max` | **Category C** (AUROC & AUPRC primary) |
 
-### Formally Disqualified & Rejected Candidates (Hard-Blocked in `src/paper1/exp2_adapters.py`)
+### Blocked Upstream, Disqualified & Rejected Candidates (Hard-Blocked in `src/paper1/exp2_adapters.py`)
 
-| Candidate ID | Status | Formal Justification |
+| Candidate ID | Status | Forensic / Protocol Justification |
 |---|---|---|
-| `frcnn_cad` | **DISQUALIFIED** | Upstream ELTE checkpoint URL (`error.elte.hu/error/452.html`) is dead; legacy Caffe / CUDA 8.0 runtime is incompatible with L40S (`sm_89`); outputs generic lesion detections rather than calibrated exam malignancy. |
-| `mammoscreen_r1` | **REJECTED** | Trained on RSNA Mammography data — violates cross-cohort independence for Experiment 2 NLBS evaluation. |
-| `petrini_vindr_r2` | **REJECTED** | VinDr-Mammo label target (BI-RADS >= 3) is screening assessment rather than biopsy-confirmed cancer ground truth. |
-| `mammo_clip_zeroshot` | **REJECTED** | Contrastive vision-language model (VLM), not a supervised mammography cancer classifier aligned with Exp 2 scope. |
+| `petrini_twoview_efnb3` | **`blocked_upstream`** | Verified forensic corruption on both HuggingFace and Google Drive (`2024-10-01` & `2024-07-01` `.pt`): truncated at `88.0 MiB` (`nz_end = 92,274,688`) with `~405 MiB` zero-padding and no ZIP EOCD (`PK\x05\x06`); `torch.load` raises `BadZipFile`. |
+| `frcnn_cad` | **`disqualified`** | Official ELTE weight URL (`error.elte.hu/error/452.html`) is dead; CUDA 8.0 / Caffe runtime is incompatible with L40S (`sm_89`); lesion detection outputs are not natively calibrated screening malignancy scores. |
+| `mammoscreen_r1` | **`rejected`** | Fine-tuned on RSNA Screening Mammography (`80/10/10` Split 1), violating Exp 2's zero-RSNA-supervision rule. |
+| `petrini_vindr_r2` | **`rejected`** | Trained on VinDr-Mammo BI-RADS `>= 3` screening assessments rather than confirmed cancer outcomes. |
+| `mammo_clip_zeroshot` | **`rejected`** | Contrastive vision-language model rather than a supervised breast cancer classifier. |
 
 ---
 
-## 2. Threshold & Metric Policy Audit (Zero RSNA Calibration)
+## 2. License & Research-Use Restrictions Audit (4 Active Models)
 
-1. **Primary Metrics Locked (Category C):** Threshold-independent **AUROC** and **AUPRC** are locked as the primary Experiment 2 evaluation metrics across all 5 eligible models.
-2. **Category A / B Guardrail:** No arbitrary `0.5` cutoff and zero RSNA-derived threshold calibration are permitted. Operating-point sensitivity/specificity (Category A/B) may only be reported if an independent published/source-domain threshold is explicitly provided and validated via `apply_threshold_policy` in `src/paper1/exp2_adapters.py`.
-3. **Label Quarantine:** Inference manifests remain strictly label-free (`datasets/paper1/nlbs_4view_common_cohort_label_free.csv`, `datasets/nlbs/inference_manifest_stage_c.csv`).
+Verified directly against upstream `LICENSE` and `README.md` files on GitHub:
 
----
-
-## 3. Read-Only Modal Account & Volume Inventory Audit
-
-Verified read-only prior to any Wave 2 spend:
-
-- **`tigerwood693` (Execution Profile):**
-  - Active running apps: `0`
-  - Remaining credits: **`$25.77`** (resets `2026-12-01`); billed: `$0.00`
-  - Existing storage: **`224.8539 GiB`** across `9` volumes (`410,266` files, `$0.00/day` storage, **`799.15 GiB`** headroom under `1,024 GiB` limit)
-  - `rsna-mammography-vol` (`102.2373 GiB`, `81,806` files): `/cache/stage1_nlbs_uint16` (`27,020` files, `35.9386 GiB`), `/cache/stage1_rsna_uint16` (`54,709` files, `65.9501 GiB`), `/cache/paper1_dinov2_vits14` (`23` files, `0.2369 GiB` — preserved untouched), `/models/paper1` (`1` file, `0.0822 GiB`)
-- **`hasinishrak2015` (Read-Only Source Profile):**
-  - Remaining credits: `$5.97`
-  - `nlbs-mammography-vol:/nlbs/extracted`: `26,988` files, `324.4480 GiB`
-  - `rsna-mammography-vol:/cache/paper1_gmic_uint16_v1/nlbs`: `27,007` files, `97.3070 GiB`
+1. **`nyukat/GMIC` (`gmic_pretrained`):** Licensed under **GNU AGPLv3** (`LICENSE` & `README.md`). Research/evaluation allowed; any modified/network-deployed service triggering AGPLv3 section 13 requires corresponding source disclosure under AGPLv3.
+2. **`nyukat/breast_cancer_classifier` (`nyu_fourview_pretrained`):** Licensed under **GNU AGPLv3** (`LICENSE` & `README.md`). Explicit clinical disclaimer in `README.md` (`"not used clinically at NYU Langone Health"` — 2019 legacy model, non-clinical research use only).
+3. **`nyukat/GLAM` (`glam_pretrained`):** **Internal Non-Commercial Research-Only (`LICENSE` file vs `README.md` AGPLv3 conflict).** Upstream `LICENSE` grants permission *solely for internal non-commercial research and evaluation purposes* (`Copyright 2021 New York University. All Rights Reserved`), explicitly prohibiting redistribution, sublicensing, modification, assignment, or commercial use (contact NYU Office of Industrial Liaison for commercial/distribution rights). Respect the stricter `LICENSE` terms: keep weights/outputs strictly internal and never redistribute checkpoints.
+4. **`lishen/end2end-all-conv` (`end2end_cbis_ddsm`):** Licensed under **Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (`CC BY-NC-SA 4.0`)** with explicit **Non-Commercial Terms of Use** in `README.md` (free for non-commercial research; commercial licensing via Mount Sinai Innovation Partners, MSIP; any adapted derivatives shared publicly must carry ShareAlike `CC BY-NC-SA 4.0`).
 
 ---
 
-## 4. NLBS Preparation & Cache Option Reconciliation
+## 3. Threshold Restriction Audit (Strict Category C)
 
-### A. `glam_pretrained` Cache (`glam_nlbs` Bundle)
-Added `"glam_nlbs"` to `src/utils/modal_transfer.py` (`get_bundle_specs("glam_nlbs")`), transferring `hasinishrak2015:rsna-mammography-vol/cache/paper1_gmic_uint16_v1/nlbs` (`27,007` files, `97.31 GiB`, `2944x1920` uint16 PNG) to `tigerwood693:rsna-mammography-vol/cache/paper1_gmic_uint16_v1/nlbs` (`~$0.25 USD`, `$0.00` source delta).
+- **Primary Metrics:** Threshold-independent **AUROC** and **AUPRC** only (`threshold_category="C"`, `calibration_domain="none_threshold_independent_auroc_auprc_only"`).
+- **Zero RSNA / Zero NLBS Calibration:** `apply_threshold_policy` in `src/paper1/exp2_adapters.py` explicitly raises `ValueError` if any `"RSNA"` or `"NLBS"` calibration domain is supplied.
+- **No Arbitrary `0.5` Cutoffs & No False Dismissal Claims:** Because none of the 4 original publications specify compatible screening triage thresholds directly transportable to NLBS without external/target calibration, no arbitrary `0.5` cutoff and no uncalibrated sensitivity/specificity rule-out dismissal claims are made.
+- **Label Quarantine:** `glam_pretrained` and `end2end_cbis_ddsm` read only `datasets/nlbs/inference_manifest_stage_c.csv` (`assert_no_forbidden_columns` enforced).
 
-### B. `end2end_cbis_ddsm` & `petrini_twoview_efnb3` Cache Reconciliation (Option A vs Option B1 vs Option B2)
+---
 
-| Option | Strategy | Storage on `tigerwood693` | Estimated Cost | Preprocessing Parity | Recommendation |
+## 4. Live Read-Only Modal Audit on `tigerwood693` (`$0.00` Audit Spend)
+
+Executed read-only against `MODAL_PROFILE=tigerwood693` after `main` merge (`465d3d4`):
+
+- **Running Apps (`modal app list`):** `0`
+- **Active Profile:** `tigerwood693`
+- **Billing Summary (`modal billing summary`):**
+  - Metered Cost: **`$14.79`** (`Volumes: $8.24`, `Ephemeral Apps: $5.97`, `Deployed Apps: $0.40`, `Network Egress: $0.17`)
+  - Credits: **`-$6.38`** | Network Egress Allowance: **`-$0.17`** | Free Storage: **`-$8.24`** | **Billed Cost: `$0.00`**
+- **Exact Storage Across All 9 Volumes (`464,431` files, `364,849,917,225` bytes = `339.7930 GiB` / `1,024 GiB` limit, `684.21 GiB` free, `$0.00/day`):**
+  - `rsna-mammography-vol`: **`135,971` files, `233,191,388,679` bytes (`217.1764 GiB`)**
+    - `/cache/stage1_nlbs_uint16`: `27,020` files, `38,588,761,450` bytes (`35.9386 GiB`)
+    - `/cache/stage1_rsna_uint16`: `54,709` files, `70,813,338,933` bytes (`65.9501 GiB`)
+    - `/cache/paper1_dinov2_vits14`: `23` files, `254,406,084` bytes (`0.2369 GiB`) — **INTACT**
+    - `/cache/paper1_gmic_uint16_v1`: `27,007` files, `104,482,633,855` bytes (`97.3070 GiB`) — **Wave 2 `glam_nlbs` verified (`all_verified: true` in execution JSON)**
+    - `/cache/paper1_exp2_uncropped_1152x896`: `26,988` files, `17,187,881,356` bytes (`16.0075 GiB`) — **Wave 2 Option B1 uncropped cache verified**
+    - `/models`: `5` files, `1,173,103,648` bytes (`1.0925 GiB`) (`end2end_cbis_ddsm_ts.pt`, `ddsm_resnet50_s10_[512-512-1024]x2.h5`, `glam_model_joint.ckpt`, `petrini_twoview_efnb3.pt`, `dinov2_vits14_pretrain.pth`)
+    - `/external_repos`: `150` files, `650,747,932` bytes (`0.6061 GiB`)
+    - `/_transfer_manifests`: `68` files, `35,565,969` bytes (`0.0331 GiB`)
+    - `/rsna`: `1` file, `4,949,452` bytes (`0.0046 GiB`)
+  - `medmnist-custom-results`: `3` files, `401,479` bytes (`0.0004 GiB`)
+  - `behavior-perception-cache`: `90,539` files, `1,566,805,946` bytes (`1.4592 GiB`)
+  - `viewpoint-checkpoints`: `4` files, `268,560,534` bytes (`0.2501 GiB`)
+  - `viewpoint-real-data`: `893` files, `1,959,235,393` bytes (`1.8247 GiB`)
+  - `behavior-checkpoints`: `6,293` files, `1,497,166,591` bytes (`1.3943 GiB`)
+  - `beef-behavior-data`: `4,351` files, `55,398,766,251` bytes (`51.5941 GiB`)
+  - `cvb-data`: `226,363` files, `15,346,043,642` bytes (`14.2921 GiB`)
+  - `moo-data`: `14` files, `55,621,548,710` bytes (`51.8016 GiB`)
+
+---
+
+## 5. Wave 3 Pilot Benchmarks & Exact Phase 2 Execution Plan (`tigerwood693`)
+
+Verified from `reports/paper1/expanded/exp2/pilots/{glam_pretrained,end2end_cbis_ddsm}_pilot_bench.json`:
+
+| Model ID | Recommended Batch Size | Throughput | Peak VRAM (Alloc / Res) | Pilot Diff vs Smallest BS | Projected Full NLBS (`26,988` imgs / `6,359` studies) |
 |---|---|---|---|---|---|
-| **Option A** | Transfer full raw `nlbs-mammography-vol:/nlbs/extracted` DICOMs (`324.45 GiB`) + decode | `+324.45 GiB` | `$1.15–$1.75` | Exact native | Rejected (unnecessary egress/storage) |
-| **Option B1** | Stream read-only DICOMs from `hasinishrak2015` -> CPU decode/invert/right-mirror -> save uncropped `(1152, 896)` `uint16` PNGs to `cache/paper1_exp2_uncropped_1152x896/nlbs` (`--stage build_uncropped_cache`) | **`~30–38 GiB`** | **`$0.38–$0.55`** (`$0.00` source delta) | Matches CBIS-DDSM uncropped `1152x896` full-field aspect & pixel mean | **RECOMMENDED** |
-| **Option B2** | Reuse existing `/cache/stage1_nlbs_uint16` (`35.94 GiB`, `1520x912` cropped) | `+0 GiB` | `$0.00` | Cropped breast bounding box shifts global pixel mean vs uncropped CBIS-DDSM training | Fallback only (documented ablation risk) |
+| `glam_pretrained` | **`4`** | **`11.674 imgs/sec`** (`2.918 exams/sec`) | `1.1056 / 1.9121 GiB` | `0.0003297` | **`35.32 min` / `$1.3901` (`$1.39`)** |
+| `end2end_cbis_ddsm` | **`32`** | **`29.385 imgs/sec`** (`7.346 exams/sec`) | `6.3919 / 7.1777 GiB` | `0.000184` | **`14.03 min` / `$0.5523` (`$0.55`)** |
+| **Combined Phase 2** | — | — | — | — | **`49.35 min` / `~$1.94 USD`** (`~$1.94–$2.15` incl. NVMe staging) |
 
-**Peak `tigerwood693` Storage Projection (Option B1 + `glam_nlbs`):**
-`224.85 GiB` (existing) + `97.31 GiB` (`glam_nlbs`) + `~35 GiB` (Option B1 `1152x896` cache) + `~1.5 GiB` (weights/outputs) = **`~358.7 GiB << 1,024 GiB`** (`$0.00/day` storage).
+### Exact Executable Phase 2 CLI Commands (After Approval)
 
----
-
-## 5. Adapter, Runner & Local Test Verification
-
-- **`src/paper1/exp2_adapters.py`:** Locks `EXP2_ELIGIBLE_MODELS` (5 models), hard-blocks the 4 disqualified/rejected models in `assert_model_eligible`, implements `EXP2_NLBS_CACHE_OPTIONS`, `prepare_uncropped_1152x896_from_array`, `default_pilot_batch_sizes`, preprocessing/aggregation adapters, `apply_threshold_policy`, shard schema validation, and immutable prediction locking.
-- **`scripts/run_paper1_exp2_modal.py`:** Implements `--stage plan`, `--stage build_uncropped_cache --approve-wave2-download`, progressive batch-size `--stage pilot` (`run_exp2_pilot_benchmark_l40s` benchmarking `vram_allocated_gb`, `vram_reserved_gb`, `imgs_per_sec`, `exams_per_sec`, `data_load_sec`, `gpu_infer_sec`, OOM handling, parity checks, saving `reports/paper1/expanded/exp2/pilots/{model_id}_pilot_bench.json`), and `--stage full`.
-- **`src/utils/modal_transfer.py` & `tests/test_transfer_modal_volumes_cloud.py`:** Adds and unit-tests `"glam_nlbs"` bundle specification.
-- **`tests/test_paper1_exp2_adapters.py`:** CPU unit test suite covering cohort lock, 4 hard-blocked candidates, Option B1 uncropped `1152x896` preprocessing, progressive pilot batch sizes, `--stage build_uncropped_cache` approval guard, Category B/C enforcement, shard resume, and locking.
-
----
-
-## 6. Section 9 — Consolidated Wave 2 + Wave 3 Approval Request (And Phase 2 Projection)
-
-> **STOP GATE:** Zero paid Modal actions have been run. Approval is requested before executing Wave 2 or Wave 3.
-
-### Cost Breakdown (`tigerwood693`, `$25.77` credits available)
-
-| Stage | Scope | Exact Estimated Cost |
-|---|---|---|
-| **Wave 2 (Data & Weights)** | `glam_nlbs` transfer (`~$0.25`) + Option B1 uncropped `1152x896` cache build (`~$0.38–$0.55`) + 3 weight downloads & Keras->PyTorch parity verification (`~$0.05–$0.10`) | **`~$0.68–$0.90 USD`** |
-| **Wave 3 (L40S Pilots)** | Progressive batch-size `--stage pilot` (`200–500` units) across `glam_pretrained`, `end2end_cbis_ddsm`, `petrini_twoview_efnb3` | **`~$0.20–$0.35 USD`** |
-| **Wave 2 + Wave 3 Subtotal** | **Immediate Approval Request** | **`~$0.88–$1.25 USD`** |
-| **Phase 2 (Full NLBS)** | Full NLBS L40S inference + immutable prediction locks (`glam_pretrained`, `end2end_cbis_ddsm`, `petrini_twoview_efnb3`; `gmic` & `nyu` `$0.00` reuse) | **`~$1.15–$2.25 USD`** |
-| **Combined Exp 2 Total** | **Wave 2 + Wave 3 + Phase 2** | **`~$2.03–$3.50 USD`** |
-
-### Exact Pre-Staged Wave 2 Commands (After Approval)
+`scripts/run_paper1_exp2_modal.py` uses resumable shard caches (`rsna-mammography-vol:/cache/paper1_exp2_shards/<model_id>/nlbs_full/shard_XX_of_04.json` verified via `expected_unit_ids_sha256` and `checkpoint_sha256`) and writes immutable pre-join locks to `reports/paper1/expanded/exp2/predictions_locked/{model_id}_nlbs_full_{unit_scores.csv, case_scores.csv, provenance_lock.json}`:
 
 ```powershell
-# 1. Free dry-run plan + Paid Modal transfer for GLAM 2944x1920 NLBS PNG cache (97.31 GiB) to tigerwood693
-python scripts/transfer_modal_volumes_cloud.py --dst-profile tigerwood693 --bundle glam_nlbs --plan-only
-$env:MODAL_PROFILE="tigerwood693"; modal --profile tigerwood693 run scripts/transfer_modal_volumes_cloud.py --dst-profile tigerwood693 --bundle glam_nlbs
+# 1. GLAM full NLBS inference (26,988 imgs / 6,359 studies, bs=4, 4 shards)
+$env:MODAL_PROFILE="tigerwood693"; python scripts/run_paper1_exp2_modal.py --stage infer --model-id glam_pretrained --split nlbs_full --batch-size 4 --num-shards 4 --approve-full-infer
 
-# 2. Build Option B1 uncropped 1152x896 uint16 NLBS PNG cache (~30-38 GiB) on tigerwood693
-$env:MODAL_PROFILE="tigerwood693"; python scripts/run_paper1_exp2_modal.py --stage build_uncropped_cache --model-id end2end_cbis_ddsm --cache-mode uncropped_1152x896 --approve-wave2-download
+# 2. End2End CBIS-DDSM full NLBS inference (26,988 imgs / 6,359 studies, bs=32, 4 shards)
+$env:MODAL_PROFILE="tigerwood693"; python scripts/run_paper1_exp2_modal.py --stage infer --model-id end2end_cbis_ddsm --split nlbs_full --cache-mode uncropped_1152x896 --batch-size 32 --num-shards 4 --approve-full-infer
 ```
 
-### Exact Pre-Staged Wave 3 Progressive Pilot Commands (After Wave 2)
-
-```powershell
-# GLAM L40S progressive pilot (batch sizes: 1,2,4)
-$env:MODAL_PROFILE="tigerwood693"; python scripts/run_paper1_exp2_modal.py --stage pilot --model-id glam_pretrained --pilot-batch-sizes 1,2,4 --approve-pilot
-
-# End2End CBIS-DDSM L40S progressive pilot (batch sizes: 4,8,16,32)
-$env:MODAL_PROFILE="tigerwood693"; python scripts/run_paper1_exp2_modal.py --stage pilot --model-id end2end_cbis_ddsm --cache-mode uncropped_1152x896 --pilot-batch-sizes 4,8,16,32 --approve-pilot
-
-# Petrini Two-View EfficientNet-B3 L40S progressive pilot (batch sizes: 2,4,8,16)
-$env:MODAL_PROFILE="tigerwood693"; python scripts/run_paper1_exp2_modal.py --stage pilot --model-id petrini_twoview_efnb3 --cache-mode uncropped_1152x896 --pilot-batch-sizes 2,4,8,16 --approve-pilot
-```
-
-### Exact Phase 2 Commands (After Wave 3 Pilot Sign-Off)
-
-```powershell
-$env:MODAL_PROFILE="tigerwood693"; python scripts/run_paper1_exp2_modal.py --stage infer --model-id glam_pretrained --split nlbs_full --approve-full-infer
-$env:MODAL_PROFILE="tigerwood693"; python scripts/run_paper1_exp2_modal.py --stage infer --model-id end2end_cbis_ddsm --cache-mode uncropped_1152x896 --split nlbs_full --approve-full-infer
-$env:MODAL_PROFILE="tigerwood693"; python scripts/run_paper1_exp2_modal.py --stage infer --model-id petrini_twoview_efnb3 --cache-mode uncropped_1152x896 --split nlbs_full --approve-full-infer
-```
+*(Note: A dedicated CPU-only `scripts/evaluate_paper1_exp2.py` script for post-lock Category C AUROC/AUPRC & cluster-bootstrap reporting has not yet been authored and should be added once `glam_pretrained` and `end2end_cbis_ddsm` Phase 2 locks complete; `--split nlbs_full` covers both full `N=6,359` and common 4-view `N=6,184` evaluation via subsetting.)*
