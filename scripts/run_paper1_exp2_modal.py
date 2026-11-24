@@ -1,8 +1,9 @@
 """Paper 1 Experiment 2 — Modal Runner, Progressive Pilot Benchmarker & Cache Builder.
 
 Targets Modal profile `tigerwood693` explicitly (NEVER calls `modal profile activate`).
-Enforces Section 6 locked shortlist (`glam_pretrained`, `end2end_cbis_ddsm`, `petrini_twoview_efnb3`)
-while hard-blocking disqualified/rejected candidates and locking Category C (AUROC/AUPRC).
+Enforces finalized Phase 2 shortlist (`glam_pretrained`, `end2end_cbis_ddsm`)
+while hard-blocking blocked_upstream (`petrini_twoview_efnb3`), disqualified, and rejected candidates
+and locking Category C (AUROC/AUPRC).
 
 Stages:
   - `plan` (CPU-local, $0.00): dry-run work-item counts & progressive pilot batch schedule.

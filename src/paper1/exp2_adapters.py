@@ -1,14 +1,14 @@
 """Paper 1 Experiment 2 — Original Pretrained Mammography Model Adapters & Quarantine Pipeline.
 
-Locked Section 6 Decisions (5 Eligible Models, Category C Primary AUROC/AUPRC):
+Finalized Phase 2 Cohort (4 Active Eligible Models, Category C Primary AUROC/AUPRC):
   - Eligible Locked Reuse ($0.00):
       1. `gmic_pretrained` (nyukat/GMIC, sample_model_1.p)
       2. `nyu_fourview_pretrained` (nyukat/breast_cancer_classifier, sample_image_model.p)
   - Eligible New Inference (tigerwood693):
       3. `glam_pretrained` (nyukat/GLAM, model_joint.ckpt; reuses GMIC 2944x1920 NLBS PNGs)
-      4. `end2end_cbis_ddsm` (lishen/end2end-all-conv, ddsm_resnet50_s10_[512-512-1024]x2.h5)
-      5. `petrini_twoview_efnb3` (dpetrini/multiple-view, CBIS-DDSM EfficientNet-B3 2-view)
-  - Formally Disqualified & Rejected Candidates (Hard-Blocked):
+      4. `end2end_cbis_ddsm` (lishen/end2end-all-conv, ddsm_resnet50_s10_[512-512-1024]x2.h5 -> TorchScript)
+  - Blocked Upstream / Disqualified / Rejected Candidates (Hard-Blocked):
+      - `petrini_twoview_efnb3`: BLOCKED_UPSTREAM (corrupt upstream .pt truncated at 88.0 MiB with ~405 MiB zero-padding & no ZIP EOCD PK\\x05\\x06 on HF and Google Drive)
       - `frcnn_cad`: DISQUALIFIED (dead ELTE weight URL + CUDA 8.0/Caffe + unvalidated semantics)
       - `mammoscreen_r1`: REJECTED (trained on RSNA 80/10/10 — violates zero-RSNA-supervision design)
       - `petrini_vindr_r2`: REJECTED (VinDr-Mammo BI-RADS >=3 is not biopsy-confirmed cancer)
@@ -42,12 +42,10 @@ EXP2_ELIGIBLE_MODELS: Tuple[str, ...] = (
     "nyu_fourview_pretrained",
     "glam_pretrained",
     "end2end_cbis_ddsm",
-    "petrini_twoview_efnb3",
 )
 EXP2_NEW_INFER_MODELS: Tuple[str, ...] = (
     "glam_pretrained",
     "end2end_cbis_ddsm",
-    "petrini_twoview_efnb3",
 )
 EXP2_PETRINI_INPUT_SIZE: Tuple[int, int] = (1152, 896)  # (height, width)
 EXP2_PETRINI_CBIS_MEAN: float = 13369.0
@@ -179,8 +177,8 @@ EXP2_MODEL_REGISTRY: Dict[str, Exp2ModelSpec] = {
     "petrini_twoview_efnb3": Exp2ModelSpec(
         model_id="petrini_twoview_efnb3",
         display_name="Petrini Two-View EfficientNet-B3 (CBIS-DDSM)",
-        eligibility="eligible_new_inference",
-        threshold_category="C",
+        eligibility="blocked_upstream",
+        threshold_category="N/A",
         official_repo="https://github.com/dpetrini/multiple-view",
         repo_revision="2331b545ebdbd5e8c1da58e13b5dd14ba80d33c2",
         checkpoint_name="2024-10-01-14h36m_50ep_best_model_AUC_08643_Best_2-Views-CBIS-EFB3-CVUBP.pt",
@@ -188,8 +186,13 @@ EXP2_MODEL_REGISTRY: Dict[str, Exp2ModelSpec] = {
         license="MIT",
         training_dataset="CBIS-DDSM (two-view CC+MLO, original split, N=2,694)",
         input_level="breast_2view",
-        nlbs_cache_source="uncropped_1152x896",
+        nlbs_cache_source="blocked",
         aggregation_rule="max(left_breast_malignancy_prob, right_breast_malignancy_prob)",
+        exclusion_reason=(
+            "BLOCKED_UPSTREAM: Both HuggingFace and Google Drive checkpoints (2024-10-01 and 2024-07-01 .pt) "
+            "are forensically corrupted — truncated at 88.0 MiB (nz_end=92,274,688) with ~405 MiB zero-padding "
+            "and no ZIP EOCD (PK\\x05\\x06); torch.load raises BadZipFile."
+        ),
     ),
     "frcnn_cad": Exp2ModelSpec(
         model_id="frcnn_cad",
@@ -284,11 +287,11 @@ def default_pilot_batch_sizes(model_id: str) -> List[int]:
 
 
 def assert_model_eligible(model_id: str) -> Exp2ModelSpec:
-    """Return model spec or raise RuntimeError if unknown, disqualified, or rejected for Exp 2."""
+    """Return model spec or raise RuntimeError if unknown, blocked_upstream, disqualified, or rejected for Exp 2."""
     if model_id not in EXP2_MODEL_REGISTRY:
         raise ValueError(f"Unknown Experiment 2 model_id={model_id!r}")
     spec = EXP2_MODEL_REGISTRY[model_id]
-    if spec.eligibility in ("disqualified", "rejected"):
+    if spec.eligibility in ("disqualified", "rejected", "blocked_upstream"):
         raise RuntimeError(
             f"BLOCKED ({spec.eligibility.upper()}): model_id={model_id!r} ({spec.exclusion_reason})"
         )

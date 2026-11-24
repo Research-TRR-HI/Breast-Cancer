@@ -3,18 +3,22 @@
 ## Active Goals & Todo
 - [x] **Paper 1 Primary Six-Model Benchmark (`reports/paper1/six_model_final/six_model_summary.{md,json}`):** Completed & pushed (`bad3689`).
 - [x] **Paper 1 Expanded Three-Experiment Protocol — Phase 1 Wave 1 (`reports/paper1/expanded/phase1_master_readiness.{md,json}`):** Completed & pushed (`6d8f8e1`).
-- [x] **Paper 1 Expanded — Wave 2 + Wave 3 Execution (`USD 3.59 <= USD 5.90` cap):**
-  - **Exp 1 (`dryousufmozumder`, `~USD 0.58`):** `GMIC train_all` (`43,724` imgs) verified, `rsna_val_calib` (`62.06 GiB`) transferred & verified, `rsna_train_pilot` (`200` exams, `5.913 GiB`) NYU cache built & verified; GMIC L40S pilot (`bf16`, `bs=64`, `49.001 imgs/sec`, `8.22 GB` VRAM, proj `0.531h` / `USD 1.25`) & NYU L40S pilot (`extract bs=16` `6.83 exams/sec`, `10-TTA eval bs=8` `1.26 exams/sec`) completed.
-  - **Exp 2 (`tigerwood693`, `~USD 2.05`):** `glam_nlbs` (`97.307 GiB`) transferred & verified, Option B1 `1152x896` cache (`27,020` imgs, `0` failures) built, `GLAM` (`a647ba91...`), `End2End` Keras->TorchScript (`1c93c4c3...`, `max_abs_diff=4.51e-10`), and `Petrini` downloaded; `GLAM` (`bs=4`, `11.674 imgs/sec`, `USD 0.037`, proj `USD 1.39`) & `End2End` (`bs=32`, `29.385 imgs/sec`, `USD 0.028`, proj `USD 0.55`) L40S pilots completed. `petrini_twoview_efnb3` blocked upstream (both HF & Google Drive `.pt` truncated at `88.0 MiB` with `405 MiB` zero-padding and no ZIP EOCD `PK\x05\x06`).
-  - **Exp 3 (`tigerwood697`, `~USD 0.96`):** `exp3_backbones` (`1.80 GiB`), `LUMINA` (`1,285` imgs / `468` exams, neutral pseudonyms, `0` fallbacks), and `CMMD` (`5,202` imgs / `1,775` exams, `0` fallbacks) downloaded & preprocessed; `LUMINA` & `CMMD` L40S pilots completed (`ce_b5` `bs=32`, `trust_b5` `bs=32`, `dinov2_rsna` `bs=128`/`32`, `resnet50_rsna` `bs=32`). `IMDB` still pending manual IBIA download.
-- [ ] **Phase 2 Approval Gate:** Awaiting user approval for full Phase 2 fine-tuning (Exp 1) and full external inference (Exp 2 & Exp 3).
+- [x] **Paper 1 Expanded — Wave 2 + Wave 3 Execution (`~USD 3.59–3.64 <= USD 5.90` cap):** Completed & pushed (`465d3d4`).
+- [x] **Final Phase 2 Readiness Audit (`2026-11-25`, `$0.00` spend, `92` tests OK `skipped=2`, `14/14` specialist OK):**
+  - **Exp 1 (`dryousufmozumder`, `~$25.56` left, `963.74 GiB`):** GMIC (`bf16 bs=64`, `$1.25`) & NYU (`extract bs=16` `$4.76`, `10-TTA bs=8` `$4.88`) audited; 3 critical NYU CLI flags verified (`--max-spend-usd 6.5`, `_cached_` ckpt path, `--num-shards 4`); `< 1,024 GiB` Cleanup Gates #1 (`-245.23 GiB`) & #2 (`-159.37 GiB`) locked; `~$15.24` Phase 2 total.
+  - **Exp 2 (`tigerwood693`, `~$23.62` left, `339.79 GiB`):** Integrated into `main` (`834a453..6ff3115`); finalized **4 models** (`gmic` & `nyu` `$0` reuse, `glam` `bs=4` `$1.39`, `end2end` `bs=32` `$0.55`); `petrini_twoview_efnb3` hard-blocked `blocked_upstream`, `frcnn_cad` `disqualified`; licenses & Category C verified (`~$1.94–$2.15` total).
+  - **Exp 3 (`tigerwood697`, `~$24.55` left, `~243.49 GiB`):** Integrated into `main` (`246474f..15b89c6`); fixed missing `run_cli` `--stage infer` sharded orchestration, NYU-on-LUMINA hard block, CMMD `826`-exam 4-view restriction, pre-join SHA-256 locking, and dry-runs (`~$0.42` Ready-4 + `~$1.50–$2.50` Agent 1 handoff).
+  - **Phase 2 Execution Plan & `$30` Budget:** Written to `reports/paper1/expanded/phase2_execution_plan.md` (`~$22.74–$23.95` total w/o IMDB, Reserve `~$6.05–$7.26`; `~$24.34–$26.75` w/ IMDB).
+- [ ] **FINAL APPROVAL GATE: Awaiting user `GO PHASE 2`** before launching full training or full inference.
+- [ ] **External Access Blocker (`IMDB`):** User-assisted manual IBIA download (`MAMOS_1000000004`, `MAMOS_1000000050`) or MIDAS access + `modal volume put` to `tigerwood697`.
 
-## Last Session (Convo 4ea0ac0d-67d7-40c5-b5c8-ebd4cc866015)
-- Executed Wave 2 + Wave 3 concurrently across `dryousufmozumder`, `tigerwood693`, and `tigerwood697` (`~USD 3.59` total billed vs `USD 5.90` cap).
-- Fixed NYU L40S TF32 feature tolerance (`atol=1e-3`, `score_diff=0.0`), GMIC `Tuple` import, GLAM PyTorch-2 `get_max_window` floor division + 7 legacy checkpoint keys, End2End double-softmax bug, Exp 3 `Stage1CropResult` attribute access + `canUse32BitIndexMath` guard, and CMMD `ViewCodeSequence` fallback.
-- Verified `petrini_twoview_efnb3` upstream corruption forensically (`nz_end = 92,274,688`, zero ZIP EOCD on both HF and Google Drive).
+## Last Session (Convo 4ea0ac0d-67d7-40c5-b5c8-ebd4cc866015 — `2026-11-25`)
+- Executed 3-subagent Final Phase 2 Readiness Audit across `dryousufmozumder`, `tigerwood693`, and `tigerwood697` (`$0.00` spend, `0` running apps).
+- Integrated Exp 2 (`4`-model lock) and Exp 3 (`--stage infer` orchestration + 4 new tests) into `main`.
+- Verified full test suite (`Ran 92 tests in 175.075s — OK (skipped=2)`), specialist suite (`14/14 OK` in `3.835s`), and Exp 3 `dry_run` (`cmmd` & `lumina`).
 
 ## Current Blockers & Notes
-- **IMDB (Exp 3):** IBIA portal requires interactive web login/download.
-- **Petrini Two-View EfficientNet-B3 (Exp 2):** Upstream `.pt` files (`2024-10-01` & `2024-07-01`) lack ZIP EOCD (`PK\x05\x06`) and are zero-padded after `88.0 MiB`; 4 valid Exp 2 models (`gmic_pretrained`, `nyu_fourview_pretrained`, `glam_pretrained`, `end2end_cbis_ddsm`) are ready.
-- **DO NOT** run full Phase 2 training/inference until explicit user approval.
+- **IMDB (Exp 3):** IBIA portal requires interactive web download (`MAMOS_1000000004`, `MAMOS_1000000050`).
+- **Petrini (`blocked_upstream`) & Faster R-CNN (`disqualified`):** Permanently excluded from Exp 2 (no repair spend).
+- **LUMINA NYU 4-View:** Hard-blocked in `scripts/run_paper1_exp3_modal.py` (malignant cases lack contralateral views).
+- **DO NOT** run full Phase 2 training/inference until explicit user `GO PHASE 2`.

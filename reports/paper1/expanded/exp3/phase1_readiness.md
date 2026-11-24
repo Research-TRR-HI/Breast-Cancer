@@ -79,5 +79,5 @@ $env:MODAL_PROFILE='tigerwood697'; modal run scripts/run_paper1_exp3_modal.py --
 $env:MODAL_PROFILE='tigerwood697'; modal run scripts/run_paper1_exp3_modal.py --stage infer --dataset lumina --model gmic_rsna_finetuned --manifest-csv datasets/exp3_meta/lumina_inference_manifest.csv --handoff-json <AGENT1_HANDOFF_JSON> --num-shards 4 --max-spend-usd 1.5 --approve-full-infer
 
 # 5. Isolated Multi-Dataset Evaluation (never pooled)
-python scripts/evaluate_paper1_exp3.py --eval-specs-json <EVAL_SPECS_JSON> --out-dir reports/paper1/expanded/exp3/eval --n-boot 2000
+python scripts/evaluate_paper1_exp3.py --config-json <EVAL_CONFIG_JSON> --out-dir reports/paper1/expanded/exp3/eval --n-boot 2000
 ```
