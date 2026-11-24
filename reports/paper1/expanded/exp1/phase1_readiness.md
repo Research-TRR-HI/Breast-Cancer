@@ -227,3 +227,17 @@ python scripts/evaluate_paper1_specialist_finetune.py --model nyu_fourview_rsna_
 - Ready to execute Wave 2 (`--stage verify --split train_all`, `dryousuf_gmic_eval_rsna_val_calib` transfer) and Wave 3 L40S pilots (`~$0.30` total) upon explicit approval, provided:
   1. `modal run` executes from a directory containing `external/GMIC` & `external/breast_cancer_classifier`.
   2. Sequential storage cleanup gates (post-GMIC-train & post-GMIC-eval) are explicitly approved to keep storage `< 1,024 GiB` (`$0.00/day`).
+
+---
+
+## 25. Final Phase 2 Readiness Audit (`2026-11-25`, Post-Wave 2+3)
+
+- **Live Modal State (`dryousufmozumder`, read-only):** `0` running apps, `$4.44` credits used (`~$25.56` remaining of `$30.00`), **`963.7435 GiB` used** across 6 volumes (`60.2565 GiB` under `1,024 GiB` free tier, `$0.00/day`).
+- **Measured Wave 3 Winners:**
+  - **GMIC (`L40S`, `bf16`, `bs=64`):** `49.001 imgs/sec` (`43.087 imgs/sec` val), `8.2241 GB` alloc VRAM, `steps_per_epoch=75` (`4,800` draws/ep), `scaled_lr=2.8284e-4`, `warmup=12`, `train_calib` AUROC selection, **`0.531h` / `$1.25`** projected full train.
+  - **NYU Four-View (`L40S`):** Feature extraction `bs=16` (`6.8278 exams/sec`, `176.86 MiB` cache, **`110.52 min` / `$4.76`**); 10-TTA eval `bs=8` (`1.2611 exams/sec`, `17.30 GB` alloc VRAM, `$1.36` `val_calib` + `$3.52` `nlbs_4view`); multi-draw cache equivalence verified (`max_feature_abs_diff = 3.57e-4`, `max_score_abs_diff_vs_full_eval = 0.0`).
+- **Critical CLI Flag Corrections Verified Against Code:**
+  1. NYU `--stage extract_head_features` MUST pass `--batch-exams 16 --max-spend-usd 6.5` (not `$3.0`, because extraction is `$4.76`).
+  2. NYU `--stage eval` MUST pass `--checkpoint-path /rsna_vol/models/paper1/checkpoints/nyu_rsna_head_only_cached_seed42_best_train_calib.pt` explicitly (`main()` defaults without `_cached_`).
+  3. NYU `--stage eval --split nlbs_4view` MUST pass `--batch-exams 8 --num-shards 4 --max-spend-usd 4.5` (`per_shard_cap = min(2.0, max_spend_usd)` vs `$3.52` full cost).
+- **Updated Phase 2 Projection (`dryousufmozumder`):** **`~$15.24` total** (`$1.25` GMIC train + `$2.10` GMIC eval/transfer + `$2.25` NYU `train_all` PNGs + `$4.76` NYU extract/head + `$4.88` NYU 10-TTA eval), with sequential `< 1,024 GiB` cleanup Gates #1 (`-245.23 GiB`) and #2 (`-159.37 GiB`) documented in [phase2_execution_plan.md](../phase2_execution_plan.md).
