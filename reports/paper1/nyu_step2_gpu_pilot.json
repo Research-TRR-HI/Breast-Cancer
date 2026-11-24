@@ -1,0 +1,233 @@
+{
+  "modal_profile": "hasinishrak2015",
+  "gpu_name": "NVIDIA L40S",
+  "checkpoint_sha256": "9a1d97f93493ea2007c00e6c1805dfa634cbc321ecdeba2c2adecd351e86b014",
+  "preprocess_version": "paper1_nyu_uint16_v1",
+  "pilot_counts": {
+    "n_rsna_exams": 50,
+    "n_rsna_fallback_exams_tested": 34,
+    "n_nlbs_exams": 50,
+    "total_exams": 100,
+    "total_images": 400,
+    "batch_exams": 4,
+    "num_tta_epochs": 10,
+    "tta_seed": 0
+  },
+  "all_scores_finite": true,
+  "score_summary_label_free": {
+    "min": 0.010808,
+    "median": 0.060193,
+    "max": 0.707167
+  },
+  "sample0_10tta_l40s": {
+    "left_benign": 0.057984162122011185,
+    "right_benign": 0.0754040852189064,
+    "left_malignant": 0.00904991663992405,
+    "right_malignant": 0.017942098900675774,
+    "exam_score": 0.017942098900675774
+  },
+  "parity_batched_vs_orig_bs1_12exams": {
+    "max_abs_diff_exam_score": 4.306e-06,
+    "max_abs_diff_all4_classes": 6.199e-06,
+    "orig_bs1_12exams_sec": 15.023,
+    "orig_bs1_exams_per_sec": 0.8,
+    "rows": [
+      {
+        "split": "rsna_val_calib",
+        "case_id": "12943",
+        "n_fallbacks": 1,
+        "orig_bs1_exam_score": 0.03204032,
+        "batched_exam_score": 0.03204046,
+        "abs_diff_exam_score": 1.34e-07,
+        "abs_diff_max4": 5.126e-06
+      },
+      {
+        "split": "rsna_val_calib",
+        "case_id": "14995",
+        "n_fallbacks": 2,
+        "orig_bs1_exam_score": 0.10371856,
+        "batched_exam_score": 0.10371745,
+        "abs_diff_exam_score": 1.11e-06,
+        "abs_diff_max4": 4.023e-06
+      },
+      {
+        "split": "rsna_val_calib",
+        "case_id": "1625",
+        "n_fallbacks": 2,
+        "orig_bs1_exam_score": 0.13052605,
+        "batched_exam_score": 0.13052174,
+        "abs_diff_exam_score": 4.306e-06,
+        "abs_diff_max4": 4.306e-06
+      },
+      {
+        "split": "rsna_val_calib",
+        "case_id": "17724",
+        "n_fallbacks": 3,
+        "orig_bs1_exam_score": 0.05417356,
+        "batched_exam_score": 0.05417295,
+        "abs_diff_exam_score": 6.07e-07,
+        "abs_diff_max4": 1.311e-06
+      },
+      {
+        "split": "rsna_val_calib",
+        "case_id": "19499",
+        "n_fallbacks": 1,
+        "orig_bs1_exam_score": 0.06261919,
+        "batched_exam_score": 0.06261775,
+        "abs_diff_exam_score": 1.445e-06,
+        "abs_diff_max4": 4.947e-06
+      },
+      {
+        "split": "rsna_val_calib",
+        "case_id": "21194",
+        "n_fallbacks": 1,
+        "orig_bs1_exam_score": 0.02922603,
+        "batched_exam_score": 0.02922584,
+        "abs_diff_exam_score": 1.94e-07,
+        "abs_diff_max4": 2.652e-06
+      },
+      {
+        "split": "rsna_val_calib",
+        "case_id": "21468",
+        "n_fallbacks": 2,
+        "orig_bs1_exam_score": 0.05104087,
+        "batched_exam_score": 0.05104254,
+        "abs_diff_exam_score": 1.669e-06,
+        "abs_diff_max4": 6.199e-06
+      },
+      {
+        "split": "rsna_val_calib",
+        "case_id": "26286",
+        "n_fallbacks": 2,
+        "orig_bs1_exam_score": 0.13197462,
+        "batched_exam_score": 0.13197273,
+        "abs_diff_exam_score": 1.892e-06,
+        "abs_diff_max4": 4.113e-06
+      },
+      {
+        "split": "nlbs_4view",
+        "case_id": "1.2.124.113532.10.77.16.11.20060925.83410.7336485",
+        "n_fallbacks": 0,
+        "orig_bs1_exam_score": 0.08182269,
+        "batched_exam_score": 0.08182126,
+        "abs_diff_exam_score": 1.431e-06,
+        "abs_diff_max4": 3.099e-06
+      },
+      {
+        "split": "nlbs_4view",
+        "case_id": "1.2.124.113532.10.77.16.11.20090707.85139.13387751",
+        "n_fallbacks": 0,
+        "orig_bs1_exam_score": 0.04737159,
+        "batched_exam_score": 0.0473711,
+        "abs_diff_exam_score": 4.95e-07,
+        "abs_diff_max4": 4.202e-06
+      },
+      {
+        "split": "nlbs_4view",
+        "case_id": "1.2.124.113532.10.77.16.11.20090713.143931.13428339",
+        "n_fallbacks": 0,
+        "orig_bs1_exam_score": 0.05002569,
+        "batched_exam_score": 0.05002471,
+        "abs_diff_exam_score": 9.83e-07,
+        "abs_diff_max4": 2.742e-06
+      },
+      {
+        "split": "nlbs_4view",
+        "case_id": "1.2.124.113532.10.77.16.11.20090716.92151.13448089",
+        "n_fallbacks": 0,
+        "orig_bs1_exam_score": 0.17157951,
+        "batched_exam_score": 0.1715766,
+        "abs_diff_exam_score": 2.906e-06,
+        "abs_diff_max4": 3.517e-06
+      }
+    ]
+  },
+  "parity_cached_vs_online_raw_6exams": {
+    "max_abs_diff_vs_raw_online": 4.306e-06,
+    "rows": [
+      {
+        "split": "rsna_val_calib",
+        "case_id": "12943",
+        "n_fallbacks": 1,
+        "online_raw_exam_score": 0.03204032,
+        "cached_batched_exam_score": 0.03204046,
+        "abs_diff_vs_raw_online": 1.34e-07
+      },
+      {
+        "split": "rsna_val_calib",
+        "case_id": "14995",
+        "n_fallbacks": 2,
+        "online_raw_exam_score": 0.10371856,
+        "cached_batched_exam_score": 0.10371745,
+        "abs_diff_vs_raw_online": 1.11e-06
+      },
+      {
+        "split": "rsna_val_calib",
+        "case_id": "1625",
+        "n_fallbacks": 2,
+        "online_raw_exam_score": 0.13052605,
+        "cached_batched_exam_score": 0.13052174,
+        "abs_diff_vs_raw_online": 4.306e-06
+      },
+      {
+        "split": "nlbs_4view",
+        "case_id": "1.2.124.113532.10.77.16.11.20060925.83410.7336485",
+        "n_fallbacks": 0,
+        "online_raw_exam_score": 0.08182269,
+        "cached_batched_exam_score": 0.08182126,
+        "abs_diff_vs_raw_online": 1.431e-06
+      },
+      {
+        "split": "nlbs_4view",
+        "case_id": "1.2.124.113532.10.77.16.11.20090707.85139.13387751",
+        "n_fallbacks": 0,
+        "online_raw_exam_score": 0.04737159,
+        "cached_batched_exam_score": 0.0473711,
+        "abs_diff_vs_raw_online": 4.95e-07
+      },
+      {
+        "split": "nlbs_4view",
+        "case_id": "1.2.124.113532.10.77.16.11.20090713.143931.13428339",
+        "n_fallbacks": 0,
+        "online_raw_exam_score": 0.05002569,
+        "cached_batched_exam_score": 0.05002471,
+        "abs_diff_vs_raw_online": 9.83e-07
+      }
+    ]
+  },
+  "bs8_mini_probe": {
+    "n_exams": 16,
+    "wall_sec": 10.156,
+    "exams_per_sec": 1.58,
+    "gpu_infer_sec": 6.176,
+    "peak_vram_gb": 18.578,
+    "max_exam_score_diff_vs_bs": 4.2e-06
+  },
+  "timing_sec": {
+    "model_load_sec": 2.376,
+    "nvme_stage_sec": 1.903,
+    "decode_tta_sec": 10.686,
+    "gpu_infer_sec": 41.639,
+    "infer_loop_sec": 52.428,
+    "e2e_pilot_sec": 54.331,
+    "total_container_sec": 114.385
+  },
+  "throughput": {
+    "e2e_exams_per_sec": 1.84,
+    "e2e_imgs_per_sec": 7.36,
+    "gpu_only_exams_per_sec": 2.4
+  },
+  "memory": {
+    "peak_vram_gb": 9.309,
+    "host_rss_gb": 23.616
+  },
+  "cost": {
+    "l40s_hourly_usd": 2.4258,
+    "max_pilot_cost_usd": 0.18,
+    "measured_pilot_e2e_usd": 0.03661,
+    "measured_pilot_total_container_usd": 0.07708,
+    "under_020_budget": true,
+    "projected_full_8566_exams_hours": 1.3425,
+    "projected_full_8566_exams_usd": 3.2566
+  }
+}
