@@ -1,0 +1,62 @@
+{
+  "schema_version": "paper1_exp2_pilot_bench_v1",
+  "model_id": "glam_pretrained",
+  "checkpoint_sha256": "a647ba9176b3e11d2dec7252054504f33856bcabb2bbe763432d3d20e7c65aec",
+  "split_name": "nlbs_4view",
+  "cache_mode": "auto",
+  "model_load_sec": 2.754,
+  "nvme_stage_sec": 0.189,
+  "pilot_wall_sec": 56.647,
+  "pilot_estimated_cost_usd": 0.03716,
+  "recommended_batch_size": 4,
+  "sweep_results": [
+    {
+      "batch_size": 1,
+      "status": "OK",
+      "n_units": 200,
+      "n_images": 200,
+      "data_load_sec": 14.285,
+      "gpu_infer_sec": 4.895,
+      "total_infer_sec": 19.18,
+      "imgs_per_sec": 10.428,
+      "exams_per_sec": 2.607,
+      "vram_allocated_gb": 0.3862,
+      "vram_reserved_gb": 0.5137,
+      "max_abs_diff_vs_smallest_bs": 0.0,
+      "projected_full_nlbs_min": 39.54,
+      "projected_full_nlbs_usd": 1.5562
+    },
+    {
+      "batch_size": 2,
+      "status": "OK",
+      "n_units": 200,
+      "n_images": 200,
+      "data_load_sec": 13.698,
+      "gpu_infer_sec": 3.694,
+      "total_infer_sec": 17.392,
+      "imgs_per_sec": 11.499,
+      "exams_per_sec": 2.875,
+      "vram_allocated_gb": 0.6821,
+      "vram_reserved_gb": 1.0352,
+      "max_abs_diff_vs_smallest_bs": 0.0001436,
+      "projected_full_nlbs_min": 35.85,
+      "projected_full_nlbs_usd": 1.4112
+    },
+    {
+      "batch_size": 4,
+      "status": "OK",
+      "n_units": 200,
+      "n_images": 200,
+      "data_load_sec": 13.257,
+      "gpu_infer_sec": 3.876,
+      "total_infer_sec": 17.132,
+      "imgs_per_sec": 11.674,
+      "exams_per_sec": 2.918,
+      "vram_allocated_gb": 1.1056,
+      "vram_reserved_gb": 1.9121,
+      "max_abs_diff_vs_smallest_bs": 0.0003297,
+      "projected_full_nlbs_min": 35.32,
+      "projected_full_nlbs_usd": 1.3901
+    }
+  ]
+}
