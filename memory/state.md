@@ -1,8 +1,8 @@
 # state.md — Unified Two-Paper Workspace State
 
 **Last Updated:** 2026-11-24  
-**Verified Repo Head (Prior):** `a154dd6` (`main`)  
-**Current Decision Across Both Papers:** Paper 1 **NYU Step 1 COMPLETE (`34,264` imgs / `157.506 GiB`) + Step 2 Hardened (`8vCPU/32GiB bs=4`, `USD 2.5844/hr`, wave aggregate spend cap, frozen Step-1 SHAs, FP32 check, RSNA-first calibration lock `calibrate_paper1_nyu_rsna.py`, `9/9` CPU tests PASS)**; Pilot reconciled (**`USD 0.0917` settled on `ap-1WtcQA2...`**, `USD 7.50` left until `2026-12-01`); conservative full est **`USD 4.19`** (**`RSNA USD 1.21` ready now** -> calibrate -> `NLBS USD 2.98` Dec 1 / post-lock reclaim); GMIC Steps 1–3 LOCKED; Paper 2 Stage D pending
+**Verified Repo Head (Prior):** `e38e0f1` (`main`)  
+**Current Decision Across Both Papers:** Paper 1 **NYU Step 1 COMPLETE (`34,264` imgs / `157.506 GiB`) + Step 2 Hardened (`8vCPU/32GiB bs=4`)**; **Cloud-to-Cloud Dataset Transfer COMPLETE & 100% SHA-256 Verified (`279,495 / 279,495` files / `465.16 GiB` across `tigerwood693` DINOv2 `USD 0.53`, `tigerwood697` ResNet-50 `USD 0.58`, and `dryousufmozumder` Option B `USD 0.71` = `USD 1.82` total, `USD 0.00` source delta, `USD 0.00/day` destination storage)**; GMIC Steps 1–3 LOCKED; zero training launched (awaiting model execution approval); Paper 2 Stage D pending
 
 ---
 
@@ -51,7 +51,8 @@
   - [x] **NYU Step 1 NLBS `nlbs_4view` CPU Build & Parallel SHA-256 Verify (`hasinishrak2015`, `ap-Fik9WBtJXeOQ0CI2hHHrxD`, `0` GPU):** Processed & verified all `24,736 / 24,736` NLBS PNGs across `6,184` 4-view exams (`0` rejected, `0` fallbacks, `101` pixel checks, `4.320 GiB` peak RSS, `87.720 GiB`, **`USD 1.0715`** settled, live resume verified on shards `0/3/5`). **NYU Step 1 100% COMPLETE (`34,264` imgs / `157.506 GiB`, `USD 7.57` credits left, `reports/paper1/nyu_step1_preprocessing_report.md`).**
   - [x] **NYU Step 2 L40S GPU Pilot (`hasinishrak2015`, `ap-1WtcQA2ZWaNFBzKQy5CFAU`):** Benchmarked NVMe + prefetch + `batch_exams=4` FP32 on `100` exams (`400` imgs incl. all `34` RSNA fallbacks): **`1.84 exams/sec` (`2.3x` `bs=1`)**, `4.306e-06` parity diff, `9.309 GiB` VRAM, `23.616 GiB` RSS, **`USD 0.0917` settled** (`ap-f195vW4` `$0.00`; `USD 7.50` left) (`reports/paper1/nyu_step2_gpu_pilot_report.md`).
   - [x] **NYU Step 2 Production Hardening & RSNA-First Gate (`USD 0.00`, `9/9` CPU tests PASS):** Upgraded `infer_nyu_shard` to **`8 vCPU / 32 GiB` (`USD 2.5844/hr`)**, added wave aggregate spend guard + frozen Step-1 SHAs + FP32 checks, built RSNA-only calibration lock `scripts/calibrate_paper1_nyu_rsna.py` gating NLBS (`reports/paper1/nyu_step2_pre_infer_readiness.md`, conservative `RSNA USD 1.21` / `NLBS USD 2.98`).
-  - [ ] **Stage 2 — Execute Remaining Paper 1 Runs:** `Approve RSNA NYU Step 2 -> calibrate_paper1_nyu_rsna.py -> NLBS NYU Step 2 (Dec 1 / reclaim) -> DINOv2 -> ResNet-50 -> evaluate_paper1_six_models.py` on `hasinishrak2015`.
+  - [x] **Parallel Cloud-to-Cloud Multi-Account Transfer COMPLETE (`USD 1.82` full / `USD 1.94` w/ Pilot, `USD 0.00` source delta):** Built [`src/utils/modal_transfer.py`](../src/utils/modal_transfer.py) + [`scripts/transfer_modal_volumes_cloud.py`](../scripts/transfer_modal_volumes_cloud.py) (`8/8` CPU tests PASS); benchmarked `16/24/32` workers (`1.5 GiB` pilot, `USD 0.12`), then replicated & SHA-256 verified all **`279,495 / 279,495` files (`465.16 GiB`)** at `16 × 6` async streams + `256`-thread verification to `tigerwood693` (`dinov2`, `81,731` files / `101.98 GiB`, `USD 0.53`), `tigerwood697` (`resnet50`, `81,731` files / `101.99 GiB`, `USD 0.58`), and `dryousufmozumder` (`Option B`, `116,033` files / `261.20 GiB`, `USD 0.71`), all `< 1 TiB` (`USD 0.00/day` storage; `research_logs/2026-11-24_modal_cloud_to_cloud_dataset_transfer.md`).
+  - [ ] **Stage 2 — Execute Remaining Paper 1 Runs (Awaiting Approval):** `run_paper1_dinov2_modal.py` (`tigerwood693`) + `run_paper1_resnet50_modal.py` (`tigerwood697`) + `run_paper1_nyu_modal.py` Step 2 RSNA -> `calibrate_paper1_nyu_rsna.py` -> NLBS (`dryousufmozumder` / `hasinishrak2015` Dec 1) -> `evaluate_paper1_six_models.py`.
   - [ ] **Blocker 3 (Manuscript Gate) — Adversarial Literature Matrix:** Formal *MEDINFO 2025/2026 Meta-Repository* & *Sensors (June 2026)* comparison before manuscript drafting.
 
 ---
@@ -67,8 +68,11 @@
 
 ## 4. Infrastructure, Budget & Active Modal Volume Notes
 - **Modal Volumes:**
-  - `hasinishrak2015`: `nlbs-mammography-vol` (`26,988` raw `.dcm`s in `/nlbs/extracted/`), `rsna-mammography-vol` (`54,706` RSNA Stage-1 `1520x912` PNGs + `b5-model-best-epoch-7.tar` + Stage-B Epoch-20 checkpoints + newly built **`26,988` NLBS `1520x912` `uint16` PNGs** at `/cache/stage1_nlbs_uint16/png_1520x912/`).
-  - `hasinishrak74001`: `rsna-mammography-vol` (`65.9 GiB` RSNA `1520x912` PNGs + `640`-shard `1M`-occurrence cache + Stage-B Epoch-20 checkpoints/results).
+  - `hasinishrak2015`: `nlbs-mammography-vol` (`26,988` raw `.dcm`s in `/nlbs/extracted/`), `rsna-mammography-vol` (`54,706` RSNA Stage-1, `26,988` NLBS Stage-1, `34,264` NYU 4-view PNGs, `37,970` GMIC PNGs, Paper 1 weights, raw RSNA `.dcm`s). Preserved untouched (`0` compute/egress delta during transfers).
+  - `hasinishrak74001`: `rsna-mammography-vol` (`65.95 GiB` RSNA `1520x912` PNGs + `640`-shard `1M`-occurrence cache + Mammo-CLIP `b5` + Stage-B Epoch-20 checkpoints/results). Preserved untouched (`USD 0.00000000` delta).
+  - `tigerwood693` (DINOv2): `rsna-mammography-vol` verified **`81,731` files / `101.98 GiB`** (`54,706` RSNA Stage-1 + `26,988` NLBS Stage-1 + `dinov2_vits14_pretrain.pth` + `splits_seed42.csv`; `224.60 GiB` total `< 1 TiB`, `USD 0.00/day` storage).
+  - `tigerwood697` (ResNet-50): `rsna-mammography-vol` verified **`81,731` files / `101.99 GiB`** (`54,706` RSNA Stage-1 + `26,988` NLBS Stage-1 + `resnet50-11ad3fa6.pth` + `splits_seed42.csv`; `165.26 GiB` total `< 1 TiB`, `USD 0.00/day` storage).
+  - `dryousufmozumder` (Option B): `rsna-mammography-vol` verified **`116,033` files / `261.20 GiB`** (Stage-1 RSNA + NLBS + `34,264` NYU 4-view + all 4 Paper 1 weights + Mammo-CLIP `b5` + Stage-B checkpoints; `357.38 GiB` total `< 1 TiB`, `USD 0.00/day` storage; note `run_paper1_nyu_modal.py --stage infer` binds unused `/nlbs_vol` unless empty `nlbs-mammography-vol` or guard added).
 - **Mandatory Before Any Next Paid Run:** Check real remaining balance/credits on active Modal profile (`hasinishrak2015` vs `hasinishrak74001`), verify `.pt`/volume locations, and enforce the **$30 additional Modal cap**.
 
 ---
