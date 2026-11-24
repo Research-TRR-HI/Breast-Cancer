@@ -339,6 +339,7 @@ def validate_gmic_shard_payload(
     split_name: str,
     shard_idx: int,
     num_shards: int,
+    model_id: str = GMIC_MODEL_ID,
     checkpoint_sha256: str = GMIC_CKPT_SHA256,
     preprocess_version: str = GMIC_PREPROCESS_VERSION,
     preprocess_manifest_sha256: Optional[str] = None,
@@ -346,7 +347,7 @@ def validate_gmic_shard_payload(
     """Verify resumed shard provenance (batch size, checkpoint hash, preprocess version, exact item IDs, finite scores)."""
     if not isinstance(payload, dict):
         return False, "payload_not_dict"
-    if payload.get("model_id") != GMIC_MODEL_ID:
+    if payload.get("model_id") != model_id:
         return False, f"model_id_mismatch:{payload.get('model_id')}"
     if str(payload.get("checkpoint_sha256", "")).lower() != str(checkpoint_sha256).lower():
         return False, f"checkpoint_sha256_mismatch:{payload.get('checkpoint_sha256')}"
@@ -390,6 +391,8 @@ def finalize_and_lock_gmic_predictions(
     case_col: str,
     case_out_col: str,
     batch_size: int,
+    model_id: str = GMIC_MODEL_ID,
+    checkpoint_file: str = "sample_model_1.p",
     checkpoint_sha256: str = GMIC_CKPT_SHA256,
     preprocess_version: str = GMIC_PREPROCESS_VERSION,
     out_dir: Path,
@@ -408,6 +411,8 @@ def finalize_and_lock_gmic_predictions(
     shard_meta: List[Dict[str, Any]] = []
     preprocess_manifest_shas = set()
     for o in sorted(shard_outputs, key=lambda x: int(x["shard_idx"])):
+        if o.get("model_id") != model_id:
+            raise RuntimeError(f"Shard {o.get('shard_idx')} model_id mismatch: {o.get('model_id')} != {model_id}")
         if str(o.get("checkpoint_sha256", "")).lower() != checkpoint_sha256.lower():
             raise RuntimeError(f"Shard {o.get('shard_idx')} checkpoint_sha256 mismatch")
         if o.get("preprocess_version") != preprocess_version:
@@ -474,8 +479,8 @@ def finalize_and_lock_gmic_predictions(
 
     img_payload = {
         "schema_version": "paper1_gmic_image_scores_v2",
-        "model_id": GMIC_MODEL_ID,
-        "checkpoint_file": "sample_model_1.p",
+        "model_id": model_id,
+        "checkpoint_file": checkpoint_file,
         "checkpoint_sha256": checkpoint_sha256,
         "preprocess_version": preprocess_version,
         "preprocess_manifest_sha256s": sorted(preprocess_manifest_shas),
@@ -506,8 +511,8 @@ def finalize_and_lock_gmic_predictions(
     case_arr = case_df["score"].values.astype(np.float64)
     lock_manifest = {
         "schema_version": "paper1_gmic_step2_lock_v1",
-        "model_id": GMIC_MODEL_ID,
-        "checkpoint_file": "sample_model_1.p",
+        "model_id": model_id,
+        "checkpoint_file": checkpoint_file,
         "checkpoint_sha256": checkpoint_sha256,
         "preprocess_version": preprocess_version,
         "preprocess_manifest_sha256s": sorted(preprocess_manifest_shas),
