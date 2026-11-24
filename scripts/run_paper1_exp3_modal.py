@@ -25,11 +25,12 @@ import shutil
 import signal
 import sys
 import time
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 import modal
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from src.evaluation.stage_c_eval import compute_sha256_file, compute_sha256_json
 from src.paper1.external_datasets import (
     DATASET_REGISTRY,
     select_common_4view_cohort,
@@ -41,6 +42,7 @@ from src.paper1.universal_eval import (
     aggregate_image_records_to_exams,
     get_frozen_thresholds,
     lock_external_predictions,
+    reuse_completed_nlbs_predictions,
     save_inference_shard_atomic,
     validate_agent1_handoff_bundle,
     validate_and_load_inference_shard,
@@ -53,6 +55,8 @@ RSNA_VOL = modal.Volume.from_name("rsna-mammography-vol")
 RSNA_MOUNT = Path("/rsna_vol")
 L40S_HOURLY_USD = 2.3618  # 1x L40S ($1.95) + 6 vCPU ($0.2838) + 16 GiB RAM ($0.1280)
 ALLOWED_CPU_WORKERS = (2, 4, 8, 16)
+READY_MODELS: Tuple[str, ...] = ("ce_b5", "trust_b5", "dinov2_rsna", "resnet50_rsna")
+AGENT1_HANDOFF_MODELS: Tuple[str, ...] = ("gmic_rsna_finetuned", "nyu_fourview_rsna_finetuned")
 DEFAULT_PILOT_BATCH_SIZES: Dict[str, tuple[int, ...]] = {
     "ce_b5": (16, 32, 64),
     "trust_b5": (16, 32, 64),
@@ -60,6 +64,39 @@ DEFAULT_PILOT_BATCH_SIZES: Dict[str, tuple[int, ...]] = {
     "resnet50_rsna": (32, 64, 128),
     "gmic_rsna_finetuned": (1, 4, 8),
     "nyu_fourview_rsna_finetuned": (1, 2, 4),
+}
+VERIFIED_WAVE3_BATCH_SIZES: Dict[str, Dict[str, int]] = {
+    "cmmd": {
+        "ce_b5": 32,
+        "trust_b5": 32,
+        "dinov2_rsna": 32,
+        "resnet50_rsna": 32,
+        "gmic_rsna_finetuned": 16,
+        "nyu_fourview_rsna_finetuned": 4,
+    },
+    "lumina": {
+        "ce_b5": 32,
+        "trust_b5": 32,
+        "dinov2_rsna": 128,
+        "resnet50_rsna": 32,
+        "gmic_rsna_finetuned": 16,
+    },
+    "imdb": {
+        "ce_b5": 32,
+        "trust_b5": 32,
+        "dinov2_rsna": 32,
+        "resnet50_rsna": 32,
+        "gmic_rsna_finetuned": 16,
+        "nyu_fourview_rsna_finetuned": 4,
+    },
+    "nlbs": {
+        "ce_b5": 32,
+        "trust_b5": 32,
+        "dinov2_rsna": 128,
+        "resnet50_rsna": 128,
+        "gmic_rsna_finetuned": 16,
+        "nyu_fourview_rsna_finetuned": 4,
+    },
 }
 CHECKPOINT_SYNC_COMMANDS: List[str] = [
     # 1. DINOv2 ViT-S/14 backbone (from hasinishrak2015/tigerwood693 -> tigerwood697) + RSNA head (local -> tigerwood697)
@@ -140,6 +177,75 @@ def select_optimal_pilot_batch_size(
     }
 
 
+def resolve_exp3_model_selection(model_arg: str) -> List[str]:
+    """Expand model selector (`all_ready`, `agent1_handoff`, `all`, or comma-separated IDs)."""
+    key = str(model_arg or "").strip()
+    if key == "all_ready":
+        return list(READY_MODELS)
+    if key == "agent1_handoff":
+        return list(AGENT1_HANDOFF_MODELS)
+    if key == "all":
+        return list(RSNA_SUPERVISED_MODELS)
+    selected: List[str] = []
+    for part in key.split(","):
+        mid = part.strip()
+        if not mid:
+            continue
+        if mid not in RSNA_SUPERVISED_MODELS:
+            raise ValueError(f"Unknown model_id={mid!r}; expected {RSNA_SUPERVISED_MODELS}")
+        if mid not in selected:
+            selected.append(mid)
+    if not selected:
+        raise ValueError(f"Empty model selection: {model_arg!r}")
+    return selected
+
+
+def resolve_inference_batch_size(dataset_id: str, model_id: str, batch_size: int = 0) -> int:
+    """Return explicit positive batch_size override or verified Wave 3 L40S winner."""
+    if int(batch_size) > 0:
+        return int(batch_size)
+    ds_map = VERIFIED_WAVE3_BATCH_SIZES.get(dataset_id, {})
+    if model_id in ds_map:
+        return int(ds_map[model_id])
+    return int(DEFAULT_PILOT_BATCH_SIZES.get(model_id, (32,))[0])
+
+
+def enforce_dataset_model_eligibility(
+    dataset_id: str,
+    model_id: str,
+    inf_df: Any,
+    cohort_mode: str = "full",
+) -> Any:
+    """Enforce dataset-specific scientific eligibility rules (NEVER fabricate views).
+
+    - HARD-BLOCKS `nyu_fourview_rsna_finetuned` on `lumina` (malignant cases discard contralateral views).
+    - Automatically restricts `nyu_fourview_rsna_finetuned` on `cmmd`/`imdb`/`nlbs` to verified complete
+      4-view exams via `select_common_4view_cohort`.
+    - Allows optional `cohort_mode='common_4view'` slicing for single-view models on eligible datasets.
+    """
+    if dataset_id not in DATASET_REGISTRY:
+        raise ValueError(f"Unknown dataset_id={dataset_id!r}")
+    if cohort_mode not in ("full", "common_4view"):
+        raise ValueError(f"Unsupported cohort_mode={cohort_mode!r}; expected 'full' or 'common_4view'")
+
+    df = validate_inference_manifest(inf_df, context=f"elig_{dataset_id}_{model_id}")
+    requires_4v = bool(MODEL_HANDOFF_SPECS[model_id].get("requires_4view", False))
+
+    if dataset_id == "lumina" and (requires_4v or cohort_mode == "common_4view"):
+        raise ValueError(
+            "SCIENTIFIC ELIGIBILITY BLOCK: `nyu_fourview_rsna_finetuned` and `common_4view` mode are "
+            "strictly blocked on 'lumina' because malignant cases discard contralateral views (4view_pos=1/174). "
+            "Never fabricate views; evaluate single-view models on LUMINA instead."
+        )
+
+    if requires_4v or cohort_mode == "common_4view":
+        c4v_df, _ = select_common_4view_cohort(df)
+        if c4v_df.empty:
+            raise ValueError(f"{dataset_id}/{model_id}: zero complete 4-view exams found in manifest.")
+        return c4v_df
+    return df
+
+
 def validate_exp3_cli_guards(
     *,
     stage: str,
@@ -152,18 +258,20 @@ def validate_exp3_cli_guards(
     pilot_limit: int,
     cpu_workers: int = 4,
     pilot_batch_sizes: Optional[str] = None,
+    cohort_mode: str = "full",
 ) -> None:
     """Enforce zero-cost approval gates and budget caps before any cloud execution."""
     if stage not in ("dry_run", "download", "preprocess", "pilot", "infer"):
         raise ValueError(f"Unsupported stage={stage!r}")
     if dataset_id not in DATASET_REGISTRY:
         raise ValueError(f"Unknown dataset_id={dataset_id!r}; expected {sorted(DATASET_REGISTRY)}")
-    if model_id not in RSNA_SUPERVISED_MODELS and model_id != "all":
-        raise ValueError(f"Unknown model_id={model_id!r}; expected {RSNA_SUPERVISED_MODELS} or 'all'")
+    models = resolve_exp3_model_selection(model_id)
+    if cohort_mode not in ("full", "common_4view"):
+        raise ValueError(f"Unsupported cohort_mode={cohort_mode!r}")
     if int(cpu_workers) not in ALLOWED_CPU_WORKERS:
         raise ValueError(f"--cpu-workers must be one of {ALLOWED_CPU_WORKERS}, got {cpu_workers}")
     if pilot_batch_sizes is not None:
-        parse_pilot_batch_sizes(pilot_batch_sizes, model_id if model_id != "all" else "resnet50_rsna")
+        parse_pilot_batch_sizes(pilot_batch_sizes, models[0])
     if float(max_spend_usd) <= 0.0:
         raise ValueError(f"max_spend_usd must be > 0, got {max_spend_usd}")
     if stage == "pilot" and not (50 <= int(pilot_limit) <= 500):
@@ -845,36 +953,77 @@ def infer_external_dataset_shard_l40s(
         from src.paper1.dinov2_model import prepare_dinov2_tensor_from_uint16
         from src.paper1.resnet50_model import prepare_resnet50_tensor_from_uint16
 
-        img_ids = shard_df["image_id"].astype(str).tolist()
-        for s in range(0, len(img_ids), batch_size):
-            if ((time.perf_counter() - t0) / 3600.0) * L40S_HOURLY_USD > float(max_spend_usd):
-                raise RuntimeError(f"Budget cap ${max_spend_usd:.2f} exceeded in shard {shard_idx}")
-            b_ids = img_ids[s : s + batch_size]
-            tensors = []
-            for iid in b_ids:
-                arr = cv2.imread(str(png_dir / f"{iid}.png"), cv2.IMREAD_UNCHANGED)
-                if arr is None:
-                    raise FileNotFoundError(f"Missing cached PNG: {png_dir / f'{iid}.png'}")
-                if model_id in ("ce_b5", "trust_b5"):
-                    tensors.append(prepare_tensor_from_cropped(arr))
-                elif model_id == "dinov2_rsna":
-                    tensors.append(prepare_dinov2_tensor_from_uint16(arr))
-                elif model_id == "resnet50_rsna":
-                    tensors.append(prepare_resnet50_tensor_from_uint16(arr))
-                else:
-                    from src.paper1.gmic_adapter import standard_normalize_gmic_uint16
-                    norm = standard_normalize_gmic_uint16(arr)
+        if model_id == "gmic_rsna_finetuned":
+            from src.paper1.gmic_adapter import (
+                GMIC_INPUT_SIZE,
+                _ensure_gmic_importable,
+                prepare_dicom_uint16_for_nyukat,
+                preprocess_uint16_for_nyukat,
+                standard_normalize_gmic_uint16,
+            )
+
+            gmic_png_dir = RSNA_MOUNT / "cache" / "paper1_gmic_uint16_v1" / dataset_id / "png_2944x1920"
+            raw_root = RSNA_MOUNT / "external_datasets" / dataset_id / "extracted"
+            nyukat_mods = None if gmic_png_dir.exists() else _ensure_gmic_importable(Path("/root/external/GMIC"))
+            rows_list = shard_df.to_dict("records")
+            for s in range(0, len(rows_list), batch_size):
+                if ((time.perf_counter() - t0) / 3600.0) * L40S_HOURLY_USD > float(max_spend_usd):
+                    raise RuntimeError(f"Budget cap ${max_spend_usd:.2f} exceeded in shard {shard_idx}")
+                b_rows = rows_list[s : s + batch_size]
+                tensors = []
+                fb_flags = []
+                for row in b_rows:
+                    iid = str(row["image_id"])
+                    gpng = gmic_png_dir / f"{iid}.png"
+                    if gpng.exists():
+                        arr = cv2.imread(str(gpng), cv2.IMREAD_UNCHANGED)
+                        if arr is None:
+                            raise FileNotFoundError(f"Corrupt GMIC PNG: {gpng}")
+                        norm = standard_normalize_gmic_uint16(arr)
+                        fb_flags.append(False)
+                    else:
+                        dcm_p = raw_root / str(row["image_path"])
+                        arr_u16, _ = prepare_dicom_uint16_for_nyukat(dcm_p, laterality=str(row["laterality"]))
+                        vs = f"{str(row['laterality']).upper()}-{str(row['view']).upper()}"
+                        norm, meta = preprocess_uint16_for_nyukat(
+                            arr_u16,
+                            view_slot=vs,
+                            target_size=GMIC_INPUT_SIZE,
+                            nyukat_mods=nyukat_mods,
+                            normalize=True,
+                        )
+                        fb_flags.append(bool(meta.get("crop_fallback", False)))
                     tensors.append(torch.from_numpy(norm[np.newaxis, :, :].copy()))
-            bx = torch.stack(tensors, dim=0).to(device, non_blocking=True)
-            with torch.no_grad(), torch.amp.autocast("cuda", enabled=(model_id != "gmic_rsna_finetuned")):
-                if model_id in ("ce_b5", "trust_b5", "dinov2_rsna"):
-                    probs = torch.sigmoid(loaded["head"](loaded["encoder"](bx)).squeeze(1)).float().cpu().tolist()
-                elif model_id == "resnet50_rsna":
-                    probs = torch.sigmoid(loaded["model"](bx).squeeze(1)).float().cpu().tolist()
-                else:
+                bx = torch.stack(tensors, dim=0).to(device, non_blocking=True)
+                with torch.no_grad():
                     probs = loaded["model"](bx)[:, 1].float().cpu().tolist()
-            for iid, p in zip(b_ids, probs):
-                records.append({"item_id": iid, "score": float(p), "crop_fallback": False})
+                for row, p, fb in zip(b_rows, probs, fb_flags):
+                    records.append({"item_id": str(row["image_id"]), "score": float(p), "crop_fallback": fb})
+        else:
+            img_ids = shard_df["image_id"].astype(str).tolist()
+            for s in range(0, len(img_ids), batch_size):
+                if ((time.perf_counter() - t0) / 3600.0) * L40S_HOURLY_USD > float(max_spend_usd):
+                    raise RuntimeError(f"Budget cap ${max_spend_usd:.2f} exceeded in shard {shard_idx}")
+                b_ids = img_ids[s : s + batch_size]
+                tensors = []
+                for iid in b_ids:
+                    arr = cv2.imread(str(png_dir / f"{iid}.png"), cv2.IMREAD_UNCHANGED)
+                    if arr is None:
+                        raise FileNotFoundError(f"Missing cached PNG: {png_dir / f'{iid}.png'}")
+                    if model_id in ("ce_b5", "trust_b5"):
+                        tensors.append(prepare_tensor_from_cropped(arr))
+                    elif model_id == "dinov2_rsna":
+                        tensors.append(prepare_dinov2_tensor_from_uint16(arr))
+                    elif model_id == "resnet50_rsna":
+                        tensors.append(prepare_resnet50_tensor_from_uint16(arr))
+                bx = torch.stack(tensors, dim=0).to(device, non_blocking=True)
+                with torch.no_grad(), torch.amp.autocast("cuda", enabled=True):
+                    if model_id in ("ce_b5", "trust_b5", "dinov2_rsna"):
+                        probs = torch.sigmoid(loaded["head"](loaded["encoder"](bx)).squeeze(1)).float().cpu().tolist()
+                    else:
+                        probs = torch.sigmoid(loaded["model"](bx).squeeze(1)).float().cpu().tolist()
+                for iid, p in zip(b_ids, probs):
+                    records.append({"item_id": iid, "score": float(p), "crop_fallback": False})
     else:
         from src.paper1.nyu_fourview_adapter import (
             NYU_TTA_EPOCHS_OFFICIAL,
@@ -939,8 +1088,12 @@ def infer_external_dataset_shard_l40s(
         "model_id": model_id,
         "shard_idx": int(shard_idx),
         "num_shards": int(num_shards),
+        "checkpoint_sha256": ckpt_sha,
+        "preprocess_version": preproc_ver,
+        "expected_item_ids_sha256": compute_sha256_json([str(x) for x in expected_ids]),
         "n_records": len(records),
         "elapsed_sec": round(time.perf_counter() - t0, 2),
+        "resumed_from_cache": False,
         "records": records,
     }
 
@@ -1077,19 +1230,354 @@ def benchmark_pilot_batch_sizes_l40s(
     }
 
 
+def _resolve_manifest_path(dataset_id: str, manifest_csv: Optional[Path] = None) -> Path:
+    if manifest_csv is not None and str(manifest_csv).strip():
+        return Path(manifest_csv)
+    default_path = Path("datasets/exp3_meta") / f"{dataset_id}_inference_manifest.csv"
+    if not default_path.exists():
+        raise FileNotFoundError(
+            f"Default inference manifest not found for dataset={dataset_id!r}: {default_path}. "
+            "Pass --manifest-csv explicitly."
+        )
+    return default_path
+
+
+def _expected_shard_item_ids(
+    eligible_df: Any,
+    *,
+    requires_4view: bool,
+    shard_idx: int,
+    num_shards: int,
+) -> List[str]:
+    if requires_4view:
+        exams = sorted(eligible_df["exam_id"].astype(str).unique().tolist())
+        return exams[int(shard_idx) :: int(num_shards)]
+    return eligible_df["image_id"].astype(str).tolist()[int(shard_idx) :: int(num_shards)]
+
+
+def build_exp3_dry_run_plan(
+    *,
+    dataset_id: str,
+    model_arg: str,
+    manifest_csv: Path,
+    handoff_json: Optional[Path] = None,
+    cpu_workers: int = 8,
+    num_shards: int = 4,
+    batch_size: int = 0,
+    cohort_mode: str = "full",
+    pilot_batch_sizes: Optional[str] = None,
+    dry_run_profile: bool = True,
+) -> Dict[str, Any]:
+    """Build a zero-cost Wave 1 / Phase 2 execution plan without launching any Modal containers."""
+    import pandas as pd
+
+    prof = enforce_tigerwood697_profile(dry_run=dry_run_profile)
+    models = resolve_exp3_model_selection(model_arg)
+    inf_df = validate_inference_manifest(pd.read_csv(manifest_csv), context=str(manifest_csv))
+    c4v_df, _ = select_common_4view_cohort(inf_df)
+
+    model_plans: Dict[str, Any] = {}
+    for m_id in models:
+        elig_df = enforce_dataset_model_eligibility(
+            dataset_id=dataset_id,
+            model_id=m_id,
+            inf_df=inf_df,
+            cohort_mode=cohort_mode,
+        )
+        spec = resolve_model_handoff(m_id, handoff_json=handoff_json)
+        eff_bs = resolve_inference_batch_size(dataset_id, m_id, batch_size=batch_size)
+        eff_shards = min(
+            int(num_shards),
+            max(1, int(elig_df["exam_id"].nunique() if spec.get("requires_4view") else len(elig_df))),
+        )
+        model_plans[m_id] = {
+            "requires_4view": bool(spec.get("requires_4view", False)),
+            "cohort_mode_applied": "common_4view" if (spec.get("requires_4view") or cohort_mode == "common_4view") else "full",
+            "eligible_images": int(len(elig_df)),
+            "eligible_exams": int(elig_df["exam_id"].nunique()),
+            "num_shards": eff_shards,
+            "inference_batch_size": eff_bs,
+            "thresholds": get_frozen_thresholds(m_id, {m_id: spec["frozen_rsna_thresholds"]}),
+            "pilot_batch_sizes": parse_pilot_batch_sizes(pilot_batch_sizes, m_id),
+        }
+
+    return {
+        "profile": prof,
+        "dataset": dataset_id,
+        "manifest_csv": str(manifest_csv),
+        "n_images": int(len(inf_df)),
+        "n_exams": int(inf_df["exam_id"].nunique()),
+        "n_common_4view_exams": int(c4v_df["exam_id"].nunique()),
+        "cpu_workers_per_container": int(cpu_workers),
+        "checkpoint_sync_commands": CHECKPOINT_SYNC_COMMANDS,
+        "models": model_plans,
+    }
+
+
+def _invoke_modal_infer_shard(**kwargs: Any) -> Dict[str, Any]:
+    return infer_external_dataset_shard_l40s.remote(**kwargs)
+
+
+def orchestrate_external_inference(
+    *,
+    dataset_id: str,
+    model_arg: str,
+    manifest_csv: Optional[Path] = None,
+    handoff_json: Optional[Path] = None,
+    out_lock_dir: Path = Path("reports/paper1/expanded/exp3/locked_preds"),
+    cohort_mode: str = "full",
+    num_shards: int = 4,
+    batch_size: int = 0,
+    max_spend_usd: float = 5.0,
+    resume: bool = True,
+    nlbs_reuse_root: Path = Path("reports/paper1/six_model_final/locked_nlbs"),
+    nlbs_exam_manifest_csv: Path = Path("datasets/nlbs/exam_manifest.csv"),
+    shard_runner: Optional[Callable[..., Dict[str, Any]]] = None,
+    starmap_runner: Optional[Callable[[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
+    skip_profile_check: bool = False,
+) -> Dict[str, Any]:
+    """Execute or resume full Phase 2 sharded inference and pre-join SHA-256 locking.
+
+    Supports:
+    - `$0` reuse verification for `nlbs` via `reuse_completed_nlbs_predictions`.
+    - Local/mockable shard execution for deterministic tests (`shard_runner` / `starmap_runner`).
+    - Automatic dataset/model eligibility enforcement (hard-blocking NYU 4-view on `lumina`,
+      restricting NYU 4-view on `cmmd`/`imdb` to verified complete 4-view exams).
+    - Strict shard completeness, duplicate/missing item rejection, image->exam aggregation,
+      and SHA-256 locking via `lock_external_predictions`.
+    """
+    import pandas as pd
+
+    if not skip_profile_check:
+        enforce_tigerwood697_profile(dry_run=False)
+
+    models = resolve_exp3_model_selection(model_arg)
+    out_lock_dir = Path(out_lock_dir)
+    out_lock_dir.mkdir(parents=True, exist_ok=True)
+
+    if dataset_id == "nlbs":
+        ready_models = [m for m in models if m in ("ce_b5", "trust_b5", "dinov2_rsna", "resnet50_rsna")]
+        if len(ready_models) != len(models):
+            pending = [m for m in models if m not in ready_models]
+            raise RuntimeError(
+                f"NLBS $0 reuse only covers completed 4 models; pending Agent 1 models: {pending}"
+            )
+        reused = reuse_completed_nlbs_predictions(
+            six_model_lock_dir=nlbs_reuse_root,
+            nlbs_exam_manifest_csv=nlbs_exam_manifest_csv,
+            out_lock_dir=out_lock_dir,
+            model_ids=ready_models,
+        )
+        return {
+            "dataset_id": "nlbs",
+            "mode": "zero_cost_reuse",
+            "models": reused,
+        }
+
+    resolved_manifest = _resolve_manifest_path(dataset_id, manifest_csv)
+    inf_df = validate_inference_manifest(pd.read_csv(resolved_manifest), context=str(resolved_manifest))
+
+    model_summaries: Dict[str, Any] = {}
+    total_spend_est = 0.0
+
+    for m_id in models:
+        elig_df = enforce_dataset_model_eligibility(
+            dataset_id=dataset_id,
+            model_id=m_id,
+            inf_df=inf_df,
+            cohort_mode=cohort_mode,
+        )
+        spec = resolve_model_handoff(m_id, handoff_json=handoff_json)
+        requires_4v = bool(spec.get("requires_4view", False))
+        expected_ckpt_sha = str(spec["expected_sha256"].get("checkpoint", ""))
+        eff_bs = resolve_inference_batch_size(dataset_id, m_id, batch_size=batch_size)
+
+        expected_all_ids = (
+            sorted(elig_df["exam_id"].astype(str).unique().tolist())
+            if requires_4v
+            else elig_df["image_id"].astype(str).tolist()
+        )
+        eff_shards = max(1, min(int(num_shards), len(expected_all_ids)))
+        elig_manifest_text = elig_df.to_csv(index=False)
+
+        per_shard_kwargs: List[Dict[str, Any]] = []
+        for s_idx in range(eff_shards):
+            per_shard_kwargs.append(
+                {
+                    "dataset_id": dataset_id,
+                    "model_id": m_id,
+                    "manifest_csv_content": elig_manifest_text,
+                    "shard_idx": s_idx,
+                    "num_shards": eff_shards,
+                    "batch_size": eff_bs,
+                    "model_spec": spec,
+                    "pilot_limit": 0,
+                    "resume": bool(resume),
+                    "max_spend_usd": float(max_spend_usd),
+                }
+            )
+
+        if starmap_runner is not None:
+            shard_outputs = list(starmap_runner(per_shard_kwargs))
+        elif shard_runner is not None:
+            shard_outputs = [shard_runner(**kw) for kw in per_shard_kwargs]
+        else:
+            ordered_args = [
+                (
+                    kw["dataset_id"],
+                    kw["model_id"],
+                    kw["manifest_csv_content"],
+                    kw["shard_idx"],
+                    kw["num_shards"],
+                    kw["batch_size"],
+                    kw["model_spec"],
+                    kw["pilot_limit"],
+                    kw["resume"],
+                    kw["max_spend_usd"],
+                )
+                for kw in per_shard_kwargs
+            ]
+            shard_outputs = list(infer_external_dataset_shard_l40s.starmap(ordered_args))
+
+        if len(shard_outputs) != eff_shards:
+            raise RuntimeError(
+                f"{dataset_id}/{m_id}: expected {eff_shards} shard results, received {len(shard_outputs)}"
+            )
+
+        all_records: List[Dict[str, Any]] = []
+        seen_ids: set[str] = set()
+        resumed_shards = 0
+        elapsed_total = 0.0
+
+        for s_idx, out in enumerate(shard_outputs):
+            if str(out.get("checkpoint_sha256", "")) != expected_ckpt_sha:
+                raise ValueError(
+                    f"{dataset_id}/{m_id} shard {s_idx}: checkpoint_sha256 mismatch "
+                    f"{out.get('checkpoint_sha256')!r} != {expected_ckpt_sha!r}"
+                )
+            exp_ids = _expected_shard_item_ids(
+                elig_df, requires_4view=requires_4v, shard_idx=s_idx, num_shards=eff_shards
+            )
+            recs = list(out.get("records", []))
+            got_ids = [str(r["item_id"]) for r in recs]
+            if len(got_ids) != len(set(got_ids)):
+                raise ValueError(f"{dataset_id}/{m_id} shard {s_idx}: duplicate item_ids inside shard")
+            if set(got_ids) != set(exp_ids):
+                missing = sorted(set(exp_ids) - set(got_ids))
+                extra = sorted(set(got_ids) - set(exp_ids))
+                raise ValueError(
+                    f"{dataset_id}/{m_id} shard {s_idx}: item_id mismatch "
+                    f"(missing={missing[:5]}, extra={extra[:5]})"
+                )
+            overlap = seen_ids & set(got_ids)
+            if overlap:
+                raise ValueError(f"{dataset_id}/{m_id}: cross-shard duplicate item_ids: {sorted(overlap)[:5]}")
+            seen_ids.update(got_ids)
+            all_records.extend(recs)
+            if out.get("resumed_from_cache"):
+                resumed_shards += 1
+            else:
+                elapsed_total += float(out.get("elapsed_sec", 0.0))
+
+        if set(seen_ids) != set(expected_all_ids):
+            raise ValueError(
+                f"{dataset_id}/{m_id}: final aggregated coverage incomplete "
+                f"({len(seen_ids)}/{len(expected_all_ids)} items)"
+            )
+
+        model_est_usd = (elapsed_total / 3600.0) * L40S_HOURLY_USD
+        total_spend_est += model_est_usd
+        if total_spend_est > float(max_spend_usd):
+            raise RuntimeError(
+                f"Cumulative estimated spend ${total_spend_est:.4f} exceeded --max-spend-usd=${max_spend_usd:.2f}"
+            )
+
+        ds_lock_dir = out_lock_dir / dataset_id
+        ds_lock_dir.mkdir(parents=True, exist_ok=True)
+        image_scores_path: Optional[Path] = None
+        breast_scores_path: Optional[Path] = None
+
+        if requires_4v:
+            exam_cluster = elig_df.groupby("exam_id", sort=True)["cluster_id"].first().to_dict()
+            exam_scores_df = pd.DataFrame(
+                [
+                    {
+                        "exam_id": str(r["item_id"]),
+                        "cluster_id": str(exam_cluster[str(r["item_id"])]),
+                        "score": float(r["score"]),
+                        "n_crop_fallbacks": 1 if bool(r.get("crop_fallback", False)) else 0,
+                    }
+                    for r in all_records
+                ]
+            ).sort_values("exam_id", kind="mergesort").reset_index(drop=True)
+        else:
+            rec_df = pd.DataFrame(all_records).rename(columns={"item_id": "image_id"})
+            image_scores_df = (
+                elig_df[["image_id", "exam_id", "cluster_id", "laterality", "view"]]
+                .merge(rec_df[["image_id", "score", "crop_fallback"]], on="image_id", how="inner")
+                .sort_values("image_id", kind="mergesort")
+                .reset_index(drop=True)
+            )
+            exam_scores_df, breast_scores_df = aggregate_image_records_to_exams(elig_df, rec_df)
+            image_scores_path = ds_lock_dir / f"{m_id}_image_scores_{dataset_id}.csv"
+            image_scores_df.to_csv(image_scores_path, index=False)
+            breast_scores_path = ds_lock_dir / f"{m_id}_breast_scores_{dataset_id}.csv"
+            breast_scores_df.to_csv(breast_scores_path, index=False)
+
+        thresholds = get_frozen_thresholds(m_id, {m_id: spec["frozen_rsna_thresholds"]})
+        elig_inf_sha = compute_sha256_json(elig_df.to_dict(orient="records"))
+        expected_exam_ids = sorted(elig_df["exam_id"].astype(str).unique().tolist())
+        lock_meta = lock_external_predictions(
+            dataset_id=dataset_id,
+            model_id=m_id,
+            exam_scores_df=exam_scores_df,
+            expected_exam_ids=expected_exam_ids,
+            thresholds=thresholds,
+            model_sha256=expected_ckpt_sha,
+            inference_manifest_sha256=elig_inf_sha,
+            out_dir=out_lock_dir,
+        )
+        lock_meta.update(
+            {
+                "cohort_mode": "common_4view" if (requires_4v or cohort_mode == "common_4view") else "full",
+                "num_shards": eff_shards,
+                "resumed_shards": resumed_shards,
+                "batch_size": eff_bs,
+                "estimated_gpu_seconds": round(elapsed_total, 2),
+                "estimated_gpu_usd": round(model_est_usd, 4),
+                "exam_scores_csv": str(ds_lock_dir / lock_meta["predictions_csv"]),
+                "image_scores_csv": str(image_scores_path) if image_scores_path is not None else None,
+                "breast_scores_csv": str(breast_scores_path) if breast_scores_path is not None else None,
+            }
+        )
+        model_summaries[m_id] = lock_meta
+
+    summary_out = {
+        "dataset_id": dataset_id,
+        "cohort_mode": cohort_mode,
+        "estimated_total_usd": round(total_spend_est, 4),
+        "models": model_summaries,
+    }
+    summary_path = out_lock_dir / dataset_id / "inference_lock_summary.json"
+    summary_path.parent.mkdir(parents=True, exist_ok=True)
+    summary_path.write_text(json.dumps(summary_out, indent=2), encoding="utf-8")
+    return summary_out
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Paper 1 Exp 3 Universal Modal Inference Entrypoint.")
     parser.add_argument("--stage", required=True, choices=["dry_run", "download", "preprocess", "pilot", "infer"])
     parser.add_argument("--dataset", required=True, choices=sorted(DATASET_REGISTRY.keys()))
     parser.add_argument("--model", default="resnet50_rsna")
-    parser.add_argument("--manifest-csv", type=Path, required=True)
+    parser.add_argument("--manifest-csv", type=Path, default=None)
     parser.add_argument("--handoff-json", type=Path, default=None)
     parser.add_argument("--out-lock-dir", type=Path, default=Path("reports/paper1/expanded/exp3/locked_preds"))
+    parser.add_argument("--cohort-mode", default="full", choices=["full", "common_4view"])
     parser.add_argument("--pilot-limit", type=int, default=200)
     parser.add_argument("--pilot-batch-sizes", type=str, default=None, help="Comma-separated progressive batch sizes for --stage pilot (e.g. 16,32,64,128).")
     parser.add_argument("--cpu-workers", type=int, default=4, choices=list(ALLOWED_CPU_WORKERS), help="CPU vCPUs per Wave 2 preprocessing container (2, 4, 8, or 16).")
     parser.add_argument("--num-shards", type=int, default=4)
-    parser.add_argument("--batch-size", type=int, default=64)
+    parser.add_argument("--batch-size", type=int, default=0, help="0 uses verified Wave 3 L40S winner batch size per dataset/model.")
     parser.add_argument("--max-spend-usd", type=float, default=5.0)
     parser.add_argument("--approve-download", action="store_true")
     parser.add_argument("--approve-preprocess", action="store_true")
@@ -1107,32 +1595,23 @@ def main() -> None:
         pilot_limit=args.pilot_limit,
         cpu_workers=args.cpu_workers,
         pilot_batch_sizes=args.pilot_batch_sizes,
+        cohort_mode=args.cohort_mode,
     )
-    prof = enforce_tigerwood697_profile(dry_run=(args.stage == "dry_run"))
-    import pandas as pd
-
-    inf_df = validate_inference_manifest(pd.read_csv(args.manifest_csv), context=str(args.manifest_csv))
-    models = list(RSNA_SUPERVISED_MODELS) if args.model == "all" else [args.model]
-    resolved_specs = {m: resolve_model_handoff(m, handoff_json=args.handoff_json) for m in models}
+    resolved_manifest = _resolve_manifest_path(args.dataset, args.manifest_csv)
 
     if args.stage == "dry_run":
-        c4v_df, _ = select_common_4view_cohort(inf_df)
-        plan = {
-            "profile": prof,
-            "dataset": args.dataset,
-            "n_images": int(len(inf_df)),
-            "n_exams": int(inf_df["exam_id"].nunique()),
-            "n_common_4view_exams": int(c4v_df["exam_id"].nunique()),
-            "cpu_workers_per_container": int(args.cpu_workers),
-            "checkpoint_sync_commands": CHECKPOINT_SYNC_COMMANDS,
-            "models": {
-                m: {
-                    "thresholds": get_frozen_thresholds(m, {m: resolved_specs[m]["frozen_rsna_thresholds"]}),
-                    "pilot_batch_sizes": parse_pilot_batch_sizes(args.pilot_batch_sizes, m),
-                }
-                for m in models
-            },
-        }
+        plan = build_exp3_dry_run_plan(
+            dataset_id=args.dataset,
+            model_arg=args.model,
+            manifest_csv=resolved_manifest,
+            handoff_json=args.handoff_json,
+            cpu_workers=args.cpu_workers,
+            num_shards=args.num_shards,
+            batch_size=args.batch_size,
+            cohort_mode=args.cohort_mode,
+            pilot_batch_sizes=args.pilot_batch_sizes,
+            dry_run_profile=True,
+        )
         print(json.dumps(plan, indent=2))
         return
 
@@ -1141,26 +1620,68 @@ def main() -> None:
 
 @app.local_entrypoint()
 def run_cli(
-    stage: str = "preprocess",
+    stage: str = "dry_run",
     dataset: str = "lumina",
     model: str = "resnet50_rsna",
-    manifest_csv: str = "datasets/exp3_meta/lumina_inference_manifest.csv",
+    manifest_csv: str = "",
+    handoff_json: str = "",
+    out_lock_dir: str = "reports/paper1/expanded/exp3/locked_preds",
+    cohort_mode: str = "full",
     cpu_workers: int = 8,
-    num_shards: int = 8,
+    num_shards: int = 4,
+    batch_size: int = 0,
     pilot_limit: int = 200,
     pilot_batch_sizes: str = "",
-    max_spend_usd: float = 2.0,
+    max_spend_usd: float = 5.0,
+    no_resume: bool = False,
+    approve_download: bool = False,
     approve_preprocess: bool = False,
+    approve_full_infer: bool = False,
 ) -> None:
-    """Modal CLI entrypoint for Wave 2 `--stage preprocess` and Wave 3 `--stage pilot`."""
+    """Modal CLI entrypoint supporting `dry_run`, `preprocess`, `pilot`, and `infer`."""
     import pandas as pd
 
-    inf_df = validate_inference_manifest(pd.read_csv(manifest_csv), context=manifest_csv)
-    manifest_text = Path(manifest_csv).read_text(encoding="utf-8")
+    validate_exp3_cli_guards(
+        stage=stage,
+        dataset_id=dataset,
+        model_id=model,
+        approve_download=approve_download,
+        approve_preprocess=approve_preprocess,
+        approve_full_infer=approve_full_infer,
+        max_spend_usd=max_spend_usd,
+        pilot_limit=pilot_limit,
+        cpu_workers=cpu_workers,
+        pilot_batch_sizes=pilot_batch_sizes or None,
+        cohort_mode=cohort_mode,
+    )
+    resolved_handoff = Path(handoff_json) if str(handoff_json).strip() else None
+
+    if stage == "dry_run":
+        if dataset == "nlbs":
+            print(json.dumps({"dataset": "nlbs", "mode": "zero_cost_reuse", "models": resolve_exp3_model_selection(model)}, indent=2))
+            return
+        resolved_manifest = _resolve_manifest_path(dataset, Path(manifest_csv) if manifest_csv.strip() else None)
+        plan = build_exp3_dry_run_plan(
+            dataset_id=dataset,
+            model_arg=model,
+            manifest_csv=resolved_manifest,
+            handoff_json=resolved_handoff,
+            cpu_workers=cpu_workers,
+            num_shards=num_shards,
+            batch_size=batch_size,
+            cohort_mode=cohort_mode,
+            pilot_batch_sizes=pilot_batch_sizes or None,
+            dry_run_profile=True,
+        )
+        print(json.dumps(plan, indent=2))
+        return
+
+    enforce_tigerwood697_profile(dry_run=False)
 
     if stage == "preprocess":
-        if not approve_preprocess:
-            raise RuntimeError("BLOCKED: `--stage preprocess` requires `--approve-preprocess`.")
+        resolved_manifest = _resolve_manifest_path(dataset, Path(manifest_csv) if manifest_csv.strip() else None)
+        validate_inference_manifest(pd.read_csv(resolved_manifest), context=str(resolved_manifest))
+        manifest_text = resolved_manifest.read_text(encoding="utf-8")
         fn = get_preprocess_fn_for_cpu_workers(cpu_workers)
         outs = list(fn.starmap([(dataset, manifest_text, s, num_shards, cpu_workers) for s in range(num_shards)]))
         out_p = Path(f"reports/paper1/expanded/exp3/{dataset}_preprocess_summary.json")
@@ -1170,15 +1691,18 @@ def run_cli(
         return
 
     if stage == "pilot":
-        models = ["ce_b5", "trust_b5", "dinov2_rsna", "resnet50_rsna"] if model == "all_ready" else [model]
+        resolved_manifest = _resolve_manifest_path(dataset, Path(manifest_csv) if manifest_csv.strip() else None)
+        inf_df = validate_inference_manifest(pd.read_csv(resolved_manifest), context=str(resolved_manifest))
+        models = resolve_exp3_model_selection(model)
         results = {}
         for m_id in models:
+            elig_df = enforce_dataset_model_eligibility(dataset, m_id, inf_df, cohort_mode=cohort_mode)
             bs_list = parse_pilot_batch_sizes(pilot_batch_sizes or None, m_id)
-            spec = resolve_model_handoff(m_id)
+            spec = resolve_model_handoff(m_id, handoff_json=resolved_handoff)
             res = benchmark_pilot_batch_sizes_l40s.remote(
                 dataset_id=dataset,
                 model_id=m_id,
-                manifest_csv_content=manifest_text,
+                manifest_csv_content=elig_df.to_csv(index=False),
                 batch_sizes=bs_list,
                 pilot_limit=pilot_limit,
                 model_spec=spec,
@@ -1190,7 +1714,24 @@ def run_cli(
         print(json.dumps(results, indent=2))
         return
 
-    raise ValueError(f"Unsupported run_cli stage={stage!r}; use 'preprocess' or 'pilot'")
+    if stage == "infer":
+        out = orchestrate_external_inference(
+            dataset_id=dataset,
+            model_arg=model,
+            manifest_csv=Path(manifest_csv) if manifest_csv.strip() else None,
+            handoff_json=resolved_handoff,
+            out_lock_dir=Path(out_lock_dir),
+            cohort_mode=cohort_mode,
+            num_shards=num_shards,
+            batch_size=batch_size,
+            max_spend_usd=max_spend_usd,
+            resume=not bool(no_resume),
+            skip_profile_check=True,
+        )
+        print(json.dumps(out, indent=2))
+        return
+
+    raise ValueError(f"Unsupported run_cli stage={stage!r}; use 'dry_run', 'preprocess', 'pilot', or 'infer'")
 
 
 if __name__ == "__main__":
