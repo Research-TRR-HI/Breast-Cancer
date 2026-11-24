@@ -233,12 +233,20 @@ class TestPaper1Preparation(unittest.TestCase):
         import tempfile
         import torch.nn as nn
         from torchvision.models import resnet18
+        from src.data.preprocessing import sample_augmentation_params
         from src.data.rsna_dataset import BalancedBatchSampler
         from src.paper1.resnet50_model import (
             amp_train_step,
             load_resnet50_checkpoint,
             save_resnet50_checkpoint,
         )
+
+        # Verify prepare_resnet50_tensor_from_uint16 works with TRUST augmentation (3, 854, 512)
+        dummy_u16 = np.random.randint(0, 65535, size=(1520, 912), dtype=np.uint16)
+        aug_p = sample_augmentation_params(np.random.default_rng(7))
+        t_aug = prepare_resnet50_tensor_from_uint16(dummy_u16, augment_params=aug_p)
+        self.assertEqual(tuple(t_aug.shape), (3, 854, 512))
+        self.assertTrue(torch.isfinite(t_aug).all())
 
         # Verify scaler.unscale_(optimizer) is called strictly BEFORE clip_grad_norm_
         call_order = []

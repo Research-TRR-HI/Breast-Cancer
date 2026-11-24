@@ -29,6 +29,8 @@ def prepare_resnet50_tensor_from_uint16(
     augment_params: Optional[AugmentationParams] = None,
 ) -> torch.Tensor:
     """Convert Stage-1 1520x912 uint16 crop into aspect-preserving ImageNet-normalized tensor."""
+    if img_u16 is None:
+        raise ValueError("prepare_resnet50_tensor_from_uint16 received None image array.")
     arr = np.asarray(img_u16, dtype=np.float32)
     t = torch.from_numpy(arr).unsqueeze(0).unsqueeze(0)
     t = F.interpolate(t, size=target_size, mode="bilinear", align_corners=False).squeeze(0).squeeze(0)
@@ -41,7 +43,7 @@ def prepare_resnet50_tensor_from_uint16(
         t = torch.zeros_like(t)
 
     if augment_params is not None:
-        t = apply_trust_augmentation(t, augment_params)
+        t = apply_trust_augmentation(t.unsqueeze(0), augment_params).squeeze(0)
 
     t3 = t.unsqueeze(0).repeat(3, 1, 1)
     mean = torch.tensor(IMAGENET_MEAN, dtype=torch.float32).view(3, 1, 1)
