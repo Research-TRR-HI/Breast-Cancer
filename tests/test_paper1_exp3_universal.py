@@ -18,15 +18,19 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from run_paper1_exp3_modal import (
     enforce_tigerwood697_profile,
+    parse_pilot_batch_sizes,
     resolve_model_handoff,
+    select_optimal_pilot_batch_size,
     validate_exp3_cli_guards,
 )
 from src.paper1.external_datasets import (
     INFERENCE_MANIFEST_COLUMNS,
+    assert_lumina_neutral_inference_manifest,
     assert_no_forbidden_columns,
     build_cmmd_external_manifests,
     build_imdb_external_manifests,
     build_lumina_external_manifests,
+    build_lumina_pseudonym_ingest_map,
     build_nlbs_external_manifests,
     build_sensitivity_cohorts,
     select_common_4view_cohort,
@@ -129,7 +133,7 @@ class TestPaper1Exp3Universal(unittest.TestCase):
         self.assertEqual(flags["breast_labels"], {"L": 1, "R": 0})
         assert_no_forbidden_columns(inf_c.columns, context="cmmd_inf")
 
-        # LUMINA: colliding case_id='1' across Benign and Malign folders
+        # LUMINA: colliding case_id='1' across Benign and Malign folders -> neutral pseudonyms only
         lum_cases = pd.DataFrame(
             [
                 {"class_folder": "Benign", "case_id": "1", "image_id": "1_L_CC", "laterality": "L", "view": "CC", "image_path": "Benign/1/L_CC.dcm", "pathology": "BENIGN", "manufacturer": "Metaltronica"},
@@ -137,8 +141,15 @@ class TestPaper1Exp3Universal(unittest.TestCase):
             ]
         )
         inf_l, out_l = build_lumina_external_manifests(lum_cases)
-        self.assertEqual(sorted(out_l["exam_id"].tolist()), ["lumina_benign_1", "lumina_malign_1"])
-        self.assertEqual(out_l.set_index("exam_id")["outcome_label"].to_dict(), {"lumina_benign_1": 0, "lumina_malign_1": 1})
+        self.assertEqual(sorted(out_l["exam_id"].tolist()), ["lumina_case_0001", "lumina_case_0002"])
+        self.assertEqual(sorted(inf_l["image_id"].tolist()), ["lumina_img_00001", "lumina_img_00002"])
+        assert_lumina_neutral_inference_manifest(inf_l, context="test_02_lumina")
+        # Verify outcomes mapped accurately to neutral IDs via eligibility_flags
+        label_by_source = {
+            json.loads(r["eligibility_flags"])["source_class_folder"]: int(r["outcome_label"])
+            for _, r in out_l.iterrows()
+        }
+        self.assertEqual(label_by_source, {"benign": 0, "malign": 1})
 
     def test_03_common_4view_selection_never_fabricates_views(self):
         rows = _make_4view_rows("imdb", "ex_complete", "c1")
@@ -416,6 +427,95 @@ class TestPaper1Exp3Universal(unittest.TestCase):
                 max_spend_usd=5.0,
                 pilot_limit=200,
             )
+
+    def test_09_lumina_neutral_pseudonym_quarantine(self):
+        rows = []
+        for idx in range(1, 7):
+            cls_dir = "Benign" if idx <= 3 else "Malign"
+            path_lbl = "BENIGN" if idx <= 3 else "MALIGN"
+            rows.append(
+                {
+                    "class_folder": cls_dir,
+                    "case_id": str(idx),
+                    "image_id": f"{idx}_L_CC",
+                    "laterality": "L",
+                    "view": "CC",
+                    "image_path": f"{cls_dir}/{idx}/L_CC.dcm",
+                    "pathology": path_lbl,
+                    "manufacturer": "IMS GIOTTO S.p.A.",
+                }
+            )
+        lum_df = pd.DataFrame(rows)
+        inf_l, out_l = build_lumina_external_manifests(lum_df)
+        ingest_map = build_lumina_pseudonym_ingest_map(lum_df)
+        self.assertEqual(len(ingest_map), 6)
+
+        # Assert ZERO 'benign' or 'malign' substrings appear anywhere in LUMINA inference manifest
+        for col in inf_l.columns:
+            joined = " ".join(inf_l[col].astype(str).tolist()).lower()
+            self.assertNotIn("benign", joined, f"Leak in LUMINA inference column {col}")
+            self.assertNotIn("malign", joined, f"Leak in LUMINA inference column {col}")
+
+        # Verify deterministic salted permutation interleaved classes (not strictly 0,0,0,1,1,1)
+        ordered_labels = out_l.sort_values("exam_id")["outcome_label"].tolist()
+        self.assertEqual(sorted(ordered_labels), [0, 0, 0, 1, 1, 1])
+
+        # Verify validator rejects ANY leaked benign/malign substring in path, id, or acquisition_meta
+        for leak_col, leak_val in (
+            ("image_path", "Benign/1/L_CC.dcm"),
+            ("exam_id", "lumina_benign_1"),
+            ("image_id", "lumina_malign_1_img"),
+            ("acquisition_meta", json.dumps({"manufacturer": "GE", "note": "malign_case"})),
+        ):
+            bad = inf_l.copy()
+            bad.loc[0, leak_col] = leak_val
+            if leak_col == "exam_id":
+                bad.loc[0, "cluster_id"] = leak_val
+            with self.assertRaises(ValueError):
+                validate_inference_manifest(bad, context=f"leak_{leak_col}")
+
+    def test_10_pilot_batch_size_benchmark_and_cpu_scaling_guards(self):
+        self.assertEqual(parse_pilot_batch_sizes(None, "ce_b5"), [16, 32, 64])
+        self.assertEqual(parse_pilot_batch_sizes("64, 16, 32, 16", "resnet50_rsna"), [16, 32, 64])
+        with self.assertRaises(ValueError):
+            parse_pilot_batch_sizes("0,16", "resnet50_rsna")
+
+        sel = select_optimal_pilot_batch_size(
+            [
+                {"batch_size": 16, "img_per_sec": 120.0, "peak_vram_gb": 1.2, "max_abs_diff": 0.0},
+                {"batch_size": 64, "img_per_sec": 265.0, "peak_vram_gb": 3.4, "max_abs_diff": 2e-4},
+                {"batch_size": 128, "img_per_sec": 310.0, "peak_vram_gb": 6.8, "max_abs_diff": 5e-2},
+            ],
+            max_parity_diff=1e-3,
+        )
+        self.assertEqual(sel["recommended_batch_size"], 64)
+
+        for valid_cpu in (2, 4, 8, 16):
+            validate_exp3_cli_guards(
+                stage="pilot",
+                dataset_id="cmmd",
+                model_id="resnet50_rsna",
+                approve_download=False,
+                approve_preprocess=False,
+                approve_full_infer=False,
+                max_spend_usd=1.0,
+                pilot_limit=200,
+                cpu_workers=valid_cpu,
+                pilot_batch_sizes="16,32,64",
+            )
+        for bad_cpu in (1, 3, 32):
+            with self.assertRaises(ValueError):
+                validate_exp3_cli_guards(
+                    stage="preprocess",
+                    dataset_id="cmmd",
+                    model_id="resnet50_rsna",
+                    approve_download=False,
+                    approve_preprocess=True,
+                    approve_full_infer=False,
+                    max_spend_usd=1.0,
+                    pilot_limit=200,
+                    cpu_workers=bad_cpu,
+                )
 
 
 if __name__ == "__main__":
