@@ -38,8 +38,10 @@ RSNA_MOUNT = Path("/rsna_vol")
 NLBS_MOUNT = Path("/nlbs_vol")
 NYU_CKPT_SHA256 = "9a1d97f93493ea2007c00e6c1805dfa634cbc321ecdeba2c2adecd351e86b014"
 PREPROCESS_VERSION = "paper1_nyu_uint16_v1"
-# Nvidia L40S ($1.95/hr) + 6 vCPU ($0.2838/hr) + 24 GiB RAM ($0.1920/hr)
-L40S_COMBINED_HOURLY_USD = 2.4258
+# Pilot container: Nvidia L40S ($1.95/hr) + 6 vCPU ($0.2838/hr) + 24 GiB RAM ($0.1920/hr)
+L40S_PILOT_HOURLY_USD = 2.4258
+# Production shard worker: Nvidia L40S ($1.95/hr) + 8 vCPU ($0.3784/hr) + 32 GiB RAM ($0.2560/hr)
+L40S_PROD_HOURLY_USD = 2.5844
 
 app = modal.App(APP_NAME)
 
@@ -109,6 +111,7 @@ def _run_prefetched_batched_inference(
     verify_u16_sha256: bool,
     t_budget_start: float | None = None,
     max_spend_usd: float | None = None,
+    hourly_rate_usd: float = L40S_PROD_HOURLY_USD,
     label: str = "NYU",
 ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]], float, float]:
     """Prefetch exam PNG decode + 10-TTA generation on CPU threads overlapped with L40S GPU batches."""
@@ -154,7 +157,7 @@ def _run_prefetched_batched_inference(
 
         for start in range(0, len(exams), batch_exams):
             if t_budget_start is not None and max_spend_usd is not None:
-                spent = ((time.perf_counter() - t_budget_start) / 3600.0) * L40S_COMBINED_HOURLY_USD
+                spent = ((time.perf_counter() - t_budget_start) / 3600.0) * hourly_rate_usd
                 if spent >= max_spend_usd:
                     raise RuntimeError(
                         f"COST GUARD STOP ({label}): elapsed spend ${spent:.4f} reached limit ${max_spend_usd:.4f} "
@@ -353,7 +356,7 @@ def run_nyu_step2_pilot(
     # Optional bs=8 mini-probe (16 exams) if batch_exams != 8 to measure higher batch VRAM/speed safely
     bs8_probe = None
     if batch_exams != 8:
-        spent_so_far = ((time.perf_counter() - t_total0) / 3600.0) * L40S_COMBINED_HOURLY_USD
+        spent_so_far = ((time.perf_counter() - t_total0) / 3600.0) * L40S_PILOT_HOURLY_USD
         if spent_so_far < max_pilot_cost_usd * 0.75:
             torch.cuda.reset_peak_memory_stats()
             t_b80 = time.perf_counter()
@@ -370,6 +373,7 @@ def run_nyu_step2_pilot(
                 verify_u16_sha256=False,
                 t_budget_start=t_total0,
                 max_spend_usd=max_pilot_cost_usd,
+                hourly_rate_usd=L40S_PILOT_HOURLY_USD,
                 label="NYU-Probe-bs8",
             )
             w8 = time.perf_counter() - t_b80
@@ -461,14 +465,14 @@ def run_nyu_step2_pilot(
     gpu_exams_per_sec = pilot_n_exams / max(gpu_infer_sec, 1e-6)
     host_rss_gb = float(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / (1024 * 1024))
 
-    measured_infer_cost_usd = (e2e_pilot_sec / 3600.0) * L40S_COMBINED_HOURLY_USD
-    measured_container_cost_usd = (total_container_sec / 3600.0) * L40S_COMBINED_HOURLY_USD
+    measured_infer_cost_usd = (e2e_pilot_sec / 3600.0) * L40S_PILOT_HOURLY_USD
+    measured_container_cost_usd = (total_container_sec / 3600.0) * L40S_PILOT_HOURLY_USD
 
-    # Project full 8,566 exams (2,382 RSNA + 6,184 NLBS) with 4 shards/split (= 8 container loads * model_load + startup)
+    # Project full 8,566 exams (2,382 RSNA + 6,184 NLBS) on 8vCPU/32GiB production config across 8 shards
     full_exams = 8566
-    startup_overhead_per_shard_sec = 20.0 + model_load_sec
+    startup_overhead_per_shard_sec = 35.0
     proj_4shard_split_sec = (full_exams / max(e2e_exams_per_sec, 1e-6)) + (8 * startup_overhead_per_shard_sec)
-    proj_full_usd = (proj_4shard_split_sec / 3600.0) * L40S_COMBINED_HOURLY_USD
+    proj_full_usd = (proj_4shard_split_sec / 3600.0) * L40S_PROD_HOURLY_USD
 
     scores_arr = np.array([r["exam_score"] for r in pilot_recs], dtype=np.float64)
     return {
@@ -524,7 +528,8 @@ def run_nyu_step2_pilot(
             "host_rss_gb": round(host_rss_gb, 3),
         },
         "cost": {
-            "l40s_hourly_usd": L40S_COMBINED_HOURLY_USD,
+            "l40s_hourly_usd": L40S_PILOT_HOURLY_USD,
+            "prod_l40s_hourly_usd": L40S_PROD_HOURLY_USD,
             "max_pilot_cost_usd": max_pilot_cost_usd,
             "measured_pilot_e2e_usd": round(measured_infer_cost_usd, 5),
             "measured_pilot_total_container_usd": round(measured_container_cost_usd, 5),
@@ -539,8 +544,8 @@ def run_nyu_step2_pilot(
     image=image,
     volumes={str(RSNA_MOUNT): RSNA_VOL},
     gpu="L40S",
-    cpu=6.0,
-    memory=24576,
+    cpu=8.0,
+    memory=32768,
     ephemeral_disk=524288,
     timeout=7200,
 )
@@ -552,17 +557,19 @@ def infer_nyu_shard(
     num_tta_epochs: int = 10,
     max_shard_cost_usd: float = 2.0,
 ) -> Dict[str, Any]:
-    """Run resumable Step-2 NYU SplitBreastModel L40S inference from NVMe-staged cached uint16 PNGs."""
+    """Run resumable Step-2 NYU SplitBreastModel L40S inference (8 vCPU / 32 GiB RAM / FP32 / 10-TTA)."""
     import pandas as pd
     import resource
     import torch
     from src.evaluation.stage_c_eval import compute_sha256_file
     from src.paper1.nyu_fourview_adapter import (
+        NYU_STEP1_MANIFEST_SHA256,
         NYU_TTA_SEED_OFFICIAL,
         build_nyu_fourview_model,
         compute_nyu_case_ids_sha256,
         validate_and_load_nyu_4view_manifest,
         validate_nyu_shard_payload,
+        verify_nyu_step1_against_frozen_source,
     )
 
     if int(num_tta_epochs) != 10:
@@ -582,6 +589,9 @@ def infer_nyu_shard(
     if not man_csv.exists():
         raise FileNotFoundError(f"Step 1 NYU manifest missing: {man_csv}")
     step1_manifest_sha = compute_sha256_file(man_csv)
+    expected_frozen_sha = NYU_STEP1_MANIFEST_SHA256[split_name]
+    if step1_manifest_sha.lower() != expected_frozen_sha.lower():
+        raise RuntimeError(f"{split_name}: Volume Step 1 manifest SHA mismatch {step1_manifest_sha} != {expected_frozen_sha}")
     step1_df = pd.read_csv(man_csv, dtype={"item_id": str, "case_id": str})
 
     raw_man_path = (
@@ -589,7 +599,10 @@ def infer_nyu_shard(
         if split_name == "rsna_val_calib"
         else Path("/root/datasets/paper1/nlbs_4view_common_cohort_label_free.csv")
     )
-    _ = validate_and_load_nyu_4view_manifest(split_name, raw_man_path)
+    src_df = validate_and_load_nyu_4view_manifest(split_name, raw_man_path)
+    verify_nyu_step1_against_frozen_source(
+        split_name, step1_df, src_df, actual_manifest_sha256=step1_manifest_sha, expected_manifest_sha256=expected_frozen_sha
+    )
 
     all_exams = _group_step1_exams(step1_df)
     shard_exams = all_exams[shard_idx::num_shards]
@@ -616,7 +629,7 @@ def infer_nyu_shard(
             tta_seed=NYU_TTA_SEED_OFFICIAL,
             checkpoint_sha256=NYU_CKPT_SHA256,
             preprocess_version=PREPROCESS_VERSION,
-            preprocess_manifest_sha256=step1_manifest_sha,
+            preprocess_manifest_sha256=expected_frozen_sha,
         )
         if ok:
             cached["resumed_from_cache"] = True
@@ -635,6 +648,8 @@ def infer_nyu_shard(
     model, nyu_mods = build_nyu_fourview_model(
         ckpt_path, device=device, nyu_repo_dir=Path("/root/external/breast_cancer_classifier")
     )
+    if next(model.parameters()).dtype != torch.float32 or model.training or torch.is_autocast_enabled():
+        raise RuntimeError("Strict FP32 eval() non-autocast inference violated for NYU SplitBreastModel!")
     model_load_sec = time.perf_counter() - t_load0
 
     torch.cuda.reset_peak_memory_stats()
@@ -652,13 +667,14 @@ def infer_nyu_shard(
         verify_u16_sha256=True,
         t_budget_start=t_container0,
         max_spend_usd=max_shard_cost_usd,
+        hourly_rate_usd=L40S_PROD_HOURLY_USD,
         label=f"NYU-{split_name}-s{shard_idx:02d}",
     )
     elapsed_sec = time.perf_counter() - t_loop0
     container_wall_sec = time.perf_counter() - t_container0
     peak_vram_gb = float(torch.cuda.max_memory_allocated() / 1e9)
     host_rss_gb = float(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / (1024 * 1024))
-    estimated_cost_usd = (container_wall_sec / 3600.0) * L40S_COMBINED_HOURLY_USD
+    estimated_cost_usd = (container_wall_sec / 3600.0) * L40S_PROD_HOURLY_USD
 
     payload = {
         "schema_version": "paper1_nyu_shard_v2",
@@ -666,7 +682,8 @@ def infer_nyu_shard(
         "checkpoint_file": "sample_image_model.p",
         "checkpoint_sha256": NYU_CKPT_SHA256,
         "preprocess_version": PREPROCESS_VERSION,
-        "preprocess_manifest_sha256": step1_manifest_sha,
+        "preprocess_manifest_sha256": expected_frozen_sha,
+        "precision": "fp32",
         "split_name": split_name,
         "shard_idx": shard_idx,
         "num_shards": num_shards,
@@ -682,7 +699,7 @@ def infer_nyu_shard(
         "gpu_infer_sec": round(gpu_infer_sec, 3),
         "elapsed_sec": round(elapsed_sec, 3),
         "container_wall_sec": round(container_wall_sec, 3),
-        "l40s_hourly_usd": L40S_COMBINED_HOURLY_USD,
+        "l40s_hourly_usd": L40S_PROD_HOURLY_USD,
         "estimated_cost_usd": round(estimated_cost_usd, 5),
         "peak_vram_gb": round(peak_vram_gb, 3),
         "host_rss_gb": round(host_rss_gb, 3),
@@ -701,7 +718,7 @@ def infer_nyu_shard(
         tta_seed=NYU_TTA_SEED_OFFICIAL,
         checkpoint_sha256=NYU_CKPT_SHA256,
         preprocess_version=PREPROCESS_VERSION,
-        preprocess_manifest_sha256=step1_manifest_sha,
+        preprocess_manifest_sha256=expected_frozen_sha,
     )
     if not ok:
         raise RuntimeError(f"Generated NYU shard failed self-validation: {reason}")
@@ -723,16 +740,25 @@ def main(
     num_tta_epochs: int = 10,
     n_exams_per_split: int = 50,
     max_pilot_cost_usd: float = 0.18,
-    max_shard_cost_usd: float = 2.0,
+    max_shard_cost_usd: float = 1.50,
+    max_total_spend_usd: float = 0.0,
+    wave_size: int = 2,
     shard_indices: str = "",
     approve_full_infer: bool = False,
 ) -> None:
     import pandas as pd
+    from src.evaluation.stage_c_eval import compute_sha256_file
     from src.paper1.nyu_fourview_adapter import (
+        NYU_STEP1_MANIFEST_SHA256,
+        check_nyu_aggregate_spend_guard,
         finalize_and_lock_nyu_predictions,
+        validate_and_load_nyu_4view_manifest,
         validate_nyu_step2_cli_and_guard,
+        verify_nyu_step1_against_frozen_source,
     )
 
+    if max_total_spend_usd <= 0.0:
+        max_total_spend_usd = 1.50 if split == "rsna_val_calib" else 3.50
     validate_nyu_step2_cli_and_guard(
         stage=stage,
         split=split,
@@ -740,6 +766,7 @@ def main(
         batch_exams=batch_exams,
         num_tta_epochs=num_tta_epochs,
         approve_full_infer=approve_full_infer,
+        max_total_spend_usd=max_total_spend_usd,
     )
 
     if stage == "pilot":
@@ -755,10 +782,37 @@ def main(
         print(json.dumps(res, indent=2))
         return
 
+    # Sequential scientific gate: NLBS Step 2 inference is blocked until RSNA calibration lock exists and verifies!
+    if split == "nlbs_4view":
+        rsna_calib_lock_p = Path("reports/paper1/nyu_rsna_calibration_lock.json")
+        if not rsna_calib_lock_p.exists():
+            raise RuntimeError(
+                "BLOCKED: Run RSNA Step 2 inference and `scripts/calibrate_paper1_nyu_rsna.py` FIRST to lock "
+                "RSNA thresholds (`reports/paper1/nyu_rsna_calibration_lock.json`) before launching NLBS inference."
+            )
+        calib_lock = json.loads(rsna_calib_lock_p.read_text(encoding="utf-8"))
+        calib_sha = compute_sha256_file(Path(calib_lock["calibration_json_path"]))
+        if calib_sha != calib_lock.get("calibration_json_sha256"):
+            raise RuntimeError("RSNA calibration JSON SHA-256 lock mismatch; re-verify RSNA calibration before NLBS.")
+
     step1_local_csv = Path(f"reports/paper1/nyu_step1_{split}_manifest.csv")
     if not step1_local_csv.exists():
         raise FileNotFoundError(f"Expected Step 1 local manifest CSV: {step1_local_csv}")
+    local_sha = compute_sha256_file(step1_local_csv)
+    expected_sha = NYU_STEP1_MANIFEST_SHA256[split]
     step1_df = pd.read_csv(step1_local_csv, dtype={"item_id": str, "case_id": str})
+    src_csv = Path(
+        "datasets/paper1/rsna_val_calib_4view_selection.csv"
+        if split == "rsna_val_calib"
+        else "datasets/paper1/nlbs_4view_common_cohort_label_free.csv"
+    )
+    verify_nyu_step1_against_frozen_source(
+        split,
+        step1_df,
+        validate_and_load_nyu_4view_manifest(split, src_csv),
+        actual_manifest_sha256=local_sha,
+        expected_manifest_sha256=expected_sha,
+    )
     case_out_col = "patient_id" if split == "rsna_val_calib" else "StudyInstanceUID"
 
     shards = (
@@ -766,11 +820,45 @@ def main(
         if shard_indices.strip()
         else list(range(num_shards))
     )
-    outs = list(
-        infer_nyu_shard.starmap(
-            [(split, s, num_shards, batch_exams, num_tta_epochs, max_shard_cost_usd) for s in shards]
+    total_exams_target = step1_df["case_id"].nunique()
+    conservative_ips = 1.60  # Conservative floor below pilot 1.84 exams/sec
+    shard_overhead_sec = 35.0
+    per_shard_proj_usd = (
+        ((total_exams_target / max(num_shards, 1)) / conservative_ips + shard_overhead_sec) / 3600.0
+    ) * L40S_PROD_HOURLY_USD
+    est_total_proj_usd = len(shards) * per_shard_proj_usd
+    if est_total_proj_usd > max_total_spend_usd:
+        raise RuntimeError(
+            f"PRE-LAUNCH COST GUARD STOP: projected {len(shards)} shards for {split} = ${est_total_proj_usd:.4f} "
+            f"> --max-total-spend-usd=${max_total_spend_usd:.4f}"
         )
-    )
+
+    wave_sz = max(1, int(wave_size))
+    outs: List[Dict[str, Any]] = []
+    for w_start in range(0, len(shards), wave_sz):
+        wave = shards[w_start : w_start + wave_sz]
+        wave_proj = len(wave) * per_shard_proj_usd
+        incurred_so_far = check_nyu_aggregate_spend_guard(
+            outs, max_total_spend_usd=max_total_spend_usd, next_wave_projected_usd=0.0, context=f"{split}-pre-wave"
+        )
+        # Hard pre-wave remaining budget check if unresumed shards still exist
+        if incurred_so_far + wave_proj > max_total_spend_usd * 1.10:
+            raise RuntimeError(
+                f"AGGREGATE WAVE GUARD STOP ({split}): incurred=${incurred_so_far:.4f} + wave({wave}) "
+                f"est=${wave_proj:.4f} exceeds cap ${max_total_spend_usd:.4f}"
+            )
+        per_shard_cap = min(float(max_shard_cost_usd), max(0.25, float(max_total_spend_usd) - incurred_so_far))
+        wave_outs = list(
+            infer_nyu_shard.starmap(
+                [(split, s, num_shards, batch_exams, num_tta_epochs, per_shard_cap) for s in wave]
+            )
+        )
+        outs.extend(wave_outs)
+        incurred_after = check_nyu_aggregate_spend_guard(
+            outs, max_total_spend_usd=max_total_spend_usd, context=f"{split}-post-wave"
+        )
+        print(f"[{split}] Completed wave {wave}; cumulative new spend=${incurred_after:.4f} / ${max_total_spend_usd:.2f}")
+
     for o in sorted(outs, key=lambda x: int(x["shard_idx"])):
         print(
             f"[NYU Shard {o['shard_idx']}/{o['num_shards']}] exams={len(o['records'])} "
@@ -791,6 +879,7 @@ def main(
         batch_exams=batch_exams,
         checkpoint_sha256=NYU_CKPT_SHA256,
         preprocess_version=PREPROCESS_VERSION,
+        expected_manifest_sha256=expected_sha,
         out_dir=Path("reports/paper1/predictions_locked"),
     )
     print(json.dumps(lock_manifest, indent=2))
