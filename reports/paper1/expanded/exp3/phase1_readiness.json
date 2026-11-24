@@ -1,22 +1,22 @@
 {
-  "schema_version": "paper1_exp3_phase1_readiness_v2",
-  "generated_at_utc": "2026-11-24T14:46:00Z",
+  "schema_version": "paper1_exp3_phase2_readiness_v3",
+  "generated_at_utc": "2026-11-24T20:30:00Z",
   "branch": "paper1-exp3-phase1",
-  "synced_with_main_commit": "409ec2b",
-  "phase_status": "PHASE_1_STEP_A_COMPLETE_CONDITIONAL_GO_FOR_WAVE_2_3",
+  "synced_with_main_commit": "465d3d4",
+  "phase_status": "PHASE_2_READY_FOR_4_MODELS_GATED_ON_APPROVAL",
   "modal_audit": {
     "profile": "tigerwood697",
     "activated_globally": false,
     "billing_summary_usd": {
-      "metered_total": 8.54,
-      "ephemeral_apps": 4.52,
+      "metered_total": 9.48,
+      "ephemeral_apps": 5.45,
       "volumes_metered": 3.99,
       "network_egress_metered": 0.04,
-      "credits_applied": -4.52,
+      "credits_applied": -5.45,
       "free_storage_applied": -3.99,
       "network_egress_allowance": -0.04,
       "billed_cost": 0.0,
-      "estimated_monthly_credits_remaining": 25.48
+      "estimated_monthly_credits_remaining": 24.55
     },
     "running_apps": 0,
     "volumes": [
@@ -28,52 +28,29 @@
       "sciencedb-data",
       "mmcows-data"
     ],
-    "total_storage_gib": 165.26,
+    "rsna_mammography_vol_bytes": 193506112761,
+    "rsna_mammography_vol_gib": 180.2166,
+    "total_storage_gib": 243.49,
     "free_tier_limit_gib": 1024.0,
     "storage_overage_usd_per_day": 0.0,
-    "verified_resnet50_assets_on_tigerwood697": {
-      "models/paper1/resnet50-11ad3fa6.pth": {
-        "exists": true,
-        "bytes": 102540417
-      },
-      "models/paper1/checkpoints/resnet50_rsna_seed42_best_train_calib.pt": {
-        "exists": true
-      },
-      "models/paper1/checkpoints/resnet50_rsna_seed42_latest.pt": {
-        "exists": true
-      },
-      "cache/stage1_rsna_uint16/png_1520x912": {
-        "exists": true,
-        "file_count": 54706
-      },
-      "cache/stage1_nlbs_uint16/png_1520x912": {
-        "exists": true,
-        "file_count": 26988
-      },
-      "cache/paper1_resnet50_preds": {
-        "exists": true,
-        "files": [
-          "nlbs_image_scores.csv",
-          "nlbs_case_scores.csv",
-          "rsna_val_calib_image_scores.csv",
-          "rsna_val_calib_case_scores.csv"
-        ]
-      }
+    "verified_4_ready_models_and_caches_on_tigerwood697": {
+      "models/mammo_clip/b5-model-best-epoch-7.tar": {"exists": true, "bytes": 1654145453, "verified_by": "reports/transfers/tigerwood697_exp3_backbones_full_20261124T151605Z_execution.json"},
+      "models/checkpoints/stage_b_rsna/ce_rsna_seed42_final_epoch20.pt": {"exists": true, "bytes": 99040, "verified_by": "tigerwood697_exp3_backbones_full"},
+      "models/checkpoints/stage_b_rsna/trust_rsna_seed42_final_epoch20.pt": {"exists": true, "bytes": 100128, "verified_by": "tigerwood697_exp3_backbones_full"},
+      "models/paper1/dinov2_vits14_pretrain.pth": {"exists": true, "bytes": 88283115},
+      "models/paper1/checkpoints/dinov2_vits14_head_seed42.pt": {"exists": true, "bytes": 7072},
+      "models/paper1/resnet50-11ad3fa6.pth": {"exists": true, "bytes": 102540417},
+      "models/paper1/checkpoints/resnet50_rsna_seed42_best_train_calib.pt": {"exists": true, "bytes": 282593192},
+      "models/paper1/checkpoints/resnet50_rsna_seed42_latest.pt": {"exists": true, "bytes": 282594536},
+      "cache/stage1_cmmd_uint16/png_1520x912": {"exists": true, "file_count": 5202, "bytes": 10645731726, "gib": 9.9146},
+      "cache/stage1_lumina_uint16/png_1520x912": {"exists": true, "file_count": 1285, "bytes": 6917495001, "gib": 6.4424},
+      "cache/stage1_rsna_uint16/png_1520x912": {"exists": true, "file_count": 54706, "gib": 65.9501},
+      "cache/stage1_nlbs_uint16/png_1520x912": {"exists": true, "file_count": 26988, "gib": 35.9340},
+      "cache/paper1_resnet50_preds": {"exists": true, "file_count": 4, "bytes": 3205146}
     },
-    "checkpoint_sync_commands": [
-      "$env:MODAL_PROFILE='hasinishrak2015'; modal volume get rsna-mammography-vol models/paper1/dinov2_vits14_pretrain.pth models/paper1/dinov2_vits14_pretrain.pth",
-      "$env:MODAL_PROFILE='tigerwood697'; modal volume put rsna-mammography-vol models/paper1/dinov2_vits14_pretrain.pth /models/paper1/dinov2_vits14_pretrain.pth",
-      "$env:MODAL_PROFILE='tigerwood697'; modal volume put rsna-mammography-vol reports/paper1/dinov2_head/dinov2_vits14_head_seed42.pt /models/paper1/checkpoints/dinov2_vits14_head_seed42.pt",
-      "$env:MODAL_PROFILE='hasinishrak74001'; modal volume get rsna-mammography-vol models/mammo_clip/b5-model-best-epoch-7.tar models/mammo_clip/b5-model-best-epoch-7.tar",
-      "$env:MODAL_PROFILE='hasinishrak74001'; modal volume get rsna-mammography-vol models/checkpoints/stage_b_rsna/ce_rsna_seed42_final_epoch20.pt models/checkpoints/stage_b_rsna/ce_rsna_seed42_final_epoch20.pt",
-      "$env:MODAL_PROFILE='hasinishrak74001'; modal volume get rsna-mammography-vol models/checkpoints/stage_b_rsna/trust_rsna_seed42_final_epoch20.pt models/checkpoints/stage_b_rsna/trust_rsna_seed42_final_epoch20.pt",
-      "$env:MODAL_PROFILE='tigerwood697'; modal volume put rsna-mammography-vol models/mammo_clip/b5-model-best-epoch-7.tar /models/mammo_clip/b5-model-best-epoch-7.tar",
-      "$env:MODAL_PROFILE='tigerwood697'; modal volume put rsna-mammography-vol models/checkpoints/stage_b_rsna/ce_rsna_seed42_final_epoch20.pt /models/checkpoints/stage_b_rsna/ce_rsna_seed42_final_epoch20.pt",
-      "$env:MODAL_PROFILE='tigerwood697'; modal volume put rsna-mammography-vol models/checkpoints/stage_b_rsna/trust_rsna_seed42_final_epoch20.pt /models/checkpoints/stage_b_rsna/trust_rsna_seed42_final_epoch20.pt"
-    ],
     "pending_agent1_handoff": [
-      "gmic_rsna_finetuned (sample_model_1.p + gmic_rsna_finetuned_best_train_calib.pt + rsna_val_calib thresholds)",
-      "nyu_fourview_rsna_finetuned (sample_image_model.p + nyu_fourview_rsna_finetuned_best_train_calib.pt + rsna_val_calib thresholds)"
+      "gmic_rsna_finetuned (sample_model_1.p verified on volume [60,740,040 B]; waiting on Agent 1 fine-tuned checkpoint + SHA-256 + RSNA val_calib tau_98/tau_95)",
+      "nyu_fourview_rsna_finetuned (sample_image_model.p verified on volume [24,705,061 B]; waiting on Agent 1 fine-tuned checkpoint + SHA-256 + RSNA val_calib tau_98/tau_95)"
     ]
   },
   "frozen_rsna_thresholds": {
@@ -84,6 +61,20 @@
     "gmic_rsna_finetuned": {"target_98": null, "target_95": null, "status": "pending_agent1_handoff"},
     "nyu_fourview_rsna_finetuned": {"target_98": null, "target_95": null, "status": "pending_agent1_handoff"}
   },
+  "wave3_pilot_winners_l40s": {
+    "cmmd": {
+      "ce_b5": {"batch_size": 32, "img_per_sec": 30.1, "peak_vram_gb": 10.032, "projected_sec": 172.8, "projected_usd": 0.1134, "note": "bs=64 failed with CUDA canUse32BitIndexMath"},
+      "trust_b5": {"batch_size": 32, "img_per_sec": 30.56, "peak_vram_gb": 10.031, "projected_sec": 170.2, "projected_usd": 0.1117, "note": "bs=64 failed with CUDA canUse32BitIndexMath"},
+      "dinov2_rsna": {"batch_size": 32, "img_per_sec": 163.45, "peak_vram_gb": 0.625, "projected_sec": 31.8, "projected_usd": 0.0209},
+      "resnet50_rsna": {"batch_size": 32, "img_per_sec": 139.76, "peak_vram_gb": 1.611, "projected_sec": 37.2, "projected_usd": 0.0244, "note": "bs=64/128 exceeded max_abs_diff 1e-3 (0.001953)"}
+    },
+    "lumina": {
+      "ce_b5": {"batch_size": 32, "img_per_sec": 23.58, "peak_vram_gb": 10.031, "projected_sec": 54.5, "projected_usd": 0.0357},
+      "trust_b5": {"batch_size": 32, "img_per_sec": 24.35, "peak_vram_gb": 10.031, "projected_sec": 52.8, "projected_usd": 0.0346},
+      "dinov2_rsna": {"batch_size": 128, "img_per_sec": 61.97, "peak_vram_gb": 2.23, "projected_sec": 20.7, "projected_usd": 0.0136},
+      "resnet50_rsna": {"batch_size": 32, "img_per_sec": 62.73, "peak_vram_gb": 1.611, "projected_sec": 20.5, "projected_usd": 0.0134}
+    }
+  },
   "datasets": {
     "nlbs": {
       "country": "Canada",
@@ -92,84 +83,54 @@
       "population_screening_dismissal_allowed": true,
       "counts": {"images": 26988, "full_studies": 6359, "common_4view_studies": 6184, "clusters_4view": 5868, "clusters_full": 5942, "positives": 151},
       "completed_models_reusable": ["ce_b5", "trust_b5", "dinov2_rsna", "resnet50_rsna"],
-      "estimated_new_storage_gib": 0.0
-    },
-    "imdb": {
-      "country": "India",
-      "eligibility": "ELIGIBLE_WITH_INTERACTIVE_DOWNLOAD_AND_MODALITY_SEPARATION",
-      "cohort_role": "mixed_diagnostic_opportunistic",
-      "population_screening_dismissal_allowed": false,
-      "manual_download_instructions": [
-        "1. Open https://ibdc.dbt.gov.in/ibia/studybrowse/ (no account/login required) and search 'mammo' (or visit MAMOS_1000000004 & MAMOS_1000000050 directly).",
-        "2. Click the Data button on both cards to download DICOMs + CSV metadata locally.",
-        "3. Upload to tigerwood697: modal volume put rsna-mammography-vol <local_r1> /external_datasets/imdb/raw/r1/ and <local_r2> /external_datasets/imdb/raw/r2/.",
-        "Alternative: request CC BY 4.0 scripted mirror access at https://www.midas.iisc.ac.in/fe/datasets/breast/breast-mammography."
-      ],
-      "cross_release_overlap_audit_plan": [
-        "Namespace sequential pt_XXX IDs as imdb_r1_<pt> and imdb_r2_<pt>.",
-        "Check exact SOPInstanceUID and StudyInstanceUID collisions across r1.0 (2020) vs r2.0 (Aug-Dec 2025).",
-        "Compute pixel-array SHA-256 + DICOM (PatientAge, ManufacturerModelName, laterality, view) fingerprint across releases; merge any matched repeat patients into a shared cluster_id.",
-        "Separate FFDM vs Synthetic Mammography (SM) via ImageType/SeriesDescription and retain composite label_source provenance."
-      ],
-      "license": "IBIA Open Access (~CC BY); MIDAS CC BY 4.0",
-      "doi": "10.59275/j.melba.2026-bd61",
-      "counts": {"r1_patients": 583, "r1_images": 3577, "r1_cancers": 73, "r2_patients": 2636, "r2_images": 9097, "r2_cancers": 315, "combined_patients": 3219, "combined_images": 12674, "combined_cancers": 388, "combined_non_cancers": 2821, "unclassified_or_incomplete_patients": 10},
-      "estimated_storage_gib": {"raw_dicom_est": 180.0, "stage1_png_cache_est": 15.5, "total_est": 195.5}
+      "estimated_new_storage_gib": 0.0,
+      "projected_phase2_usd_ready4": 0.0
     },
     "cmmd": {
       "country": "China",
       "eligibility": "ELIGIBLE_OPEN_PUBLIC_DIAGNOSTIC_BENCHMARK",
       "cohort_role": "diagnostic_biopsy_enriched",
       "population_screening_dismissal_allowed": false,
-      "accessibility": "100% Open Public via TCIA NBIA REST API (zero credentials).",
-      "license": "CC BY 4.0",
-      "doi": "10.7937/tcia.eqde-4b16",
-      "counts": {"patients_studies_series": 1775, "images": 5202, "raw_bytes": 22861926932, "raw_gib": 21.292, "series_4view_bilateral": 826, "images_in_4view_series": 3304, "series_2view_unilateral": 949, "clinical_breast_rows": 1872, "bilateral_clinical_patients": 97, "malignant_breast_rows": 1316, "benign_breast_rows": 556},
-      "estimated_storage_gib": {"raw_dicom_verified": 21.292, "extracted_plus_stage1_cache_est": 27.5, "total_est": 48.8}
+      "counts": {"images": 5202, "exams": 1775, "positives": 1310, "common_4view_exams": 826, "common_4view_images": 3304, "common_4view_positives": 765},
+      "nyu_fourview_policy": "AUTO_RESTRICT_TO_826_COMPLETE_4VIEW_EXAMS",
+      "stage1_cache_verified": {"images": 5202, "skipped": 0, "fallbacks": 0},
+      "projected_phase2_usd_ready4": 0.2704
     },
     "lumina": {
       "country": "Turkey",
-      "eligibility": "ELIGIBLE_VIEW_AGNOSTIC_MULTI_VENDOR_STRESS_TEST",
+      "eligibility": "ELIGIBLE_SINGLE_VIEW_DIAGNOSTIC_STRESS_TEST",
       "cohort_role": "diagnostic_biopsy_enriched",
       "population_screening_dismissal_allowed": false,
-      "pseudonym_quarantine": {
-        "enforced": true,
-        "id_format": "lumina_case_XXXX / lumina_img_XXXXX (salted SHA-256 interleaved permutation)",
-        "neutral_path_format": "lumina_neutral/lumina_case_XXXX/lumina_img_XXXXX.dcm",
-        "forbidden_substrings_in_inference": ["benign", "malign"],
-        "verified_by_unit_test": "test_09_lumina_neutral_pseudonym_quarantine"
-      },
-      "accessibility": "100% Open Public via OSF Storage API (https://osf.io/b63jc/, direct ZIPs, zero login).",
-      "license": "CC BY-NC 4.0",
-      "arxiv": "2603.14644v3",
-      "counts": {"patients": 468, "benign_unique_ids": 250, "malign_unique_ids": 218, "images_total": 1824, "benign_images": 960, "malignant_images": 864},
-      "estimated_storage_gib": {"raw_zips_verified": 8.476, "extracted_plus_stage1_cache_est": 11.0, "total_est": 19.5}
+      "counts": {"images": 1285, "exams": 468, "positives": 218, "common_4view_exams": 174, "common_4view_positives": 1},
+      "nyu_fourview_policy": "HARD_BLOCKED_UNILATERAL_MALIGNANT_SELECTION",
+      "pseudonym_quarantine": {"enforced": true, "id_format": "lumina_case_XXXX / lumina_img_XXXXX", "forbidden_substrings_in_inference": ["benign", "malign"]},
+      "stage1_cache_verified": {"images": 1285, "skipped": 0, "fallbacks": 0},
+      "projected_phase2_usd_ready4": 0.0973
+    },
+    "imdb": {
+      "country": "India",
+      "eligibility": "CONDITIONAL_PENDING_MANUAL_IBIA_UPLOAD",
+      "cohort_role": "mixed_diagnostic_opportunistic",
+      "population_screening_dismissal_allowed": false,
+      "manual_download_instructions": [
+        "1. Open https://ibdc.dbt.gov.in/ibia/studybrowse/ (no login) and search 'mammo' or visit MAMOS_1000000004 (r1.0, 583 pts) and MAMOS_1000000050 (r2.0, 2,636 pts).",
+        "2. Download DICOMs + CSV metadata locally via the Data button (or request CC BY 4.0 scripted access on https://www.midas.iisc.ac.in/fe/datasets/breast/breast-mammography).",
+        "3. Upload to tigerwood697: $env:MODAL_PROFILE='tigerwood697'; modal volume put rsna-mammography-vol <LOCAL_R1_DIR> /external_datasets/imdb/raw/r1/ and <LOCAL_R2_DIR> /external_datasets/imdb/raw/r2/."
+      ]
     }
   },
-  "pipeline_upgrades_wave2_3": {
-    "cpu_worker_scaling_choices": [2, 4, 8, 16],
-    "download_and_unzip_allocation": "cpu=1.0, memory=2048 (60s commits + signal handlers)",
-    "progressive_pilot_batch_sizes": {
-      "ce_b5": [16, 32, 64],
-      "trust_b5": [16, 32, 64],
-      "dinov2_rsna": [32, 64, 128],
-      "resnet50_rsna": [32, 64, 128]
-    },
-    "unit_tests_passing": "10/10 in tests/test_paper1_exp3_universal.py + 3/3 in tests/test_stage_c_quarantine_and_eval.py"
+  "phase2_execution_commands": {
+    "cmmd_ready4": "$env:MODAL_PROFILE='tigerwood697'; modal run scripts/run_paper1_exp3_modal.py --stage infer --dataset cmmd --model all_ready --manifest-csv datasets/exp3_meta/cmmd_inference_manifest.csv --num-shards 4 --max-spend-usd 1.5 --approve-full-infer",
+    "lumina_ready4": "$env:MODAL_PROFILE='tigerwood697'; modal run scripts/run_paper1_exp3_modal.py --stage infer --dataset lumina --model all_ready --manifest-csv datasets/exp3_meta/lumina_inference_manifest.csv --num-shards 4 --max-spend-usd 1.0 --approve-full-infer",
+    "nlbs_reuse_zero_usd": "python -c \"from scripts.run_paper1_exp3_modal import orchestrate_external_inference; print(orchestrate_external_inference(dataset_id='nlbs', model_arg='all_ready', skip_profile_check=True))\"",
+    "cmmd_agent1_handoff": "$env:MODAL_PROFILE='tigerwood697'; modal run scripts/run_paper1_exp3_modal.py --stage infer --dataset cmmd --model agent1_handoff --manifest-csv datasets/exp3_meta/cmmd_inference_manifest.csv --handoff-json <AGENT1_HANDOFF_JSON> --num-shards 4 --max-spend-usd 2.5 --approve-full-infer",
+    "lumina_gmic_handoff_only": "$env:MODAL_PROFILE='tigerwood697'; modal run scripts/run_paper1_exp3_modal.py --stage infer --dataset lumina --model gmic_rsna_finetuned --manifest-csv datasets/exp3_meta/lumina_inference_manifest.csv --handoff-json <AGENT1_HANDOFF_JSON> --num-shards 4 --max-spend-usd 1.5 --approve-full-infer",
+    "isolated_evaluation": "python scripts/evaluate_paper1_exp3.py --eval-specs-json <EVAL_SPECS_JSON> --out-dir reports/paper1/expanded/exp3/eval --n-boot 2000"
   },
-  "section9_wave2_wave3_approval_request": {
-    "profile": "tigerwood697",
-    "wave2_wave3_estimated_usd": 1.25,
-    "breakdown": {
-      "checkpoint_sync_and_verify": 0.02,
-      "lumina_download_neutral_ingest_and_stage1": 0.08,
-      "cmmd_nbia_download_and_stage1": 0.25,
-      "imdb_stage1_after_manual_ibia_upload": 0.65,
-      "wave3_l40s_progressive_batch_size_pilots": 0.25
-    },
-    "phase2_extrapolated_usd_range": [1.7, 4.3],
-    "all_inclusive_usd_range": [2.95, 5.55],
-    "projected_peak_storage_gib": 430.91,
-    "storage_overage_usd_per_day": 0.0
+  "phase2_cost_projection_usd": {
+    "cmmd_plus_lumina_4_ready_models_pure_gpu": 0.3677,
+    "cmmd_plus_lumina_4_ready_models_with_overhead": 0.42,
+    "agent1_gmic_and_nyu_on_cmmd_and_gmic_on_lumina_est_range": [1.5, 2.5],
+    "conditional_imdb_if_uploaded_est_range": [1.6, 2.8]
   }
 }
