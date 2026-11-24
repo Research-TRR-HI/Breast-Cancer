@@ -111,6 +111,46 @@ def get_bundle_specs(bundle_name: str) -> List[SourceSpec]:
     Prefers `hasinishrak74001` for Stage-1 RSNA (`65.95 GiB`), `splits_seed42.csv`,
     and Mammo-CLIP/Stage-B artifacts to avoid extra load on `hasinishrak2015`.
     """
+    if bundle_name == "nyu_nlbs_failover":
+        specs = [
+            SourceSpec(
+                src_profile="hasinishrak2015",
+                src_volume="rsna-mammography-vol",
+                src_prefix="cache/paper1_nyu_uint16_v1/nlbs_4view",
+                dst_volume="rsna-mammography-vol",
+                dst_prefix="cache/paper1_nyu_uint16_v1/nlbs_4view",
+                description="Verified 24,736 NLBS four-view PNG cache",
+            ),
+            SourceSpec(
+                src_profile="hasinishrak2015",
+                src_volume="rsna-mammography-vol",
+                src_prefix="models/paper1/sample_image_model.p",
+                dst_volume="rsna-mammography-vol",
+                dst_prefix="models/paper1/sample_image_model.p",
+                description="Official NYU image-only four-view pretrained checkpoint",
+            ),
+        ]
+        for spec in specs:
+            assert_transfer_path_allowed(spec.src_prefix, context=f"bundle:{bundle_name}:src")
+            assert_transfer_path_allowed(spec.dst_prefix, context=f"bundle:{bundle_name}:dst")
+        return specs
+
+    if bundle_name == "dryousuf_rsna_raw":
+        specs = [
+            SourceSpec(
+                src_profile="hasinishrak2015",
+                src_volume="rsna-mammography-vol",
+                src_prefix="rsna/raw",
+                dst_volume="rsna-mammography-vol",
+                dst_prefix="rsna/raw",
+                description="RSNA raw DICOM archive for native GMIC/NYU fine-tuning",
+            )
+        ]
+        for spec in specs:
+            assert_transfer_path_allowed(spec.src_prefix, context=f"bundle:{bundle_name}:src")
+            assert_transfer_path_allowed(spec.dst_prefix, context=f"bundle:{bundle_name}:dst")
+        return specs
+
     specs: List[SourceSpec] = [
         SourceSpec(
             src_profile="hasinishrak74001",
@@ -225,38 +265,6 @@ def get_bundle_specs(bundle_name: str) -> List[SourceSpec]:
                     ),
                 ]
             )
-    elif bundle_name == "nyu_nlbs_failover":
-        specs.extend(
-            [
-                SourceSpec(
-                    src_profile="hasinishrak2015",
-                    src_volume="rsna-mammography-vol",
-                    src_prefix="cache/paper1_nyu_uint16_v1/nlbs_4view",
-                    dst_volume="rsna-mammography-vol",
-                    dst_prefix="cache/paper1_nyu_uint16_v1/nlbs_4view",
-                    description="Verified 24,736 NLBS four-view PNG cache",
-                ),
-                SourceSpec(
-                    src_profile="hasinishrak2015",
-                    src_volume="rsna-mammography-vol",
-                    src_prefix="models/paper1/sample_image_model.p",
-                    dst_volume="rsna-mammography-vol",
-                    dst_prefix="models/paper1/sample_image_model.p",
-                    description="Official NYU image-only four-view pretrained checkpoint",
-                ),
-            ]
-        )
-    elif bundle_name == "dryousuf_rsna_raw":
-        specs.append(
-            SourceSpec(
-                src_profile="hasinishrak2015",
-                src_volume="rsna-mammography-vol",
-                src_prefix="rsna/raw",
-                dst_volume="rsna-mammography-vol",
-                dst_prefix="rsna/raw",
-                description="RSNA raw DICOM archive for native GMIC/NYU fine-tuning",
-            )
-        )
     else:
         raise ValueError(f"Unknown transfer bundle '{bundle_name}'")
 
