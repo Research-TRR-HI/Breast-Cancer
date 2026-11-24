@@ -36,7 +36,7 @@ from src.utils.env_metadata import PINNED_MODAL_PIP_PACKAGES, PINNED_MODAL_PYTHO
 
 APP_NAME = "paper1-gmic-cpu-preprocess"
 RSNA_VOL = modal.Volume.from_name("rsna-mammography-vol")
-NLBS_VOL = modal.Volume.from_name("nlbs-mammography-vol")
+NLBS_VOL = modal.Volume.from_name("nlbs-mammography-vol", create_if_missing=True)
 
 RSNA_MOUNT = Path("/rsna_vol")
 NLBS_MOUNT = Path("/nlbs_vol")
@@ -76,12 +76,13 @@ def _load_split_rows(split_name: str) -> List[Dict[str, str]]:
     import pandas as pd
     from src.evaluation.stage_c_eval import load_label_free_inference_manifest
 
-    if split_name == "rsna_val_calib":
+    if split_name in ("rsna_val_calib", "rsna_train", "rsna_train_calib"):
+        target_split = split_name.replace("rsna_", "", 1)
         df = pd.read_csv(
             "/root/datasets/rsna/splits_seed42.csv",
             usecols=["image_id", "patient_id", "split", "laterality", "view", "rel_path"],
         )
-        df = df[df["split"] == "val_calib"].sort_values(["patient_id", "image_id"]).reset_index(drop=True)
+        df = df[df["split"] == target_split].sort_values(["patient_id", "image_id"]).reset_index(drop=True)
         return [
             {
                 "item_id": str(r.image_id),
@@ -410,7 +411,12 @@ def main(stage: str = "benchmark", split: str = "all", num_shards: int = 16) -> 
                 f"Projected GMIC CPU preprocessing cost ${res['proj_full_37970_cost_usd']:.2f} exceeds $3.00 gate!"
             )
     elif stage == "build":
-        splits = ("rsna_val_calib", "nlbs") if split == "all" else (split,)
+        if split == "all":
+            splits = ("rsna_val_calib", "nlbs")
+        elif split == "train_all":
+            splits = ("rsna_train", "rsna_train_calib")
+        else:
+            splits = (split,)
         build_stats: Dict[str, Any] = {}
         total_cost = 0.0
         for sp in splits:
@@ -434,7 +440,12 @@ def main(stage: str = "benchmark", split: str = "all", num_shards: int = 16) -> 
         (out_dir / "gmic_cpu_build_summary.json").write_text(json.dumps(build_stats, indent=2), encoding="utf-8")
         print(json.dumps({k: {kk: vv for kk, vv in v.items() if kk != "shards"} if isinstance(v, dict) else v for k, v in build_stats.items()}, indent=2))
     elif stage == "verify":
-        splits = ("rsna_val_calib", "nlbs") if split == "all" else (split,)
+        if split == "all":
+            splits = ("rsna_val_calib", "nlbs")
+        elif split == "train_all":
+            splits = ("rsna_train", "rsna_train_calib")
+        else:
+            splits = (split,)
         ver_stats = {sp: verify_gmic_cpu_cache.remote(sp, num_shards=num_shards, parity_n=10) for sp in splits}
         (out_dir / "gmic_cpu_verify_summary.json").write_text(json.dumps(ver_stats, indent=2), encoding="utf-8")
         print(json.dumps(ver_stats, indent=2))
