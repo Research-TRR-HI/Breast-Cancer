@@ -1,6 +1,6 @@
 {
   "schema_version": "paper1_exp3_multi_dataset_eval_v1",
-  "generated_at_utc": "2026-11-24T22:10:45.543585+00:00",
+  "generated_at_utc": "2026-11-25T02:15:59.874574+00:00",
   "pooled_analysis_performed": false,
   "pooling_policy": "Strictly per-dataset reporting; never pool screening (NLBS) with diagnostic/mixed (IMDB/CMMD/LUMINA).",
   "datasets": {
@@ -285,6 +285,73 @@
               }
             },
             "n_fallback_exams": 0
+          },
+          "gmic_rsna_finetuned": {
+            "auroc": 0.8637146258619512,
+            "auprc": 0.33382869099854656,
+            "target_98": {
+              "threshold": 0.130207672715187,
+              "total_cases": 6359,
+              "total_cancers": 151,
+              "n_dismissed": 2140,
+              "n_retained": 4219,
+              "dismissal_rate": 0.3365309010850763,
+              "detected_cancers": 145,
+              "missed_cancers": 6,
+              "triage_recall": 0.9602649006622517,
+              "cancer_prev_dismissed": 0.002803738317757009,
+              "clopper_pearson_99_ub": 0.00679507549339136,
+              "meets_target_recall": false,
+              "reported_dismissal_rate": null
+            },
+            "target_95": {
+              "threshold": 0.1583975553512573,
+              "total_cases": 6359,
+              "total_cancers": 151,
+              "n_dismissed": 2634,
+              "n_retained": 3725,
+              "dismissal_rate": 0.4142160717093883,
+              "detected_cancers": 139,
+              "missed_cancers": 12,
+              "triage_recall": 0.9205298013245033,
+              "cancer_prev_dismissed": 0.004555808656036446,
+              "clopper_pearson_99_ub": 0.008646157846768199,
+              "meets_target_recall": false,
+              "reported_dismissal_rate": null
+            },
+            "bootstrap_95ci": {
+              "auroc": {
+                "mean": 0.864094587025959,
+                "ci95_low": 0.829860342177873,
+                "ci95_high": 0.8962621023362829
+              },
+              "auprc": {
+                "mean": 0.33682274298943343,
+                "ci95_low": 0.2578445056301669,
+                "ci95_high": 0.41746404768724577
+              },
+              "s98": {
+                "mean": 0.9601055533223313,
+                "ci95_low": 0.9276291952707857,
+                "ci95_high": 0.9873457278481013
+              },
+              "d98": {
+                "mean": 0.33642176973207355,
+                "ci95_low": 0.3241461905080619,
+                "ci95_high": 0.3487528472972122
+              },
+              "s95": {
+                "mean": 0.9209832299167731,
+                "ci95_low": 0.875,
+                "ci95_high": 0.961038961038961
+              },
+              "d95": {
+                "mean": 0.41424050793508627,
+                "ci95_low": 0.40170620353516684,
+                "ci95_high": 0.4263447143665747
+              }
+            },
+            "n_fallback_exams": 0
           }
         }
       },
@@ -558,6 +625,140 @@
                 "mean": 0.19777214366962936,
                 "ci95_low": 0.1878313426214932,
                 "ci95_high": 0.20778609857319572
+              }
+            },
+            "n_fallback_exams": 0
+          },
+          "gmic_rsna_finetuned": {
+            "auroc": 0.8623530845251778,
+            "auprc": 0.33445385366868946,
+            "target_98": {
+              "threshold": 0.130207672715187,
+              "total_cases": 6184,
+              "total_cancers": 151,
+              "n_dismissed": 2050,
+              "n_retained": 4134,
+              "dismissal_rate": 0.3315006468305304,
+              "detected_cancers": 145,
+              "missed_cancers": 6,
+              "triage_recall": 0.9602649006622517,
+              "cancer_prev_dismissed": 0.002926829268292683,
+              "clopper_pearson_99_ub": 0.007092771901358275,
+              "meets_target_recall": false,
+              "reported_dismissal_rate": null
+            },
+            "target_95": {
+              "threshold": 0.1583975553512573,
+              "total_cases": 6184,
+              "total_cancers": 151,
+              "n_dismissed": 2533,
+              "n_retained": 3651,
+              "dismissal_rate": 0.4096054333764554,
+              "detected_cancers": 139,
+              "missed_cancers": 12,
+              "triage_recall": 0.9205298013245033,
+              "cancer_prev_dismissed": 0.00473746545598105,
+              "clopper_pearson_99_ub": 0.00899017442012116,
+              "meets_target_recall": false,
+              "reported_dismissal_rate": null
+            },
+            "bootstrap_95ci": {
+              "auroc": {
+                "mean": 0.862335061970324,
+                "ci95_low": 0.8273329108506725,
+                "ci95_high": 0.8954410777892554
+              },
+              "auprc": {
+                "mean": 0.3363897323883026,
+                "ci95_low": 0.2563479638924911,
+                "ci95_high": 0.4126385819603851
+              },
+              "s98": {
+                "mean": 0.9601895726532863,
+                "ci95_low": 0.9266617647058824,
+                "ci95_high": 0.9875795567824553
+              },
+              "d98": {
+                "mean": 0.33155412838090276,
+                "ci95_low": 0.3194981806862464,
+                "ci95_high": 0.3433452841050547
+              },
+              "s95": {
+                "mean": 0.9203759160799302,
+                "ci95_low": 0.8741710276478488,
+                "ci95_high": 0.9637746324679386
+              },
+              "d95": {
+                "mean": 0.4097075509897247,
+                "ci95_low": 0.397568595847839,
+                "ci95_high": 0.42183874090952184
+              }
+            },
+            "n_fallback_exams": 0
+          },
+          "nyu_fourview_rsna_finetuned": {
+            "auroc": 0.7845634880123998,
+            "auprc": 0.159886182016906,
+            "target_98": {
+              "threshold": 0.0477315112948417,
+              "total_cases": 6184,
+              "total_cancers": 151,
+              "n_dismissed": 908,
+              "n_retained": 5276,
+              "dismissal_rate": 0.14683053040103494,
+              "detected_cancers": 146,
+              "missed_cancers": 5,
+              "triage_recall": 0.9668874172185431,
+              "cancer_prev_dismissed": 0.005506607929515419,
+              "clopper_pearson_99_ub": 0.014372306233783773,
+              "meets_target_recall": false,
+              "reported_dismissal_rate": null
+            },
+            "target_95": {
+              "threshold": 0.0690864473581314,
+              "total_cases": 6184,
+              "total_cancers": 151,
+              "n_dismissed": 2178,
+              "n_retained": 4006,
+              "dismissal_rate": 0.3521992238033635,
+              "detected_cancers": 138,
+              "missed_cancers": 13,
+              "triage_recall": 0.9139072847682119,
+              "cancer_prev_dismissed": 0.005968778696051423,
+              "clopper_pearson_99_ub": 0.011054824661461949,
+              "meets_target_recall": false,
+              "reported_dismissal_rate": null
+            },
+            "bootstrap_95ci": {
+              "auroc": {
+                "mean": 0.7845787383932225,
+                "ci95_low": 0.7413657058509229,
+                "ci95_high": 0.8251485640034667
+              },
+              "auprc": {
+                "mean": 0.1648433158044843,
+                "ci95_low": 0.11425295754407618,
+                "ci95_high": 0.22274729507174437
+              },
+              "s98": {
+                "mean": 0.9666469078768489,
+                "ci95_low": 0.9346321740374982,
+                "ci95_high": 0.9931518497810082
+              },
+              "d98": {
+                "mean": 0.14691265671348003,
+                "ci95_low": 0.1377586264760658,
+                "ci95_high": 0.1559577486494931
+              },
+              "s95": {
+                "mean": 0.913859047098935,
+                "ci95_low": 0.8657718120805369,
+                "ci95_high": 0.9570574057843997
+              },
+              "d95": {
+                "mean": 0.35226332654772297,
+                "ci95_low": 0.3395920250599313,
+                "ci95_high": 0.3649361010769564
               }
             },
             "n_fallback_exams": 0
@@ -854,6 +1055,75 @@
               }
             },
             "n_fallback_exams": 0
+          },
+          "gmic_rsna_finetuned": {
+            "auroc": 0.7671476647787902,
+            "auprc": 0.9075384813201612,
+            "target_98": {
+              "threshold": 0.130207672715187,
+              "total_cases": 1775,
+              "total_cancers": 1310,
+              "n_dismissed": 159,
+              "n_retained": 1616,
+              "dismissal_rate": 0.0895774647887324,
+              "detected_cancers": 1242,
+              "missed_cancers": 68,
+              "triage_recall": 0.9480916030534351,
+              "cancer_prev_dismissed": 0.4276729559748428,
+              "clopper_pearson_99_ub": 0.5229652219975652,
+              "meets_target_recall": false,
+              "reported_dismissal_rate": null,
+              "dismissal_clinical_caveat": "NOT_POPULATION_SCREENING (diagnostic_biopsy_enriched): Below-threshold rate reflects non-cancer/benign score calibration only; do NOT claim screening workload reduction."
+            },
+            "target_95": {
+              "threshold": 0.1583975553512573,
+              "total_cases": 1775,
+              "total_cancers": 1310,
+              "n_dismissed": 240,
+              "n_retained": 1535,
+              "dismissal_rate": 0.1352112676056338,
+              "detected_cancers": 1194,
+              "missed_cancers": 116,
+              "triage_recall": 0.9114503816793893,
+              "cancer_prev_dismissed": 0.48333333333333334,
+              "clopper_pearson_99_ub": 0.5602068094880349,
+              "meets_target_recall": false,
+              "reported_dismissal_rate": null,
+              "dismissal_clinical_caveat": "NOT_POPULATION_SCREENING (diagnostic_biopsy_enriched): Below-threshold rate reflects non-cancer/benign score calibration only; do NOT claim screening workload reduction."
+            },
+            "bootstrap_95ci": {
+              "auroc": {
+                "mean": 0.7668829481638738,
+                "ci95_low": 0.7450358389874456,
+                "ci95_high": 0.7894311043846663
+              },
+              "auprc": {
+                "mean": 0.907529821739663,
+                "ci95_low": 0.8929170960024325,
+                "ci95_high": 0.9211444291545041
+              },
+              "s98": {
+                "mean": 0.9479631910062969,
+                "ci95_low": 0.9356986159747128,
+                "ci95_high": 0.9592307692307692
+              },
+              "d98": {
+                "mean": 0.0895543661971831,
+                "ci95_low": 0.07716901408450705,
+                "ci95_high": 0.10253521126760563
+              },
+              "s95": {
+                "mean": 0.9112114176978138,
+                "ci95_low": 0.896069896599187,
+                "ci95_high": 0.9267342902656868
+              },
+              "d95": {
+                "mean": 0.13532591549295772,
+                "ci95_low": 0.12,
+                "ci95_high": 0.15098591549295776
+              }
+            },
+            "n_fallback_exams": 1
           }
         }
       },
@@ -1135,6 +1405,144 @@
                 "mean": 0.04605992736077481,
                 "ci95_low": 0.03268765133171913,
                 "ci95_high": 0.06053268765133172
+              }
+            },
+            "n_fallback_exams": 0
+          },
+          "gmic_rsna_finetuned": {
+            "auroc": 0.7059252116147006,
+            "auprc": 0.9699225401018977,
+            "target_98": {
+              "threshold": 0.130207672715187,
+              "total_cases": 826,
+              "total_cancers": 765,
+              "n_dismissed": 29,
+              "n_retained": 797,
+              "dismissal_rate": 0.035108958837772396,
+              "detected_cancers": 741,
+              "missed_cancers": 24,
+              "triage_recall": 0.9686274509803922,
+              "cancer_prev_dismissed": 0.8275862068965517,
+              "clopper_pearson_99_ub": 0.9536549098641606,
+              "meets_target_recall": false,
+              "reported_dismissal_rate": null,
+              "dismissal_clinical_caveat": "NOT_POPULATION_SCREENING (diagnostic_biopsy_enriched): Below-threshold rate reflects non-cancer/benign score calibration only; do NOT claim screening workload reduction."
+            },
+            "target_95": {
+              "threshold": 0.1583975553512573,
+              "total_cases": 826,
+              "total_cancers": 765,
+              "n_dismissed": 59,
+              "n_retained": 767,
+              "dismissal_rate": 0.07142857142857142,
+              "detected_cancers": 712,
+              "missed_cancers": 53,
+              "triage_recall": 0.930718954248366,
+              "cancer_prev_dismissed": 0.8983050847457628,
+              "clopper_pearson_99_ub": 0.9688784699706127,
+              "meets_target_recall": false,
+              "reported_dismissal_rate": null,
+              "dismissal_clinical_caveat": "NOT_POPULATION_SCREENING (diagnostic_biopsy_enriched): Below-threshold rate reflects non-cancer/benign score calibration only; do NOT claim screening workload reduction."
+            },
+            "bootstrap_95ci": {
+              "auroc": {
+                "mean": 0.7064314237471773,
+                "ci95_low": 0.651998300240511,
+                "ci95_high": 0.7574368271350109
+              },
+              "auprc": {
+                "mean": 0.9699141411670104,
+                "ci95_low": 0.9579583914964219,
+                "ci95_high": 0.9796008055761388
+              },
+              "s98": {
+                "mean": 0.968639885313944,
+                "ci95_low": 0.9554973821989529,
+                "ci95_high": 0.9815059445178336
+              },
+              "d98": {
+                "mean": 0.035163438256658595,
+                "ci95_low": 0.023002421307506054,
+                "ci95_high": 0.048426150121065374
+              },
+              "s95": {
+                "mean": 0.930775375114546,
+                "ci95_low": 0.9121160849401149,
+                "ci95_high": 0.9488232574116154
+              },
+              "d95": {
+                "mean": 0.07141585956416466,
+                "ci95_low": 0.053268765133171914,
+                "ci95_high": 0.08958837772397095
+              }
+            },
+            "n_fallback_exams": 0
+          },
+          "nyu_fourview_rsna_finetuned": {
+            "auroc": 0.7137254901960784,
+            "auprc": 0.9673695560403528,
+            "target_98": {
+              "threshold": 0.0477315112948417,
+              "total_cases": 826,
+              "total_cancers": 765,
+              "n_dismissed": 62,
+              "n_retained": 764,
+              "dismissal_rate": 0.07506053268765134,
+              "detected_cancers": 711,
+              "missed_cancers": 54,
+              "triage_recall": 0.9294117647058824,
+              "cancer_prev_dismissed": 0.8709677419354839,
+              "clopper_pearson_99_ub": 0.9514886319635105,
+              "meets_target_recall": false,
+              "reported_dismissal_rate": null,
+              "dismissal_clinical_caveat": "NOT_POPULATION_SCREENING (diagnostic_biopsy_enriched): Below-threshold rate reflects non-cancer/benign score calibration only; do NOT claim screening workload reduction."
+            },
+            "target_95": {
+              "threshold": 0.0690864473581314,
+              "total_cases": 826,
+              "total_cancers": 765,
+              "n_dismissed": 163,
+              "n_retained": 663,
+              "dismissal_rate": 0.1973365617433414,
+              "detected_cancers": 624,
+              "missed_cancers": 141,
+              "triage_recall": 0.8156862745098039,
+              "cancer_prev_dismissed": 0.8650306748466258,
+              "clopper_pearson_99_ub": 0.9207532584652471,
+              "meets_target_recall": false,
+              "reported_dismissal_rate": null,
+              "dismissal_clinical_caveat": "NOT_POPULATION_SCREENING (diagnostic_biopsy_enriched): Below-threshold rate reflects non-cancer/benign score calibration only; do NOT claim screening workload reduction."
+            },
+            "bootstrap_95ci": {
+              "auroc": {
+                "mean": 0.7132487242158914,
+                "ci95_low": 0.6558969644784628,
+                "ci95_high": 0.769883359980512
+              },
+              "auprc": {
+                "mean": 0.9672532925350088,
+                "ci95_low": 0.9505333533739451,
+                "ci95_high": 0.9801092300461666
+              },
+              "s98": {
+                "mean": 0.9294229932913584,
+                "ci95_low": 0.9106666666666666,
+                "ci95_high": 0.9472990777338604
+              },
+              "d98": {
+                "mean": 0.07506961259079904,
+                "ci95_low": 0.05690072639225181,
+                "ci95_high": 0.09322033898305085
+              },
+              "s95": {
+                "mean": 0.8157003680389003,
+                "ci95_low": 0.7869281045751634,
+                "ci95_high": 0.8420365535248042
+              },
+              "d95": {
+                "mean": 0.19724273607748186,
+                "ci95_low": 0.17191283292978207,
+                "ci95_high": 0.22518159806295399
               }
             },
             "n_fallback_exams": 0
@@ -1431,6 +1839,75 @@
               }
             },
             "n_fallback_exams": 0
+          },
+          "gmic_rsna_finetuned": {
+            "auroc": 0.7425504587155963,
+            "auprc": 0.7800191329115899,
+            "target_98": {
+              "threshold": 0.130207672715187,
+              "total_cases": 468,
+              "total_cancers": 218,
+              "n_dismissed": 25,
+              "n_retained": 443,
+              "dismissal_rate": 0.053418803418803416,
+              "detected_cancers": 204,
+              "missed_cancers": 14,
+              "triage_recall": 0.9357798165137615,
+              "cancer_prev_dismissed": 0.56,
+              "clopper_pearson_99_ub": 0.7843659492908737,
+              "meets_target_recall": false,
+              "reported_dismissal_rate": null,
+              "dismissal_clinical_caveat": "NOT_POPULATION_SCREENING (diagnostic_biopsy_enriched): Below-threshold rate reflects non-cancer/benign score calibration only; do NOT claim screening workload reduction."
+            },
+            "target_95": {
+              "threshold": 0.1583975553512573,
+              "total_cases": 468,
+              "total_cancers": 218,
+              "n_dismissed": 38,
+              "n_retained": 430,
+              "dismissal_rate": 0.0811965811965812,
+              "detected_cancers": 200,
+              "missed_cancers": 18,
+              "triage_recall": 0.9174311926605505,
+              "cancer_prev_dismissed": 0.47368421052631576,
+              "clopper_pearson_99_ub": 0.6691172654977835,
+              "meets_target_recall": false,
+              "reported_dismissal_rate": null,
+              "dismissal_clinical_caveat": "NOT_POPULATION_SCREENING (diagnostic_biopsy_enriched): Below-threshold rate reflects non-cancer/benign score calibration only; do NOT claim screening workload reduction."
+            },
+            "bootstrap_95ci": {
+              "auroc": {
+                "mean": 0.7425172287551154,
+                "ci95_low": 0.6943498467244026,
+                "ci95_high": 0.7878534420977058
+              },
+              "auprc": {
+                "mean": 0.7803259745012361,
+                "ci95_low": 0.7283389743623713,
+                "ci95_high": 0.8278794206186716
+              },
+              "s98": {
+                "mean": 0.9359756526824496,
+                "ci95_low": 0.9004969229680979,
+                "ci95_high": 0.9658253205128204
+              },
+              "d98": {
+                "mean": 0.05294230769230769,
+                "ci95_low": 0.03418803418803419,
+                "ci95_high": 0.07478632478632478
+              },
+              "s95": {
+                "mean": 0.9179543439071827,
+                "ci95_low": 0.8783701384311141,
+                "ci95_high": 0.9521790890269152
+              },
+              "d95": {
+                "mean": 0.08049358974358974,
+                "ci95_low": 0.057692307692307696,
+                "ci95_high": 0.10683760683760683
+              }
+            },
+            "n_fallback_exams": 6
           }
         }
       },
