@@ -1,0 +1,13 @@
+{
+  "schema_version": "paper1_specialist_rsna_calib_lock_v1",
+  "generated_at_utc": "2026-11-24T22:21:18.313915+00:00",
+  "model_id": "gmic_rsna_finetuned",
+  "checkpoint_sha256": "11efb7c65f773fc7f4f7a7bf8b0620c276c63536a3e7e7b2bf84eed6024146d5",
+  "rsna_step2_lock_sha256": "65db60b6b6f62bc69544069c9754f070cdd525b349910a1cb4127d0b7e09bb47",
+  "frozen_thresholds": {
+    "target_98": 0.130207672715187,
+    "target_95": 0.1583975553512573
+  },
+  "calibration_json_path": "reports\\paper1\\expanded\\exp1\\gmic_rsna_finetuned_rsna_calibration.json",
+  "calibration_json_sha256": "a1ab640bb0b3df1d0d9c48b8b85790bc841dfdbb1e9d3a5bddc23d9797038ae2"
+}
