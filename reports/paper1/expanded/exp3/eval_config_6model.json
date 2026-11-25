@@ -1,0 +1,40 @@
+{
+  "nlbs": {
+    "inference_manifest": "datasets/exp3_meta/nlbs_inference_manifest.csv",
+    "outcome_manifest": "datasets/exp3_meta/nlbs_outcome_manifest.csv",
+    "models": [
+      "ce_b5",
+      "trust_b5",
+      "dinov2_rsna",
+      "resnet50_rsna",
+      "gmic_rsna_finetuned",
+      "nyu_fourview_rsna_finetuned"
+    ],
+    "cohort_mode": "all"
+  },
+  "cmmd": {
+    "inference_manifest": "datasets/exp3_meta/cmmd_inference_manifest.csv",
+    "outcome_manifest": "datasets/exp3_meta/cmmd_outcome_manifest.csv",
+    "models": [
+      "ce_b5",
+      "trust_b5",
+      "dinov2_rsna",
+      "resnet50_rsna",
+      "gmic_rsna_finetuned",
+      "nyu_fourview_rsna_finetuned"
+    ],
+    "cohort_mode": "all"
+  },
+  "lumina": {
+    "inference_manifest": "datasets/exp3_meta/lumina_inference_manifest.csv",
+    "outcome_manifest": "datasets/exp3_meta/lumina_outcome_manifest.csv",
+    "models": [
+      "ce_b5",
+      "trust_b5",
+      "dinov2_rsna",
+      "resnet50_rsna",
+      "gmic_rsna_finetuned"
+    ],
+    "cohort_mode": "full"
+  }
+}

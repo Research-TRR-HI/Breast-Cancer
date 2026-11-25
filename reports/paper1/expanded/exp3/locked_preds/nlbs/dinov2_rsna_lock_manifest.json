@@ -1,6 +1,6 @@
 {
   "schema_version": "paper1_exp3_locked_predictions_v1",
-  "locked_at_utc": "2026-11-24T22:07:57.875547+00:00",
+  "locked_at_utc": "2026-11-25T01:57:31.686565+00:00",
   "dataset_id": "nlbs",
   "model_id": "dinov2_rsna",
   "model_sha256": "b141c2631ca8e54e5d233239823aafaf18fa3f5d8c62c755339888f41f67d5f5",

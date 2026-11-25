@@ -492,6 +492,7 @@ def reuse_completed_nlbs_predictions(
     nlbs_exam_manifest_csv: Path,
     out_lock_dir: Path,
     model_ids: Sequence[str] = ("ce_b5", "trust_b5", "dinov2_rsna", "resnet50_rsna"),
+    nlbs_4view_ids: Optional[Sequence[str]] = None,
 ) -> Dict[str, Any]:
     """Verify existing Paper 1 NLBS locked predictions and register them into Exp 3 lock layout."""
     from src.paper1.six_model_eval import verify_and_load_locked_model
@@ -499,11 +500,27 @@ def reuse_completed_nlbs_predictions(
     em = pd.read_csv(nlbs_exam_manifest_csv, dtype=str)
     em_dedup = em.sort_values("exam_id").drop_duplicates("StudyInstanceUID", keep="first")
     study_cluster = dict(zip(em_dedup["StudyInstanceUID"].astype(str), em_dedup["split_cluster_id"].astype(str)))
-    expected_ids = sorted(study_cluster.keys())
+    expected_full_ids = sorted(study_cluster.keys())
+    valid_4v_set = {str(x).strip() for x in nlbs_4view_ids} if nlbs_4view_ids is not None else None
 
     reused: Dict[str, Any] = {}
     for m in model_ids:
         df_old, man_old = verify_and_load_locked_model(six_model_lock_dir, m)
+        study_ids = sorted(df_old["StudyInstanceUID"].astype(str).tolist())
+        is_4v = bool(MODEL_HANDOFF_SPECS.get(m, {}).get("requires_4view", False))
+        if is_4v:
+            if not set(study_ids).issubset(set(expected_full_ids)):
+                raise RuntimeError(f"NLBS 4-view reuse contains unknown studies for {m}")
+            if valid_4v_set is not None and set(study_ids) != valid_4v_set:
+                raise RuntimeError(
+                    f"NLBS 4-view study mismatch for {m}: got {len(study_ids)}, expected {len(valid_4v_set)}"
+                )
+            if "n_studies" in man_old and len(study_ids) != int(man_old["n_studies"]):
+                raise RuntimeError(f"NLBS n_studies mismatch for {m}: {len(study_ids)} != {man_old['n_studies']}")
+            expected_ids = study_ids
+        else:
+            expected_ids = expected_full_ids
+
         df_new = pd.DataFrame(
             {
                 "exam_id": df_old["StudyInstanceUID"].astype(str),

@@ -118,7 +118,7 @@ _REPO_ROOT = Path(__file__).resolve().parent.parent
 image = (
     modal.Image.debian_slim(python_version=PINNED_MODAL_PYTHON_VERSION)
     .apt_install("libgl1-mesa-glx", "libglib2.0-0", "unzip")
-    .pip_install(*PINNED_MODAL_PIP_PACKAGES, "openpyxl==3.1.5", "requests==2.32.3")
+    .pip_install(*PINNED_MODAL_PIP_PACKAGES, "openpyxl==3.1.5", "requests==2.32.3", "imageio==2.37.0", "tqdm==4.67.1")
     .add_local_python_source("src")
 )
 for _rel_ext in ("external/dinov2/dinov2", "external/GMIC/src", "external/breast_cancer_classifier/src"):
@@ -302,6 +302,8 @@ def resolve_model_handoff(
     entry = data[model_id] if model_id in data else data
     validated = validate_agent1_handoff_bundle(entry)
     spec["checkpoint_path_override"] = str(entry["checkpoint_path"])
+    if entry.get("canonical_handoff_relpath"):
+        spec["canonical_handoff_relpath"] = str(entry["canonical_handoff_relpath"])
     spec["expected_sha256"] = {**spec["expected_sha256"], "checkpoint": validated["checkpoint_sha256"]}
     spec["frozen_rsna_thresholds"] = {"target_98": validated["target_98"], "target_95": validated["target_95"]}
     return spec
@@ -848,30 +850,42 @@ def _load_model_for_inference(model_id: str, spec: Dict[str, Any], device: Any) 
         model.eval()
         return {"model": model}
 
-    if model_id == "gmic_rsna_finetuned":
-        from src.paper1.gmic_adapter import build_gmic_model
+    def _resolve_vol_ckpt_path(spec_obj: Dict[str, Any], default_name: str) -> Path:
+        cands: List[Path] = []
+        for raw in (spec_obj.get("canonical_handoff_relpath"), spec_obj.get("checkpoint_path_override")):
+            if not raw:
+                continue
+            s = str(raw).strip()
+            cands.append(Path(s) if s.startswith(str(RSNA_MOUNT)) else (RSNA_MOUNT / s.lstrip("/")))
+        cands.append(RSNA_MOUNT / "models" / "paper1" / "checkpoints" / default_name)
+        for cand in cands:
+            if cand.exists():
+                return cand
+        raise FileNotFoundError(f"Missing fine-tuned checkpoint across candidates: {[str(c) for c in cands]}")
 
-        base_p = RSNA_MOUNT / "models" / "paper1" / "sample_model_1.p"
-        ckpt_p = RSNA_MOUNT / spec["checkpoint_path_override"]
-        if compute_sha256_file(ckpt_p).lower() != spec["expected_sha256"]["checkpoint"]:
-            raise RuntimeError(f"GMIC fine-tuned checkpoint SHA-256 mismatch at {ckpt_p}")
-        model, _ = build_gmic_model(base_p, model_index="1", device=device, gmic_repo_dir=Path("/root/external/GMIC"))
-        payload = torch.load(ckpt_p, map_location=device, weights_only=False)
-        model.load_state_dict(payload["model"], strict=True)
-        model.eval()
-        return {"model": model}
+    if model_id == "gmic_rsna_finetuned":
+        from src.paper1.gmic_finetune import load_gmic_finetuned_model_for_eval
+
+        ckpt_p = _resolve_vol_ckpt_path(spec, "gmic_rsna_finetuned_best_train_calib.pt")
+        model, mods, _ = load_gmic_finetuned_model_for_eval(
+            ckpt_p,
+            expected_sha256=spec["expected_sha256"]["checkpoint"],
+            model_index="1",
+            device=device,
+            gmic_repo_dir=Path("/root/external/GMIC"),
+        )
+        return {"model": model, "mods": mods}
 
     if model_id == "nyu_fourview_rsna_finetuned":
-        from src.paper1.nyu_fourview_adapter import build_nyu_fourview_model
+        from src.paper1.nyu_finetune import load_nyu_finetuned_model_for_eval
 
-        base_p = RSNA_MOUNT / "models" / "paper1" / "sample_image_model.p"
-        ckpt_p = RSNA_MOUNT / spec["checkpoint_path_override"]
-        if compute_sha256_file(ckpt_p).lower() != spec["expected_sha256"]["checkpoint"]:
-            raise RuntimeError(f"NYU fine-tuned checkpoint SHA-256 mismatch at {ckpt_p}")
-        model, mods = build_nyu_fourview_model(base_p, device=device, nyu_repo_dir=Path("/root/external/breast_cancer_classifier"))
-        payload = torch.load(ckpt_p, map_location=device, weights_only=False)
-        model.load_state_dict(payload["model"], strict=True)
-        model.eval()
+        ckpt_p = _resolve_vol_ckpt_path(spec, "nyu_fourview_rsna_finetuned_best_train_calib.pt")
+        model, mods, _ = load_nyu_finetuned_model_for_eval(
+            ckpt_p,
+            expected_sha256=spec["expected_sha256"]["checkpoint"],
+            device=device,
+            nyu_repo_dir=Path("/root/external/breast_cancer_classifier"),
+        )
         return {"model": model, "mods": mods}
 
     raise ValueError(f"Unsupported model_id={model_id!r}")
@@ -964,41 +978,42 @@ def infer_external_dataset_shard_l40s(
 
             gmic_png_dir = RSNA_MOUNT / "cache" / "paper1_gmic_uint16_v1" / dataset_id / "png_2944x1920"
             raw_root = RSNA_MOUNT / "external_datasets" / dataset_id / "extracted"
-            nyukat_mods = None if gmic_png_dir.exists() else _ensure_gmic_importable(Path("/root/external/GMIC"))
+            nyukat_mods = loaded.get("mods") or _ensure_gmic_importable(Path("/root/external/GMIC"))
             rows_list = shard_df.to_dict("records")
-            for s in range(0, len(rows_list), batch_size):
-                if ((time.perf_counter() - t0) / 3600.0) * L40S_HOURLY_USD > float(max_spend_usd):
-                    raise RuntimeError(f"Budget cap ${max_spend_usd:.2f} exceeded in shard {shard_idx}")
-                b_rows = rows_list[s : s + batch_size]
-                tensors = []
-                fb_flags = []
-                for row in b_rows:
-                    iid = str(row["image_id"])
-                    gpng = gmic_png_dir / f"{iid}.png"
-                    if gpng.exists():
-                        arr = cv2.imread(str(gpng), cv2.IMREAD_UNCHANGED)
-                        if arr is None:
-                            raise FileNotFoundError(f"Corrupt GMIC PNG: {gpng}")
-                        norm = standard_normalize_gmic_uint16(arr)
-                        fb_flags.append(False)
-                    else:
-                        dcm_p = raw_root / str(row["image_path"])
-                        arr_u16, _ = prepare_dicom_uint16_for_nyukat(dcm_p, laterality=str(row["laterality"]))
-                        vs = f"{str(row['laterality']).upper()}-{str(row['view']).upper()}"
-                        norm, meta = preprocess_uint16_for_nyukat(
-                            arr_u16,
-                            view_slot=vs,
-                            target_size=GMIC_INPUT_SIZE,
-                            nyukat_mods=nyukat_mods,
-                            normalize=True,
-                        )
-                        fb_flags.append(bool(meta.get("crop_fallback", False)))
-                    tensors.append(torch.from_numpy(norm[np.newaxis, :, :].copy()))
-                bx = torch.stack(tensors, dim=0).to(device, non_blocking=True)
-                with torch.no_grad():
-                    probs = loaded["model"](bx)[:, 1].float().cpu().tolist()
-                for row, p, fb in zip(b_rows, probs, fb_flags):
-                    records.append({"item_id": str(row["image_id"]), "score": float(p), "crop_fallback": fb})
+
+            def _prep_gmic_row(row: Dict[str, Any]) -> Tuple[Any, bool]:
+                iid = str(row["image_id"])
+                gpng = gmic_png_dir / f"{iid}.png"
+                if gpng.exists():
+                    arr = cv2.imread(str(gpng), cv2.IMREAD_UNCHANGED)
+                    if arr is None:
+                        raise FileNotFoundError(f"Corrupt GMIC PNG: {gpng}")
+                    return standard_normalize_gmic_uint16(arr), False
+                dcm_p = raw_root / str(row["image_path"])
+                arr_u16, _ = prepare_dicom_uint16_for_nyukat(dcm_p, laterality=str(row["laterality"]))
+                vs = f"{str(row['laterality']).upper()}-{str(row['view']).upper()}"
+                norm, meta = preprocess_uint16_for_nyukat(
+                    arr_u16,
+                    view_slot=vs,
+                    target_size=GMIC_INPUT_SIZE,
+                    nyukat_mods=nyukat_mods,
+                    normalize=True,
+                )
+                return norm, bool(meta.get("crop_fallback", False))
+
+            with ThreadPoolExecutor(max_workers=8) as pool:
+                for s in range(0, len(rows_list), batch_size):
+                    if ((time.perf_counter() - t0) / 3600.0) * L40S_HOURLY_USD > float(max_spend_usd):
+                        raise RuntimeError(f"Budget cap ${max_spend_usd:.2f} exceeded in shard {shard_idx}")
+                    b_rows = rows_list[s : s + batch_size]
+                    prepped = list(pool.map(_prep_gmic_row, b_rows))
+                    tensors = [torch.from_numpy(norm[np.newaxis, :, :].copy()) for norm, _ in prepped]
+                    fb_flags = [fb for _, fb in prepped]
+                    bx = torch.stack(tensors, dim=0).to(device, non_blocking=True)
+                    with torch.no_grad():
+                        probs = loaded["model"](bx)[:, 1].float().cpu().tolist()
+                    for row, p, fb in zip(b_rows, probs, fb_flags):
+                        records.append({"item_id": str(row["image_id"]), "score": float(p), "crop_fallback": fb})
         else:
             img_ids = shard_df["image_id"].astype(str).tolist()
             for s in range(0, len(img_ids), batch_size):
@@ -1039,37 +1054,39 @@ def infer_external_dataset_shard_l40s(
         shard_df["view_slot"] = shard_df["laterality"] + "-" + shard_df["view"]
         exams = sorted(shard_df["exam_id"].unique().tolist())
         batch_exams = max(1, min(4, int(batch_size)))
-        for s in range(0, len(exams), batch_exams):
-            if ((time.perf_counter() - t0) / 3600.0) * L40S_HOURLY_USD > float(max_spend_usd):
-                raise RuntimeError(f"Budget cap ${max_spend_usd:.2f} exceeded in NYU shard {shard_idx}")
-            b_exams = exams[s : s + batch_exams]
-            tta_tensors = []
-            fb_counts = []
-            for eid in b_exams:
-                ex_rows = shard_df[shard_df["exam_id"] == eid]
-                view_crops = {}
-                n_fb = 0
-                for vs in NYU_VIEWS:
-                    match = ex_rows[ex_rows["view_slot"] == vs]
-                    if len(match) != 1:
-                        raise RuntimeError(f"NYU 4-view integrity error for {eid} slot {vs}: count={len(match)}")
-                    dcm_p = raw_root / str(match.iloc[0]["image_path"])
-                    vc = extract_nyu_cropped_view(dcm_p, view_slot=vs, nyu_mods=nyu_mods)
-                    if vc.get("crop_fallback"):
-                        n_fb += 1
-                    view_crops[vs] = vc
-                tta_tensors.append(
-                    prepare_nyu_exam_tta_tensors(
-                        view_crops,
-                        nyu_mods=nyu_mods,
-                        num_tta_epochs=NYU_TTA_EPOCHS_OFFICIAL,
-                        seed=NYU_TTA_SEED_OFFICIAL,
-                    )
-                )
-                fb_counts.append(n_fb)
-            preds = score_nyu_fourview_exam_batch(loaded["model"], tta_tensors, device=device)
-            for eid, pr, n_fb in zip(b_exams, preds, fb_counts):
-                records.append({"item_id": eid, "score": float(pr["exam_score"]), "crop_fallback": bool(n_fb > 0)})
+
+        def _prep_nyu_exam(eid: str) -> Tuple[Any, int]:
+            ex_rows = shard_df[shard_df["exam_id"] == eid]
+            view_crops = {}
+            n_fb = 0
+            for vs in NYU_VIEWS:
+                match = ex_rows[ex_rows["view_slot"] == vs]
+                if len(match) != 1:
+                    raise RuntimeError(f"NYU 4-view integrity error for {eid} slot {vs}: count={len(match)}")
+                dcm_p = raw_root / str(match.iloc[0]["image_path"])
+                vc = extract_nyu_cropped_view(dcm_p, view_slot=vs, nyu_mods=nyu_mods)
+                if vc.get("crop_fallback"):
+                    n_fb += 1
+                view_crops[vs] = vc
+            tta_dict = prepare_nyu_exam_tta_tensors(
+                view_crops,
+                nyu_mods=nyu_mods,
+                num_tta_epochs=NYU_TTA_EPOCHS_OFFICIAL,
+                seed=NYU_TTA_SEED_OFFICIAL,
+            )
+            return tta_dict, n_fb
+
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            for s in range(0, len(exams), batch_exams):
+                if ((time.perf_counter() - t0) / 3600.0) * L40S_HOURLY_USD > float(max_spend_usd):
+                    raise RuntimeError(f"Budget cap ${max_spend_usd:.2f} exceeded in NYU shard {shard_idx}")
+                b_exams = exams[s : s + batch_exams]
+                prepped = list(pool.map(_prep_nyu_exam, b_exams))
+                tta_tensors = [t for t, _ in prepped]
+                fb_counts = [nf for _, nf in prepped]
+                preds = score_nyu_fourview_exam_batch(loaded["model"], tta_tensors, device=device)
+                for eid, pr, n_fb in zip(b_exams, preds, fb_counts):
+                    records.append({"item_id": eid, "score": float(pr["exam_score"]), "crop_fallback": bool(n_fb > 0)})
 
     save_inference_shard_atomic(
         shard_path,
@@ -1331,6 +1348,7 @@ def orchestrate_external_inference(
     max_spend_usd: float = 5.0,
     resume: bool = True,
     nlbs_reuse_root: Path = Path("reports/paper1/six_model_final/locked_nlbs"),
+    nlbs_exp1_reuse_root: Path = Path("reports/paper1/expanded/exp1/predictions_locked"),
     nlbs_exam_manifest_csv: Path = Path("datasets/nlbs/exam_manifest.csv"),
     shard_runner: Optional[Callable[..., Dict[str, Any]]] = None,
     starmap_runner: Optional[Callable[[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
@@ -1357,17 +1375,26 @@ def orchestrate_external_inference(
 
     if dataset_id == "nlbs":
         ready_models = [m for m in models if m in ("ce_b5", "trust_b5", "dinov2_rsna", "resnet50_rsna")]
-        if len(ready_models) != len(models):
-            pending = [m for m in models if m not in ready_models]
-            raise RuntimeError(
-                f"NLBS $0 reuse only covers completed 4 models; pending Agent 1 models: {pending}"
+        exp1_models = [m for m in models if m in ("gmic_rsna_finetuned", "nyu_fourview_rsna_finetuned")]
+        reused: Dict[str, Any] = {}
+        if ready_models:
+            reused.update(
+                reuse_completed_nlbs_predictions(
+                    six_model_lock_dir=nlbs_reuse_root,
+                    nlbs_exam_manifest_csv=nlbs_exam_manifest_csv,
+                    out_lock_dir=out_lock_dir,
+                    model_ids=ready_models,
+                )
             )
-        reused = reuse_completed_nlbs_predictions(
-            six_model_lock_dir=nlbs_reuse_root,
-            nlbs_exam_manifest_csv=nlbs_exam_manifest_csv,
-            out_lock_dir=out_lock_dir,
-            model_ids=ready_models,
-        )
+        if exp1_models:
+            reused.update(
+                reuse_completed_nlbs_predictions(
+                    six_model_lock_dir=nlbs_exp1_reuse_root,
+                    nlbs_exam_manifest_csv=nlbs_exam_manifest_csv,
+                    out_lock_dir=out_lock_dir,
+                    model_ids=exp1_models,
+                )
+            )
         return {
             "dataset_id": "nlbs",
             "mode": "zero_cost_reuse",

@@ -1,0 +1,18 @@
+{
+  "schema_version": "paper1_exp3_locked_predictions_v1",
+  "locked_at_utc": "2026-11-25T02:05:59.014014+00:00",
+  "dataset_id": "cmmd",
+  "model_id": "gmic_rsna_finetuned",
+  "model_sha256": "11efb7c65f773fc7f4f7a7bf8b0620c276c63536a3e7e7b2bf84eed6024146d5",
+  "inference_manifest_sha256": "854f549c295ea8356a43e30b32f0adb540f7a554c64e2a713d5d82a549c31bdf",
+  "frozen_rsna_thresholds": {
+    "target_98": 0.130207672715187,
+    "target_95": 0.1583975553512573
+  },
+  "frozen_rsna_thresholds_sha256": "891dd0bff6a0cab7ed98ce517121283533f0bed1e881f2c8d5f115212827be2a",
+  "n_exams": 1775,
+  "n_clusters": 1775,
+  "n_exams_with_crop_fallback": 1,
+  "predictions_csv": "gmic_rsna_finetuned_locked_cmmd_predictions.csv",
+  "predictions_sha256": "aca95d370d8676e4cffd5eb3e834f2d17747984edfdaae5fb87fb70631dae562"
+}
