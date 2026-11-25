@@ -1,0 +1,38 @@
+{
+  "schema_version": "paper1_exp1_agent1_handoff_bundle_v1",
+  "generated_at_utc": "2026-11-25T01:51:00Z",
+  "source_profile": "dryousufmozumder",
+  "source_volume": "rsna-mammography-vol",
+  "gmic_rsna_finetuned": {
+    "model_id": "gmic_rsna_finetuned",
+    "checkpoint_path": "/rsna_vol/models/paper1/checkpoints/gmic_rsna_partial_seed42_best_train_calib.pt",
+    "source_checkpoint_relpath": "models/paper1/checkpoints/gmic_rsna_partial_seed42_best_train_calib.pt",
+    "canonical_handoff_relpath": "models/paper1/checkpoints/gmic_rsna_finetuned_best_train_calib.pt",
+    "checkpoint_sha256": "11efb7c65f773fc7f4f7a7bf8b0620c276c63536a3e7e7b2bf84eed6024146d5",
+    "schema_version": "paper1_gmic_finetune_ckpt_v1",
+    "best_epoch": 1,
+    "best_train_calib_auroc": 0.873319,
+    "rsna_val_calib_thresholds": {
+      "target_98": 0.130207672715187,
+      "target_95": 0.1583975553512573
+    },
+    "rsna_calibration_lock_path": "reports/paper1/expanded/exp1/gmic_rsna_finetuned_rsna_calibration_lock.json",
+    "nlbs_lock_manifest_path": "reports/paper1/expanded/exp1/predictions_locked/gmic_rsna_finetuned_lock_manifest.json"
+  },
+  "nyu_fourview_rsna_finetuned": {
+    "model_id": "nyu_fourview_rsna_finetuned",
+    "checkpoint_path": "/rsna_vol/models/paper1/checkpoints/nyu_rsna_head_only_cached_seed42_best_train_calib.pt",
+    "source_checkpoint_relpath": "models/paper1/checkpoints/nyu_rsna_head_only_cached_seed42_best_train_calib.pt",
+    "canonical_handoff_relpath": "models/paper1/checkpoints/nyu_fourview_rsna_finetuned_best_train_calib.pt",
+    "checkpoint_sha256": "b42a8b7d623210cd88369b402981b4d1050ea72052851c656c0bbd380532b00e",
+    "schema_version": "paper1_nyu_finetune_ckpt_v1",
+    "best_epoch": 5,
+    "best_train_calib_auroc": 0.805596,
+    "rsna_val_calib_thresholds": {
+      "target_98": 0.0477315112948417,
+      "target_95": 0.0690864473581314
+    },
+    "rsna_calibration_lock_path": "reports/paper1/expanded/exp1/nyu_fourview_rsna_finetuned_rsna_calibration_lock.json",
+    "nlbs_lock_manifest_path": "reports/paper1/expanded/exp1/predictions_locked/nyu_fourview_rsna_finetuned_lock_manifest.json"
+  }
+}

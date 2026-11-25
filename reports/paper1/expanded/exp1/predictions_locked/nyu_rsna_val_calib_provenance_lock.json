@@ -1,0 +1,113 @@
+{
+  "schema_version": "paper1_nyu_step2_lock_v1",
+  "model_id": "nyu_fourview_rsna_finetuned",
+  "checkpoint_file": "nyu_rsna_head_only_cached_seed42_best_train_calib.pt",
+  "checkpoint_sha256": "b42a8b7d623210cd88369b402981b4d1050ea72052851c656c0bbd380532b00e",
+  "preprocess_version": "paper1_nyu_uint16_v1",
+  "preprocess_manifest_sha256s": [
+    "bde6ae3fa12cff0c0d121de2b1344ddc775f1020b3645670b4d62ca00db8f866"
+  ],
+  "split_name": "rsna_val_calib",
+  "batch_exams": 8,
+  "num_tta_epochs": 10,
+  "tta_seed": 0,
+  "label_quarantine_enforced": true,
+  "n_unique_cases": 2382,
+  "n_unique_images": 9528,
+  "all_scores_finite": true,
+  "exam_score_summary_label_free": {
+    "min": 0.000486,
+    "median": 0.103145,
+    "p95": 0.332727,
+    "max": 0.778229
+  },
+  "shards": [
+    {
+      "shard_idx": 0,
+      "num_shards": 4,
+      "n_exams": 596,
+      "n_images": 2384,
+      "n_fallback_views": 16,
+      "elapsed_sec": 293.902,
+      "container_wall_sec": 319.984,
+      "model_load_sec": null,
+      "nvme_stage_sec": 21.068,
+      "decode_tta_sec": 6.791,
+      "gpu_infer_sec": 286.963,
+      "estimated_cost_usd": 0.22971,
+      "peak_vram_gb": 18.578,
+      "host_rss_gb": 26.605,
+      "expected_case_ids_sha256": "a6eaac30b027aaf9dd467edae1e782460b1dc0dfd7beca3a585ba6989f8a8894",
+      "resumed_from_cache": false
+    },
+    {
+      "shard_idx": 1,
+      "num_shards": 4,
+      "n_exams": 596,
+      "n_images": 2384,
+      "n_fallback_views": 15,
+      "elapsed_sec": 291.877,
+      "container_wall_sec": 312.567,
+      "model_load_sec": null,
+      "nvme_stage_sec": 18.694,
+      "decode_tta_sec": 6.204,
+      "gpu_infer_sec": 285.519,
+      "estimated_cost_usd": 0.22439,
+      "peak_vram_gb": 18.578,
+      "host_rss_gb": 29.481,
+      "expected_case_ids_sha256": "3722662ab945da84c79eb60573a02378ebd1cc902d30c4665e861170f09138fe",
+      "resumed_from_cache": false
+    },
+    {
+      "shard_idx": 2,
+      "num_shards": 4,
+      "n_exams": 595,
+      "n_images": 2380,
+      "n_fallback_views": 18,
+      "elapsed_sec": 314.129,
+      "container_wall_sec": 335.622,
+      "model_load_sec": null,
+      "nvme_stage_sec": 18.504,
+      "decode_tta_sec": 7.19,
+      "gpu_infer_sec": 306.805,
+      "estimated_cost_usd": 0.24094,
+      "peak_vram_gb": 18.578,
+      "host_rss_gb": 27.918,
+      "expected_case_ids_sha256": "421445f4dda1b925cdb2903e2295b6a26ad18f01157982d65333370da95cce66",
+      "resumed_from_cache": false
+    },
+    {
+      "shard_idx": 3,
+      "num_shards": 4,
+      "n_exams": 595,
+      "n_images": 2380,
+      "n_fallback_views": 17,
+      "elapsed_sec": 292.282,
+      "container_wall_sec": 318.626,
+      "model_load_sec": null,
+      "nvme_stage_sec": 22.532,
+      "decode_tta_sec": 7.007,
+      "gpu_infer_sec": 285.117,
+      "estimated_cost_usd": 0.22874,
+      "peak_vram_gb": 18.578,
+      "host_rss_gb": 26.741,
+      "expected_case_ids_sha256": "2dbe8950e7da66874d805764956e73c15dcdbaa72080b60927cedfb4f40d69df",
+      "resumed_from_cache": false
+    }
+  ],
+  "total_estimated_cost_usd": 0.92378,
+  "artifacts": {
+    "exam_scores_json": {
+      "path": "reports\\paper1\\expanded\\exp1\\predictions_locked\\nyu_rsna_val_calib_exam_scores.json",
+      "sha256": "0e5d5b0a21da8831cc3341cdf85929b88a35560ddef7bd3d104f95c15c6cc9db"
+    },
+    "case_scores_csv": {
+      "path": "reports\\paper1\\expanded\\exp1\\predictions_locked\\nyu_rsna_val_calib_case_scores.csv",
+      "sha256": "eca968854b620c8a14085e19948a49041369b4ffc4c0a2db71407f2ee7e41394"
+    },
+    "fallback_log_json": {
+      "path": "reports\\paper1\\expanded\\exp1\\predictions_locked\\nyu_rsna_val_calib_fallback_log.json",
+      "sha256": "a20cdfa4093cfc8b568e29fd7b4c0450b5f57a1812238e672eab8152f4f4bf64"
+    }
+  }
+}

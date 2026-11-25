@@ -1,0 +1,16 @@
+{
+  "schema_version": "paper1_specialist_locked_predictions_v1",
+  "locked_at_utc": "2026-11-24T22:44:30.509258+00:00",
+  "model_id": "gmic_rsna_finetuned",
+  "stratum": "supplementary_exploratory_rsna_finetuned",
+  "model_sha256": "11efb7c65f773fc7f4f7a7bf8b0620c276c63536a3e7e7b2bf84eed6024146d5",
+  "rsna_calibration_json_sha256": "a1ab640bb0b3df1d0d9c48b8b85790bc841dfdbb1e9d3a5bddc23d9797038ae2",
+  "frozen_rsna_thresholds": {
+    "target_98": 0.130207672715187,
+    "target_95": 0.1583975553512573
+  },
+  "n_studies": 6359,
+  "n_studies_with_crop_fallback": 0,
+  "predictions_csv": "gmic_rsna_finetuned_locked_nlbs_predictions.csv",
+  "predictions_sha256": "905707c046a13d0c7d8b84d1694e1c575a4f975c64e3b0c60a44b74317cf7b2f"
+}

@@ -1,0 +1,603 @@
+{
+  "split_name": "rsna_val_calib",
+  "n_exams": 2382,
+  "n_images": 9528,
+  "n_fallback_views": 66,
+  "n_fallback_exams": 34,
+  "fallbacks": [
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "12943",
+      "item_id": "823801773",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "14995",
+      "item_id": "1260676581",
+      "view_slot": "R-CC",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "14995",
+      "item_id": "665347060",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "1625",
+      "item_id": "1009635466",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "1625",
+      "item_id": "1534902733",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "17724",
+      "item_id": "1659000615",
+      "view_slot": "R-CC",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "17724",
+      "item_id": "386844732",
+      "view_slot": "L-CC",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "17724",
+      "item_id": "863566493",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "19499",
+      "item_id": "1043327287",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "21194",
+      "item_id": "394798221",
+      "view_slot": "L-CC",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "21468",
+      "item_id": "1212754999",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "21468",
+      "item_id": "443577437",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "26286",
+      "item_id": "110927770",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "26286",
+      "item_id": "1668421796",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "28028",
+      "item_id": "1960739226",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "30632",
+      "item_id": "1973153561",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "31727",
+      "item_id": "333034955",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "31727",
+      "item_id": "546937606",
+      "view_slot": "L-CC",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "31727",
+      "item_id": "993951232",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "3435",
+      "item_id": "1998917882",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "3435",
+      "item_id": "661965933",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "34971",
+      "item_id": "1641632028",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "40059",
+      "item_id": "1154558626",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "42875",
+      "item_id": "1415096315",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "42875",
+      "item_id": "42612127",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "49016",
+      "item_id": "1337456388",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "49016",
+      "item_id": "56405314",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "49296",
+      "item_id": "361205098",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "49634",
+      "item_id": "1352217793",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "49634",
+      "item_id": "1802686152",
+      "view_slot": "L-CC",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "49634",
+      "item_id": "1893297168",
+      "view_slot": "R-CC",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "49634",
+      "item_id": "651357073",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "49707",
+      "item_id": "1000886392",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "52204",
+      "item_id": "1286798279",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "52204",
+      "item_id": "1356906117",
+      "view_slot": "L-CC",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "52204",
+      "item_id": "1558142909",
+      "view_slot": "R-CC",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "52204",
+      "item_id": "1595965072",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "5244",
+      "item_id": "1099568643",
+      "view_slot": "L-CC",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "5244",
+      "item_id": "663953227",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "55558",
+      "item_id": "1726862764",
+      "view_slot": "R-CC",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "55558",
+      "item_id": "1823881666",
+      "view_slot": "L-CC",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "55558",
+      "item_id": "2023728094",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "55558",
+      "item_id": "866285793",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "56226",
+      "item_id": "1379689041",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "5736",
+      "item_id": "2077132944",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "5736",
+      "item_id": "493963325",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "57468",
+      "item_id": "107213666",
+      "view_slot": "R-CC",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "57468",
+      "item_id": "118621619",
+      "view_slot": "L-CC",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "57468",
+      "item_id": "698508408",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "57468",
+      "item_id": "803243812",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "59305",
+      "item_id": "1163167199",
+      "view_slot": "L-CC",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "59305",
+      "item_id": "2065970439",
+      "view_slot": "R-CC",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "60903",
+      "item_id": "1128069714",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "60903",
+      "item_id": "496763798",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "62995",
+      "item_id": "1289128633",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "63031",
+      "item_id": "1813894845",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "63031",
+      "item_id": "2007395882",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "63031",
+      "item_id": "436459243",
+      "view_slot": "R-CC",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "64891",
+      "item_id": "280213846",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "65099",
+      "item_id": "848220257",
+      "view_slot": "R-CC",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "71",
+      "item_id": "1249745058",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "71",
+      "item_id": "2004100590",
+      "view_slot": "R-CC",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "7439",
+      "item_id": "1537772603",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "7439",
+      "item_id": "790351858",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "7940",
+      "item_id": "2018619402",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "split_name": "rsna_val_calib",
+      "case_id": "7940",
+      "item_id": "523941837",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    }
+  ]
+}

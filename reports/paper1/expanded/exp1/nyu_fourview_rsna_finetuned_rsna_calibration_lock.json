@@ -1,0 +1,13 @@
+{
+  "schema_version": "paper1_specialist_rsna_calib_lock_v1",
+  "generated_at_utc": "2026-11-25T01:24:31.336240+00:00",
+  "model_id": "nyu_fourview_rsna_finetuned",
+  "checkpoint_sha256": "b42a8b7d623210cd88369b402981b4d1050ea72052851c656c0bbd380532b00e",
+  "rsna_step2_lock_sha256": "96bc9773dbcb229dd1d73a03dc9cb0ed2f8a635de54f24ffde1a11c801e6b612",
+  "frozen_thresholds": {
+    "target_98": 0.0477315112948417,
+    "target_95": 0.0690864473581314
+  },
+  "calibration_json_path": "reports\\paper1\\expanded\\exp1\\nyu_fourview_rsna_finetuned_rsna_calibration.json",
+  "calibration_json_sha256": "2bba02e3758923ff176516e8221ded239323f55367a03bb94f127b7aa00813a7"
+}

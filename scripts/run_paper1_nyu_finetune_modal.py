@@ -468,16 +468,40 @@ def extract_nyu_head_features_modal(
     summary: Dict[str, Any] = {}
 
     for split_name, n_draws, use_aug in (("rsna_train", n_train_draws, True), ("rsna_train_calib", num_tta_calib, True)):
+        pt_path = out_root / f"{split_name}_features.pt"
         rsna_split = split_name.replace("rsna_", "", 1)
         _, exam_df = select_rsna_4view_split_exams(splits_df, rsna_split)
+        pids = exam_df["patient_id"].astype(str).tolist()
+        if pt_path.exists():
+            try:
+                existing = torch.load(pt_path, map_location="cpu", weights_only=False)
+                if (
+                    existing.get("backbone_sha256") == NYU_CKPT_SHA256
+                    and list(existing.get("patient_ids", [])) == pids
+                    and tuple(existing["h_cc"].shape) == (len(pids), n_draws, 512)
+                    and tuple(existing["h_mlo"].shape) == (len(pids), n_draws, 512)
+                    and bool(torch.isfinite(existing["h_cc"]).all())
+                    and bool(torch.isfinite(existing["h_mlo"]).all())
+                ):
+                    summary[split_name] = {
+                        "path": str(pt_path),
+                        "shape": list(existing["h_cc"].shape),
+                        "mb": round(pt_path.stat().st_size / (1024**2), 2),
+                        "resumed_from_cache": True,
+                    }
+                    print(f"[NYU-Feat] Reusing verified {pt_path} ({summary[split_name]['shape']})", flush=True)
+                    continue
+            except Exception as exc:
+                print(f"[NYU-Feat] Ignoring incomplete/corrupt {pt_path}: {exc}", flush=True)
+
         s1_df = pd.read_csv(RSNA_MOUNT / "cache" / PREPROCESS_VERSION / split_name / "manifest.csv", dtype=str)
         by_pid = {str(k): grp.to_dict(orient="records") for k, grp in s1_df.groupby("case_id")}
         nvme_dir = Path(f"/tmp/nyu_feat_{split_name}")
         _stage_pngs_nvme(s1_df["item_id"].astype(str).tolist(), RSNA_MOUNT / "cache" / PREPROCESS_VERSION / split_name / "png", nvme_dir)
 
-        pids = exam_df["patient_id"].astype(str).tolist()
         h_cc_all = torch.empty((len(pids), n_draws, 512), dtype=torch.float32)
         h_mlo_all = torch.empty((len(pids), n_draws, 512), dtype=torch.float32)
+        eff_batch_exams = min(int(batch_exams), max(1, 64 // int(n_draws)))
 
         def _prep_exam(idx: int) -> Dict[str, np.ndarray]:
             rows = by_pid[pids[idx]]
@@ -492,11 +516,11 @@ def extract_nyu_head_features_modal(
             return prepare_nyu_exam_tta_tensors(vc, nyu_mods, num_tta_epochs=n_draws if use_aug else 1, seed=ex_seed)
 
         with ThreadPoolExecutor(max_workers=6) as pool:
-            for s0 in range(0, len(pids), batch_exams):
+            for s0 in range(0, len(pids), eff_batch_exams):
                 spent = ((time.perf_counter() - t0) / 3600.0) * L40S_PROD_HOURLY_USD
                 if spent >= max_spend_usd:
                     raise RuntimeError(f"COST GUARD STOP during NYU feature extraction: ${spent:.2f}")
-                e_idx = list(range(s0, min(s0 + batch_exams, len(pids))))
+                e_idx = list(range(s0, min(s0 + eff_batch_exams, len(pids))))
                 prepped = list(pool.map(_prep_exam, e_idx))
                 tbatch = {
                     v: (
@@ -512,7 +536,7 @@ def extract_nyu_head_features_modal(
                 h_cc_all[s0 : s0 + len(e_idx)] = h_cc.cpu().reshape(len(e_idx), n_draws, 512)
                 h_mlo_all[s0 : s0 + len(e_idx)] = h_mlo.cpu().reshape(len(e_idx), n_draws, 512)
 
-        pt_path = out_root / f"{split_name}_features.pt"
+        tmp_pt = pt_path.with_suffix(".pt.tmp")
         torch.save(
             {
                 "split_name": split_name,
@@ -524,10 +548,19 @@ def extract_nyu_head_features_modal(
                 "h_mlo": h_mlo_all,
                 "backbone_sha256": NYU_CKPT_SHA256,
             },
-            pt_path,
+            tmp_pt,
         )
-        summary[split_name] = {"path": str(pt_path), "shape": list(h_cc_all.shape), "mb": round(pt_path.stat().st_size / (1024**2), 2)}
-    RSNA_VOL.commit()
+        tmp_pt.replace(pt_path)
+        RSNA_VOL.commit()
+        if device.type == "cuda":
+            torch.cuda.empty_cache()
+        summary[split_name] = {
+            "path": str(pt_path),
+            "shape": list(h_cc_all.shape),
+            "mb": round(pt_path.stat().st_size / (1024**2), 2),
+            "eff_batch_exams": eff_batch_exams,
+            "resumed_from_cache": False,
+        }
     return summary
 
 

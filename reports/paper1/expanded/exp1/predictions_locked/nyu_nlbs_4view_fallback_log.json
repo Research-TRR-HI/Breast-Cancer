@@ -1,0 +1,8 @@
+{
+  "split_name": "nlbs_4view",
+  "n_exams": 6184,
+  "n_images": 24736,
+  "n_fallback_views": 0,
+  "n_fallback_exams": 0,
+  "fallbacks": []
+}

@@ -1,0 +1,661 @@
+{
+  "split_name": "rsna_val_calib",
+  "n_images": 10982,
+  "n_fallback_views": 80,
+  "n_fallback_cases": 36,
+  "by_view_slot": {
+    "L-MLO": 29,
+    "R-MLO": 26,
+    "R-CC": 13,
+    "L-CC": 12
+  },
+  "by_photometric": {
+    "MONOCHROME1": 51,
+    "MONOCHROME2": 29
+  },
+  "by_error": {
+    "attempt to get argmax of an empty sequence": 80
+  },
+  "fallbacks": [
+    {
+      "item_id": "823801773",
+      "case_id": "12943",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1260676581",
+      "case_id": "14995",
+      "view_slot": "R-CC",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "665347060",
+      "case_id": "14995",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1009635466",
+      "case_id": "1625",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1534902733",
+      "case_id": "1625",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1659000615",
+      "case_id": "17724",
+      "view_slot": "R-CC",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "386844732",
+      "case_id": "17724",
+      "view_slot": "L-CC",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "863566493",
+      "case_id": "17724",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1043327287",
+      "case_id": "19499",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1923046542",
+      "case_id": "20400",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "394798221",
+      "case_id": "21194",
+      "view_slot": "L-CC",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1212754999",
+      "case_id": "21468",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "443577437",
+      "case_id": "21468",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "110927770",
+      "case_id": "26286",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1668421796",
+      "case_id": "26286",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1960739226",
+      "case_id": "28028",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1973153561",
+      "case_id": "30632",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "333034955",
+      "case_id": "31727",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "546937606",
+      "case_id": "31727",
+      "view_slot": "L-CC",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "993951232",
+      "case_id": "31727",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1998917882",
+      "case_id": "3435",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "661965933",
+      "case_id": "3435",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1641632028",
+      "case_id": "34971",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1154558626",
+      "case_id": "40059",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1331160534",
+      "case_id": "42299",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1415096315",
+      "case_id": "42875",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "42612127",
+      "case_id": "42875",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1337456388",
+      "case_id": "49016",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "56405314",
+      "case_id": "49016",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "361205098",
+      "case_id": "49296",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1352217793",
+      "case_id": "49634",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1802686152",
+      "case_id": "49634",
+      "view_slot": "L-CC",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1893297168",
+      "case_id": "49634",
+      "view_slot": "R-CC",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "651357073",
+      "case_id": "49634",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1000886392",
+      "case_id": "49707",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "714744046",
+      "case_id": "49707",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1286798279",
+      "case_id": "52204",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1356906117",
+      "case_id": "52204",
+      "view_slot": "L-CC",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1558142909",
+      "case_id": "52204",
+      "view_slot": "R-CC",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1595965072",
+      "case_id": "52204",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1099568643",
+      "case_id": "5244",
+      "view_slot": "L-CC",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1423709598",
+      "case_id": "5244",
+      "view_slot": "L-CC",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1874353943",
+      "case_id": "5244",
+      "view_slot": "R-CC",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "663953227",
+      "case_id": "5244",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1726862764",
+      "case_id": "55558",
+      "view_slot": "R-CC",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1823881666",
+      "case_id": "55558",
+      "view_slot": "L-CC",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "2023728094",
+      "case_id": "55558",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "866285793",
+      "case_id": "55558",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1379689041",
+      "case_id": "56226",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1669088074",
+      "case_id": "56226",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "2077132944",
+      "case_id": "5736",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "493963325",
+      "case_id": "5736",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "107213666",
+      "case_id": "57468",
+      "view_slot": "R-CC",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "118621619",
+      "case_id": "57468",
+      "view_slot": "L-CC",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1263889058",
+      "case_id": "57468",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1720372073",
+      "case_id": "57468",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1762365646",
+      "case_id": "57468",
+      "view_slot": "R-CC",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1764968386",
+      "case_id": "57468",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1779526272",
+      "case_id": "57468",
+      "view_slot": "L-CC",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "698508408",
+      "case_id": "57468",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "770890034",
+      "case_id": "57468",
+      "view_slot": "L-CC",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "803243812",
+      "case_id": "57468",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "822003629",
+      "case_id": "57468",
+      "view_slot": "R-CC",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "977545628",
+      "case_id": "57468",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1163167199",
+      "case_id": "59305",
+      "view_slot": "L-CC",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "2065970439",
+      "case_id": "59305",
+      "view_slot": "R-CC",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1128069714",
+      "case_id": "60903",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "496763798",
+      "case_id": "60903",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1289128633",
+      "case_id": "62995",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1813894845",
+      "case_id": "63031",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "2007395882",
+      "case_id": "63031",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "436459243",
+      "case_id": "63031",
+      "view_slot": "R-CC",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "280213846",
+      "case_id": "64891",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "848220257",
+      "case_id": "65099",
+      "view_slot": "R-CC",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1249745058",
+      "case_id": "71",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "2004100590",
+      "case_id": "71",
+      "view_slot": "R-CC",
+      "photometric": "MONOCHROME1",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "1537772603",
+      "case_id": "7439",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "790351858",
+      "case_id": "7439",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "2018619402",
+      "case_id": "7940",
+      "view_slot": "R-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    },
+    {
+      "item_id": "523941837",
+      "case_id": "7940",
+      "view_slot": "L-MLO",
+      "photometric": "MONOCHROME2",
+      "fallback_strategy": "native_scale_optimal_window_no_resize",
+      "crop_error": "attempt to get argmax of an empty sequence"
+    }
+  ]
+}
