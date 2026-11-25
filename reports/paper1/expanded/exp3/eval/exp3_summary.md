@@ -13,6 +13,8 @@
 | `trust_b5` | 0.7040 | 0.0539 | 84.77% (23 missed) | 39.57% | 80.79% (29 missed) | 49.29% |
 | `dinov2_rsna` | 0.6299 | 0.0425 | 98.01% (3 missed) | 9.67% | 94.04% (9 missed) | 17.43% |
 | `resnet50_rsna` | 0.6452 | 0.1039 | 97.35% (4 missed) | 5.35% | 84.77% (23 missed) | 19.78% |
+| `gmic_rsna_finetuned` | 0.8624 | 0.3345 | 96.03% (6 missed) | 33.15% | 92.05% (12 missed) | 40.96% |
+| `nyu_fourview_rsna_finetuned` | 0.7846 | 0.1599 | 96.69% (5 missed) | 14.68% | 91.39% (13 missed) | 35.22% |
 
 ### Full Cohort (View-Agnostic) (`N=6359`, clusters=`5942`, pos=`151`)
 
@@ -22,6 +24,7 @@
 | `trust_b5` | 0.7052 | 0.0529 | 84.77% (23 missed) | 39.77% | 80.79% (29 missed) | 49.57% |
 | `dinov2_rsna` | 0.6301 | 0.0416 | 98.01% (3 missed) | 9.66% | 94.04% (9 missed) | 17.39% |
 | `resnet50_rsna` | 0.6452 | 0.1027 | 97.35% (4 missed) | 5.38% | 84.77% (23 missed) | 19.77% |
+| `gmic_rsna_finetuned` | 0.8637 | 0.3338 | 96.03% (6 missed) | 33.65% | 92.05% (12 missed) | 41.42% |
 
 ## Dataset: `CMMD` (China — `diagnostic_biopsy_enriched`)
 - Screening Dismissal Claim Allowed: `False`
@@ -34,6 +37,8 @@
 | `trust_b5` | 0.6474 | 0.9588 | 45.36% (418 missed) | 56.42% | 38.43% (471 missed) | 63.20% |
 | `dinov2_rsna` | 0.6567 | 0.9558 | 70.98% (222 missed) | 30.75% | 59.08% (313 missed) | 42.37% |
 | `resnet50_rsna` | 0.4741 | 0.9303 | 99.35% (5 missed) | 0.61% | 95.29% (36 missed) | 4.60% |
+| `gmic_rsna_finetuned` | 0.7059 | 0.9699 | 96.86% (24 missed) | 3.51% | 93.07% (53 missed) | 7.14% |
+| `nyu_fourview_rsna_finetuned` | 0.7137 | 0.9674 | 92.94% (54 missed) | 7.51% | 81.57% (141 missed) | 19.73% |
 
 ### Full Cohort (View-Agnostic) (`N=1775`, clusters=`1775`, pos=`1310`)
 
@@ -43,6 +48,7 @@
 | `trust_b5` | 0.6654 | 0.8494 | 41.53% (766 missed) | 64.56% | 35.11% (850 missed) | 70.76% |
 | `dinov2_rsna` | 0.6794 | 0.8460 | 64.66% (463 missed) | 42.42% | 53.36% (611 missed) | 53.24% |
 | `resnet50_rsna` | 0.5776 | 0.8002 | 98.93% (14 missed) | 1.01% | 93.13% (90 missed) | 7.72% |
+| `gmic_rsna_finetuned` | 0.7671 | 0.9075 | 94.81% (68 missed) | 8.96% | 91.15% (116 missed) | 13.52% |
 
 ## Dataset: `LUMINA` (Turkey — `diagnostic_biopsy_enriched`)
 - Screening Dismissal Claim Allowed: `False`
@@ -55,3 +61,4 @@
 | `trust_b5` | 0.6708 | 0.6688 | 94.04% (13 missed) | 3.42% | 93.12% (15 missed) | 4.49% |
 | `dinov2_rsna` | 0.5730 | 0.5879 | 92.20% (17 missed) | 6.62% | 86.70% (29 missed) | 10.90% |
 | `resnet50_rsna` | 0.5753 | 0.5713 | 89.91% (22 missed) | 10.68% | 77.52% (49 missed) | 25.85% |
+| `gmic_rsna_finetuned` | 0.7426 | 0.7800 | 93.58% (14 missed) | 5.34% | 91.74% (18 missed) | 8.12% |
