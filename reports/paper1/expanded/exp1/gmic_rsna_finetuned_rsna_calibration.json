@@ -1,0 +1,190 @@
+{
+  "schema_version": "paper1_specialist_rsna_calibration_v1",
+  "generated_at_utc": "2026-11-24T22:21:18.313915+00:00",
+  "label_quarantine_note": "Computed strictly using RSNA val_calib cancer labels ONLY prior to NLBS inference/join.",
+  "model_provenance": {
+    "model_id": "gmic_rsna_finetuned",
+    "checkpoint_file": "gmic_rsna_partial_seed42_best_train_calib.pt",
+    "checkpoint_sha256": "11efb7c65f773fc7f4f7a7bf8b0620c276c63536a3e7e7b2bf84eed6024146d5",
+    "preprocess_version": "paper1_gmic_uint16_v1",
+    "rsna_step2_lock_sha256": "65db60b6b6f62bc69544069c9754f070cdd525b349910a1cb4127d0b7e09bb47"
+  },
+  "rsna_source_eval": {
+    "n_patients": 2382,
+    "n_pos": 97,
+    "auroc": 0.8569830133772474,
+    "auprc": 0.31315430359183616,
+    "oof_pooled": {
+      "target_98_sens": 0.9690721649484536,
+      "target_98_missed": 3,
+      "target_98_dis": 0.2170445004198153,
+      "target_95_sens": 0.9587628865979382,
+      "target_95_missed": 4,
+      "target_95_dis": 0.3950461796809404
+    },
+    "bootstrap_95ci": {
+      "auroc": {
+        "mean": 0.8565860568087037,
+        "ci95_low": 0.81773450932503,
+        "ci95_high": 0.8935897797098835
+      },
+      "auprc": {
+        "mean": 0.3154210279064798,
+        "ci95_low": 0.21932655600705672,
+        "ci95_high": 0.4060439760954641
+      },
+      "s98": {
+        "mean": 0.9692842286044331,
+        "ci95_low": 0.9294087938205585,
+        "ci95_high": 1.0
+      },
+      "d98": {
+        "mean": 0.21722607052896725,
+        "ci95_low": 0.20067170445004198,
+        "ci95_high": 0.23425692695214106
+      },
+      "s95": {
+        "mean": 0.9593228673989609,
+        "ci95_low": 0.9157863031071655,
+        "ci95_high": 0.9905660377358491
+      },
+      "d95": {
+        "mean": 0.39538413098236774,
+        "ci95_low": 0.37573467674223343,
+        "ci95_high": 0.4151973131821998
+      }
+    },
+    "fold_details": {
+      "fold_a_to_fold_b": {
+        "tau_98": 0.140426218509674,
+        "tau_95": 0.2363979071378708,
+        "target_98": {
+          "threshold": 0.140426218509674,
+          "total_cases": 1191,
+          "total_cancers": 49,
+          "n_dismissed": 343,
+          "n_retained": 848,
+          "dismissal_rate": 0.2879932829554996,
+          "detected_cancers": 46,
+          "missed_cancers": 3,
+          "triage_recall": 0.9387755102040817,
+          "cancer_prev_dismissed": 0.008746355685131196,
+          "clopper_pearson_99_ub": 0.028986751813102746,
+          "meets_target_recall": false,
+          "reported_dismissal_rate": null
+        },
+        "target_95": {
+          "threshold": 0.2363979071378708,
+          "total_cases": 1191,
+          "total_cancers": 49,
+          "n_dismissed": 626,
+          "n_retained": 565,
+          "dismissal_rate": 0.5256087321578505,
+          "detected_cancers": 45,
+          "missed_cancers": 4,
+          "triage_recall": 0.9183673469387755,
+          "cancer_prev_dismissed": 0.006389776357827476,
+          "clopper_pearson_99_ub": 0.01842543383982882,
+          "meets_target_recall": false,
+          "reported_dismissal_rate": null
+        }
+      },
+      "fold_b_to_fold_a": {
+        "tau_98": 0.0957545489072799,
+        "tau_95": 0.1324738562107086,
+        "target_98": {
+          "threshold": 0.0957545489072799,
+          "total_cases": 1191,
+          "total_cancers": 48,
+          "n_dismissed": 174,
+          "n_retained": 1017,
+          "dismissal_rate": 0.14609571788413098,
+          "detected_cancers": 48,
+          "missed_cancers": 0,
+          "triage_recall": 1.0,
+          "cancer_prev_dismissed": 0.0,
+          "clopper_pearson_99_ub": 0.026119327152502758,
+          "meets_target_recall": true,
+          "reported_dismissal_rate": 0.14609571788413098
+        },
+        "target_95": {
+          "threshold": 0.1324738562107086,
+          "total_cases": 1191,
+          "total_cancers": 48,
+          "n_dismissed": 315,
+          "n_retained": 876,
+          "dismissal_rate": 0.26448362720403024,
+          "detected_cancers": 48,
+          "missed_cancers": 0,
+          "triage_recall": 1.0,
+          "cancer_prev_dismissed": 0.0,
+          "clopper_pearson_99_ub": 0.014513240598927668,
+          "meets_target_recall": true,
+          "reported_dismissal_rate": 0.26448362720403024
+        }
+      }
+    },
+    "full_val_calib_thresholds": {
+      "target_98": 0.130207672715187,
+      "target_95": 0.1583975553512573
+    },
+    "fold_a_sensitivity_thresholds": {
+      "target_98": 0.140426218509674,
+      "target_95": 0.2363979071378708
+    },
+    "score_quantiles": {
+      "positive": {
+        "p05": 0.21763099431991575,
+        "p25": 0.4151959419250488,
+        "p50": 0.560063898563385,
+        "p75": 0.819485604763031,
+        "p95": 0.9696502208709716,
+        "mean": 0.5911503647713318
+      },
+      "negative": {
+        "p05": 0.062110866606235465,
+        "p25": 0.1271891444921493,
+        "p50": 0.2158316075801849,
+        "p75": 0.3495566844940185,
+        "p95": 0.6265265703201292,
+        "mean": 0.2620574207002342
+      }
+    }
+  },
+  "full_val_calib_resubstitution_NOT_INDEPENDENT": {
+    "n_patients": 2382,
+    "n_pos": 97,
+    "auroc": 0.8569830133772474,
+    "auprc": 0.31315430359183616,
+    "target_98": {
+      "threshold": 0.130207672715187,
+      "total_cases": 2382,
+      "total_cancers": 97,
+      "n_dismissed": 598,
+      "n_retained": 1784,
+      "dismissal_rate": 0.2510495382031906,
+      "detected_cancers": 96,
+      "missed_cancers": 1,
+      "triage_recall": 0.9896907216494846,
+      "cancer_prev_dismissed": 0.0016722408026755853,
+      "clopper_pearson_99_ub": 0.011048734547984777,
+      "meets_target_recall": true,
+      "reported_dismissal_rate": 0.2510495382031906
+    },
+    "target_95": {
+      "threshold": 0.1583975553512573,
+      "total_cases": 2382,
+      "total_cancers": 97,
+      "n_dismissed": 814,
+      "n_retained": 1568,
+      "dismissal_rate": 0.3417296389588581,
+      "detected_cancers": 93,
+      "missed_cancers": 4,
+      "triage_recall": 0.9587628865979382,
+      "cancer_prev_dismissed": 0.004914004914004914,
+      "clopper_pearson_99_ub": 0.014189836052869977,
+      "meets_target_recall": true,
+      "reported_dismissal_rate": 0.3417296389588581
+    }
+  }
+}
