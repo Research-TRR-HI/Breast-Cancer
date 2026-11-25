@@ -1,0 +1,10 @@
+{
+  "split_name": "nlbs",
+  "n_images": 26988,
+  "n_fallback_views": 0,
+  "n_fallback_cases": 0,
+  "by_view_slot": {},
+  "by_photometric": {},
+  "by_error": {},
+  "fallbacks": []
+}
