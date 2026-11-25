@@ -1,0 +1,16 @@
+{
+  "schema_version": "paper1_specialist_locked_predictions_v1",
+  "locked_at_utc": "2026-11-25T01:50:02.943101+00:00",
+  "model_id": "nyu_fourview_rsna_finetuned",
+  "stratum": "supplementary_exploratory_rsna_finetuned",
+  "model_sha256": "b42a8b7d623210cd88369b402981b4d1050ea72052851c656c0bbd380532b00e",
+  "rsna_calibration_json_sha256": "2bba02e3758923ff176516e8221ded239323f55367a03bb94f127b7aa00813a7",
+  "frozen_rsna_thresholds": {
+    "target_98": 0.0477315112948417,
+    "target_95": 0.0690864473581314
+  },
+  "n_studies": 6184,
+  "n_studies_with_crop_fallback": 0,
+  "predictions_csv": "nyu_fourview_rsna_finetuned_locked_nlbs_predictions.csv",
+  "predictions_sha256": "c45255414e8f91ee107b7472e3faa57f50e16d4376d13914999f1ab82b4ddd4c"
+}
