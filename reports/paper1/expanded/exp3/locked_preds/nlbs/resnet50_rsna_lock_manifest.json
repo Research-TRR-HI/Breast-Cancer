@@ -1,0 +1,18 @@
+{
+  "schema_version": "paper1_exp3_locked_predictions_v1",
+  "locked_at_utc": "2026-11-24T22:07:57.926548+00:00",
+  "dataset_id": "nlbs",
+  "model_id": "resnet50_rsna",
+  "model_sha256": "ed620c61e38ce47ceac99d73fb1b02c2dae4946552e4469f5395f19b2a0c9d32",
+  "inference_manifest_sha256": "42ab8822d229ace6b721f66c178d059ba28a992bc41d4afbf14b42f31fc1950a",
+  "frozen_rsna_thresholds": {
+    "target_98": 0.0009927749633789,
+    "target_95": 0.0069313049316406
+  },
+  "frozen_rsna_thresholds_sha256": "03434a5687687d026cfc55cfc5d83aa5d6319765388d9a79b3fe73ef7bf7789a",
+  "n_exams": 6359,
+  "n_clusters": 5942,
+  "n_exams_with_crop_fallback": 0,
+  "predictions_csv": "resnet50_rsna_locked_nlbs_predictions.csv",
+  "predictions_sha256": "6b1909f853235fba6f76ee4f3d6fb6d8dda45d1b79487a4d2aa9b4b530b489ad"
+}

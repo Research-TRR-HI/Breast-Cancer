@@ -1427,13 +1427,13 @@ def orchestrate_external_inference(
                     kw["dataset_id"],
                     kw["model_id"],
                     kw["manifest_csv_content"],
+                    kw["model_spec"],
                     kw["shard_idx"],
                     kw["num_shards"],
                     kw["batch_size"],
-                    kw["model_spec"],
                     kw["pilot_limit"],
-                    kw["resume"],
                     kw["max_spend_usd"],
+                    kw["resume"],
                 )
                 for kw in per_shard_kwargs
             ]
