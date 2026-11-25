@@ -1,0 +1,57 @@
+{
+  "schema_version": "paper1_exp2_lock_v1",
+  "locked_at_utc": "2026-11-24T22:07:34.361980+00:00",
+  "model_id": "glam_pretrained",
+  "checkpoint_name": "model_joint.ckpt",
+  "checkpoint_sha256": "a647ba9176b3e11d2dec7252054504f33856bcabb2bbe763432d3d20e7c65aec",
+  "split_name": "nlbs_full",
+  "label_quarantine_enforced": true,
+  "threshold_policy": {
+    "threshold_category": "C",
+    "calibration_domain": "none_threshold_independent_auroc_auprc_only",
+    "target_98": null,
+    "target_95": null
+  },
+  "n_unique_studies": 6359,
+  "n_unit_records": 26988,
+  "all_scores_finite": true,
+  "score_summary_label_free": {
+    "min": 0.006714,
+    "median": 0.051071,
+    "max": 0.987641
+  },
+  "shards": [
+    {
+      "shard_idx": 0,
+      "num_shards": 4,
+      "n_units": 6747,
+      "estimated_cost_usd": 0.41853,
+      "resumed_from_cache": false
+    },
+    {
+      "shard_idx": 1,
+      "num_shards": 4,
+      "n_units": 6747,
+      "estimated_cost_usd": 0.40567,
+      "resumed_from_cache": false
+    },
+    {
+      "shard_idx": 2,
+      "num_shards": 4,
+      "n_units": 6747,
+      "estimated_cost_usd": 0.40881,
+      "resumed_from_cache": false
+    },
+    {
+      "shard_idx": 3,
+      "num_shards": 4,
+      "n_units": 6747,
+      "estimated_cost_usd": 0.40864,
+      "resumed_from_cache": false
+    }
+  ],
+  "locked_files_sha256": {
+    "glam_pretrained_nlbs_full_unit_scores.csv": "e3ee136872f709651cbec46cef0c50b6ef69faf2055533743bae516cecd12388",
+    "glam_pretrained_nlbs_full_case_scores.csv": "12d2ac770c19a8a646276caa7330d7a7f718d69df92831cfb3648de3dd471885"
+  }
+}
