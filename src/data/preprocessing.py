@@ -349,6 +349,35 @@ def decode_dicom_array(
     return arr_f32, photometric, laterality
 
 
+def decode_pgm_array(pgm_path: Union[str, Path]) -> Tuple[np.ndarray, str, str]:
+    """Decode an 8-bit/16-bit PGM image (e.g. mini-MIAS) into float32 array, MONOCHROME2, and empty laterality."""
+    path_obj = Path(pgm_path)
+    if not path_obj.exists():
+        raise FileNotFoundError(f"PGM file not found: {path_obj}")
+    arr = cv2.imread(str(path_obj), cv2.IMREAD_UNCHANGED)
+    if arr is None:
+        raise ValueError(f"Failed to decode PGM image: {path_obj}")
+    if arr.ndim == 3:
+        arr = arr[:, :, 0]
+    if arr.ndim != 2 or arr.size == 0:
+        raise ValueError(f"Expected non-empty 2D grayscale PGM image at {path_obj}, got shape={arr.shape}")
+    arr_f32 = np.asarray(arr, dtype=np.float32)
+    if not np.all(np.isfinite(arr_f32)):
+        raise ValueError(f"Non-finite pixel values in PGM image: {path_obj}")
+    return arr_f32, "MONOCHROME2", ""
+
+
+def decode_mammogram_array(
+    image_path: Union[str, Path],
+    apply_luts: bool = True,
+) -> Tuple[np.ndarray, str, str]:
+    """Dispatch mammogram decoding by extension (`.pgm` -> PGM, otherwise DICOM)."""
+    p = Path(image_path)
+    if p.suffix.lower() == ".pgm":
+        return decode_pgm_array(p)
+    return decode_dicom_array(p, apply_luts=apply_luts)
+
+
 def extract_cropped_mammogram_with_metadata(
     arr: np.ndarray,
     photometric: str = "",
