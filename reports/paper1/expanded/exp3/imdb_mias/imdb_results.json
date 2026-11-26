@@ -1,0 +1,2414 @@
+{
+  "schema_version": "paper1_exp3_imdb_ffdm_4view_eval_v1",
+  "cohort_note": "Common 4-view Hologic FFDM cohort (1665 exams: 304 r1 + 1361 r2). Never pooled with NLBS/CMMD/LUMINA/MIAS.",
+  "locks": {
+    "ce_b5": {
+      "model_sha256": "adf1443455ee1b507485ee4b7f64932d5cf6f59bb6afcf11b9f415c634372d22",
+      "predictions_sha256": "6b5b442a3b68a808b66d656c01b04114cb4676fca37e1e8d8f929f677d438a76",
+      "frozen_rsna_thresholds": {
+        "target_98": 0.0961934626102447,
+        "target_95": 0.124415136873722
+      },
+      "frozen_rsna_thresholds_sha256": "e3b8fc40b54ed61ef636ab3fafd33a901150cf08be62bec0ea9fed2da39d4734",
+      "n_exams": 1665,
+      "n_exams_with_crop_fallback": 0
+    },
+    "trust_b5": {
+      "model_sha256": "63388d790ce9cf8a8287adc7724358ced392a69b332ce1a5e46972750faa51cb",
+      "predictions_sha256": "c3a85349e55dc0065e21f66bcdf34d13473ea149ea001382e68be8e0cc790bf0",
+      "frozen_rsna_thresholds": {
+        "target_98": 0.1795480698347091,
+        "target_95": 0.1954631060361862
+      },
+      "frozen_rsna_thresholds_sha256": "71e7ab4495faab13cface8bb6a83b15c80f109e5549a6c575aaf84eb2cb1d245",
+      "n_exams": 1665,
+      "n_exams_with_crop_fallback": 0
+    },
+    "dinov2_rsna": {
+      "model_sha256": "b141c2631ca8e54e5d233239823aafaf18fa3f5d8c62c755339888f41f67d5f5",
+      "predictions_sha256": "1253742e6e2fac0f6925383b6b803d690930c256f747c060278a92b8bf8ad371",
+      "frozen_rsna_thresholds": {
+        "target_98": 0.183435708284378,
+        "target_95": 0.2065157741308212
+      },
+      "frozen_rsna_thresholds_sha256": "361ed7dd28d55a5651d0b65515d1890c19194a48e81b901d4643660b5060cdb1",
+      "n_exams": 1665,
+      "n_exams_with_crop_fallback": 0
+    },
+    "resnet50_rsna": {
+      "model_sha256": "ed620c61e38ce47ceac99d73fb1b02c2dae4946552e4469f5395f19b2a0c9d32",
+      "predictions_sha256": "29de60c599e2247a5e2f87d1b51890def661937d784cfdcfcc5ded3f01714635",
+      "frozen_rsna_thresholds": {
+        "target_98": 0.0009927749633789,
+        "target_95": 0.0069313049316406
+      },
+      "frozen_rsna_thresholds_sha256": "03434a5687687d026cfc55cfc5d83aa5d6319765388d9a79b3fe73ef7bf7789a",
+      "n_exams": 1665,
+      "n_exams_with_crop_fallback": 0
+    },
+    "gmic_rsna_finetuned": {
+      "model_sha256": "11efb7c65f773fc7f4f7a7bf8b0620c276c63536a3e7e7b2bf84eed6024146d5",
+      "predictions_sha256": "7544141f7fc5a6b96e1e2c968c7f67cc638cda13c90ec22987cd998d9ab79a03",
+      "frozen_rsna_thresholds": {
+        "target_98": 0.130207672715187,
+        "target_95": 0.1583975553512573
+      },
+      "frozen_rsna_thresholds_sha256": "891dd0bff6a0cab7ed98ce517121283533f0bed1e881f2c8d5f115212827be2a",
+      "n_exams": 1665,
+      "n_exams_with_crop_fallback": 0
+    },
+    "nyu_fourview_rsna_finetuned": {
+      "model_sha256": "b42a8b7d623210cd88369b402981b4d1050ea72052851c656c0bbd380532b00e",
+      "predictions_sha256": "3c1efe8d9ec782b379be19bc6e2c18b1d1d6010c016d59d74c3854e4c642b5ec",
+      "frozen_rsna_thresholds": {
+        "target_98": 0.0477315112948417,
+        "target_95": 0.0690864473581314
+      },
+      "frozen_rsna_thresholds_sha256": "8e2e6361ad0d084c60521bce1679c4293e72927032d49778edc54b83704269ea",
+      "n_exams": 1665,
+      "n_exams_with_crop_fallback": 0
+    }
+  },
+  "analyses": {
+    "analysis_a_r1_path": {
+      "n_exams": 61,
+      "n_positive": 60,
+      "n_negative": 1,
+      "models": {
+        "ce_b5": {
+          "n_exams": 61,
+          "n_positive": 60,
+          "n_negative": 1,
+          "auroc": 0.5,
+          "auprc": 0.9888496889976972,
+          "bootstrap_95ci": {},
+          "target_98": {
+            "threshold": 0.0961934626102447,
+            "tp": 60,
+            "tn": 0,
+            "fp": 1,
+            "fn": 0,
+            "missed_cancers": 0,
+            "sensitivity": 1.0,
+            "specificity": 0.0,
+            "fpr": 1.0,
+            "fnr": 0.0,
+            "below_thr_rate": 0.0,
+            "false_omission_rate": 0.0,
+            "non_cancer_retained": 1
+          },
+          "target_95": {
+            "threshold": 0.124415136873722,
+            "tp": 60,
+            "tn": 0,
+            "fp": 1,
+            "fn": 0,
+            "missed_cancers": 0,
+            "sensitivity": 1.0,
+            "specificity": 0.0,
+            "fpr": 1.0,
+            "fnr": 0.0,
+            "below_thr_rate": 0.0,
+            "false_omission_rate": 0.0,
+            "non_cancer_retained": 1
+          }
+        },
+        "trust_b5": {
+          "n_exams": 61,
+          "n_positive": 60,
+          "n_negative": 1,
+          "auroc": 0.5166666666666667,
+          "auprc": 0.9893793313514674,
+          "bootstrap_95ci": {},
+          "target_98": {
+            "threshold": 0.1795480698347091,
+            "tp": 60,
+            "tn": 0,
+            "fp": 1,
+            "fn": 0,
+            "missed_cancers": 0,
+            "sensitivity": 1.0,
+            "specificity": 0.0,
+            "fpr": 1.0,
+            "fnr": 0.0,
+            "below_thr_rate": 0.0,
+            "false_omission_rate": 0.0,
+            "non_cancer_retained": 1
+          },
+          "target_95": {
+            "threshold": 0.1954631060361862,
+            "tp": 60,
+            "tn": 0,
+            "fp": 1,
+            "fn": 0,
+            "missed_cancers": 0,
+            "sensitivity": 1.0,
+            "specificity": 0.0,
+            "fpr": 1.0,
+            "fnr": 0.0,
+            "below_thr_rate": 0.0,
+            "false_omission_rate": 0.0,
+            "non_cancer_retained": 1
+          }
+        },
+        "dinov2_rsna": {
+          "n_exams": 61,
+          "n_positive": 60,
+          "n_negative": 1,
+          "auroc": 0.4,
+          "auprc": 0.9853282387029801,
+          "bootstrap_95ci": {},
+          "target_98": {
+            "threshold": 0.183435708284378,
+            "tp": 60,
+            "tn": 0,
+            "fp": 1,
+            "fn": 0,
+            "missed_cancers": 0,
+            "sensitivity": 1.0,
+            "specificity": 0.0,
+            "fpr": 1.0,
+            "fnr": 0.0,
+            "below_thr_rate": 0.0,
+            "false_omission_rate": 0.0,
+            "non_cancer_retained": 1
+          },
+          "target_95": {
+            "threshold": 0.2065157741308212,
+            "tp": 60,
+            "tn": 0,
+            "fp": 1,
+            "fn": 0,
+            "missed_cancers": 0,
+            "sensitivity": 1.0,
+            "specificity": 0.0,
+            "fpr": 1.0,
+            "fnr": 0.0,
+            "below_thr_rate": 0.0,
+            "false_omission_rate": 0.0,
+            "non_cancer_retained": 1
+          }
+        },
+        "resnet50_rsna": {
+          "n_exams": 61,
+          "n_positive": 60,
+          "n_negative": 1,
+          "auroc": 0.4166666666666667,
+          "auprc": 0.9859692643440059,
+          "bootstrap_95ci": {},
+          "target_98": {
+            "threshold": 0.0009927749633789,
+            "tp": 59,
+            "tn": 0,
+            "fp": 1,
+            "fn": 1,
+            "missed_cancers": 1,
+            "sensitivity": 0.9833333333333333,
+            "specificity": 0.0,
+            "fpr": 1.0,
+            "fnr": 0.016666666666666666,
+            "below_thr_rate": 0.01639344262295082,
+            "false_omission_rate": 1.0,
+            "non_cancer_retained": 1
+          },
+          "target_95": {
+            "threshold": 0.0069313049316406,
+            "tp": 55,
+            "tn": 0,
+            "fp": 1,
+            "fn": 5,
+            "missed_cancers": 5,
+            "sensitivity": 0.9166666666666666,
+            "specificity": 0.0,
+            "fpr": 1.0,
+            "fnr": 0.08333333333333333,
+            "below_thr_rate": 0.08196721311475409,
+            "false_omission_rate": 1.0,
+            "non_cancer_retained": 1
+          }
+        },
+        "gmic_rsna_finetuned": {
+          "n_exams": 61,
+          "n_positive": 60,
+          "n_negative": 1,
+          "auroc": 0.2,
+          "auprc": 0.9747311649926511,
+          "bootstrap_95ci": {},
+          "target_98": {
+            "threshold": 0.130207672715187,
+            "tp": 59,
+            "tn": 0,
+            "fp": 1,
+            "fn": 1,
+            "missed_cancers": 1,
+            "sensitivity": 0.9833333333333333,
+            "specificity": 0.0,
+            "fpr": 1.0,
+            "fnr": 0.016666666666666666,
+            "below_thr_rate": 0.01639344262295082,
+            "false_omission_rate": 1.0,
+            "non_cancer_retained": 1
+          },
+          "target_95": {
+            "threshold": 0.1583975553512573,
+            "tp": 58,
+            "tn": 0,
+            "fp": 1,
+            "fn": 2,
+            "missed_cancers": 2,
+            "sensitivity": 0.9666666666666667,
+            "specificity": 0.0,
+            "fpr": 1.0,
+            "fnr": 0.03333333333333333,
+            "below_thr_rate": 0.03278688524590164,
+            "false_omission_rate": 1.0,
+            "non_cancer_retained": 1
+          }
+        },
+        "nyu_fourview_rsna_finetuned": {
+          "n_exams": 61,
+          "n_positive": 60,
+          "n_negative": 1,
+          "auroc": 0.4666666666666667,
+          "auprc": 0.9877564990335395,
+          "bootstrap_95ci": {},
+          "target_98": {
+            "threshold": 0.0477315112948417,
+            "tp": 60,
+            "tn": 0,
+            "fp": 1,
+            "fn": 0,
+            "missed_cancers": 0,
+            "sensitivity": 1.0,
+            "specificity": 0.0,
+            "fpr": 1.0,
+            "fnr": 0.0,
+            "below_thr_rate": 0.0,
+            "false_omission_rate": 0.0,
+            "non_cancer_retained": 1
+          },
+          "target_95": {
+            "threshold": 0.0690864473581314,
+            "tp": 58,
+            "tn": 0,
+            "fp": 1,
+            "fn": 2,
+            "missed_cancers": 2,
+            "sensitivity": 0.9666666666666667,
+            "specificity": 0.0,
+            "fpr": 1.0,
+            "fnr": 0.03333333333333333,
+            "below_thr_rate": 0.03278688524590164,
+            "false_omission_rate": 1.0,
+            "non_cancer_retained": 1
+          }
+        }
+      }
+    },
+    "analysis_a_r2_path": {
+      "n_exams": 223,
+      "n_positive": 192,
+      "n_negative": 31,
+      "models": {
+        "ce_b5": {
+          "n_exams": 223,
+          "n_positive": 192,
+          "n_negative": 31,
+          "auroc": 0.5061323924731183,
+          "auprc": 0.8649086867681182,
+          "bootstrap_95ci": {
+            "auroc": {
+              "mean": 0.5056037258045322,
+              "ci95_low": 0.3934609250398724,
+              "ci95_high": 0.6209527185221825
+            },
+            "auprc": {
+              "mean": 0.8653550310637886,
+              "ci95_low": 0.801903552524102,
+              "ci95_high": 0.9216415512767342
+            },
+            "s98": {
+              "mean": 0.911457553295727,
+              "ci95_low": 0.8677248677248677,
+              "ci95_high": 0.9484602167591858
+            },
+            "d98": {
+              "mean": 0.08969058295964126,
+              "ci95_low": 0.053811659192825115,
+              "ci95_high": 0.13004484304932734
+            },
+            "s95": {
+              "mean": 0.8385305475164062,
+              "ci95_low": 0.7839195979899497,
+              "ci95_high": 0.8888888888888888
+            },
+            "d95": {
+              "mean": 0.1524304932735426,
+              "ci95_low": 0.10762331838565023,
+              "ci95_high": 0.20179372197309417
+            }
+          },
+          "target_98": {
+            "threshold": 0.0961934626102447,
+            "tp": 175,
+            "tn": 3,
+            "fp": 28,
+            "fn": 17,
+            "missed_cancers": 17,
+            "sensitivity": 0.9114583333333334,
+            "specificity": 0.0967741935483871,
+            "fpr": 0.9032258064516129,
+            "fnr": 0.08854166666666667,
+            "below_thr_rate": 0.08968609865470852,
+            "false_omission_rate": 0.85,
+            "non_cancer_retained": 28
+          },
+          "target_95": {
+            "threshold": 0.124415136873722,
+            "tp": 161,
+            "tn": 3,
+            "fp": 28,
+            "fn": 31,
+            "missed_cancers": 31,
+            "sensitivity": 0.8385416666666666,
+            "specificity": 0.0967741935483871,
+            "fpr": 0.9032258064516129,
+            "fnr": 0.16145833333333334,
+            "below_thr_rate": 0.15246636771300448,
+            "false_omission_rate": 0.9117647058823529,
+            "non_cancer_retained": 28
+          }
+        },
+        "trust_b5": {
+          "n_exams": 223,
+          "n_positive": 192,
+          "n_negative": 31,
+          "auroc": 0.5040322580645161,
+          "auprc": 0.8634080036858318,
+          "bootstrap_95ci": {
+            "auroc": {
+              "mean": 0.5032900232037477,
+              "ci95_low": 0.39167516459641294,
+              "ci95_high": 0.6169083488196564
+            },
+            "auprc": {
+              "mean": 0.8638877811430854,
+              "ci95_low": 0.8001059178074447,
+              "ci95_high": 0.9209671639125254
+            },
+            "s98": {
+              "mean": 0.8855458735063294,
+              "ci95_low": 0.8368421052631579,
+              "ci95_high": 0.9293553364649333
+            },
+            "d98": {
+              "mean": 0.11198430493273542,
+              "ci95_low": 0.07174887892376682,
+              "ci95_high": 0.15695067264573992
+            },
+            "s95": {
+              "mean": 0.8540742099284053,
+              "ci95_low": 0.8010745651072454,
+              "ci95_high": 0.9000124378109452
+            },
+            "d95": {
+              "mean": 0.13905156950672648,
+              "ci95_low": 0.09417040358744394,
+              "ci95_high": 0.18834080717488788
+            }
+          },
+          "target_98": {
+            "threshold": 0.1795480698347091,
+            "tp": 170,
+            "tn": 3,
+            "fp": 28,
+            "fn": 22,
+            "missed_cancers": 22,
+            "sensitivity": 0.8854166666666666,
+            "specificity": 0.0967741935483871,
+            "fpr": 0.9032258064516129,
+            "fnr": 0.11458333333333333,
+            "below_thr_rate": 0.11210762331838565,
+            "false_omission_rate": 0.88,
+            "non_cancer_retained": 28
+          },
+          "target_95": {
+            "threshold": 0.1954631060361862,
+            "tp": 164,
+            "tn": 3,
+            "fp": 28,
+            "fn": 28,
+            "missed_cancers": 28,
+            "sensitivity": 0.8541666666666666,
+            "specificity": 0.0967741935483871,
+            "fpr": 0.9032258064516129,
+            "fnr": 0.14583333333333334,
+            "below_thr_rate": 0.13901345291479822,
+            "false_omission_rate": 0.9032258064516129,
+            "non_cancer_retained": 28
+          }
+        },
+        "dinov2_rsna": {
+          "n_exams": 223,
+          "n_positive": 192,
+          "n_negative": 31,
+          "auroc": 0.5204133064516129,
+          "auprc": 0.882156905914022,
+          "bootstrap_95ci": {
+            "auroc": {
+              "mean": 0.5211978928953004,
+              "ci95_low": 0.4075727120450739,
+              "ci95_high": 0.6290245869853316
+            },
+            "auprc": {
+              "mean": 0.8823233947400551,
+              "ci95_low": 0.8290665882331189,
+              "ci95_high": 0.931565361307208
+            },
+            "s98": {
+              "mean": 0.9893289637577379,
+              "ci95_low": 0.9731182795698925,
+              "ci95_high": 1.0
+            },
+            "d98": {
+              "mean": 0.009181614349775784,
+              "ci95_low": 0.0,
+              "ci95_high": 0.02242152466367713
+            },
+            "s95": {
+              "mean": 0.9893289637577379,
+              "ci95_low": 0.9731182795698925,
+              "ci95_high": 1.0
+            },
+            "d95": {
+              "mean": 0.009181614349775784,
+              "ci95_low": 0.0,
+              "ci95_high": 0.02242152466367713
+            }
+          },
+          "target_98": {
+            "threshold": 0.183435708284378,
+            "tp": 190,
+            "tn": 0,
+            "fp": 31,
+            "fn": 2,
+            "missed_cancers": 2,
+            "sensitivity": 0.9895833333333334,
+            "specificity": 0.0,
+            "fpr": 1.0,
+            "fnr": 0.010416666666666666,
+            "below_thr_rate": 0.008968609865470852,
+            "false_omission_rate": 1.0,
+            "non_cancer_retained": 31
+          },
+          "target_95": {
+            "threshold": 0.2065157741308212,
+            "tp": 190,
+            "tn": 0,
+            "fp": 31,
+            "fn": 2,
+            "missed_cancers": 2,
+            "sensitivity": 0.9895833333333334,
+            "specificity": 0.0,
+            "fpr": 1.0,
+            "fnr": 0.010416666666666666,
+            "below_thr_rate": 0.008968609865470852,
+            "false_omission_rate": 1.0,
+            "non_cancer_retained": 31
+          }
+        },
+        "resnet50_rsna": {
+          "n_exams": 223,
+          "n_positive": 192,
+          "n_negative": 31,
+          "auroc": 0.5631720430107527,
+          "auprc": 0.8817311958505027,
+          "bootstrap_95ci": {
+            "auroc": {
+              "mean": 0.5625739742474373,
+              "ci95_low": 0.45090514778936913,
+              "ci95_high": 0.6653129387646746
+            },
+            "auprc": {
+              "mean": 0.8830883822776534,
+              "ci95_low": 0.8229243696017176,
+              "ci95_high": 0.9366207500588928
+            },
+            "s98": {
+              "mean": 0.984345132759141,
+              "ci95_low": 0.9637305699481865,
+              "ci95_high": 1.0
+            },
+            "d98": {
+              "mean": 0.013466367713004485,
+              "ci95_low": 0.0,
+              "ci95_high": 0.03139013452914798
+            },
+            "s95": {
+              "mean": 0.8950194443238243,
+              "ci95_low": 0.8497339684662099,
+              "ci95_high": 0.9368421052631579
+            },
+            "d95": {
+              "mean": 0.10818609865470853,
+              "ci95_low": 0.07174887892376682,
+              "ci95_high": 0.15246636771300448
+            }
+          },
+          "target_98": {
+            "threshold": 0.0009927749633789,
+            "tp": 189,
+            "tn": 0,
+            "fp": 31,
+            "fn": 3,
+            "missed_cancers": 3,
+            "sensitivity": 0.984375,
+            "specificity": 0.0,
+            "fpr": 1.0,
+            "fnr": 0.015625,
+            "below_thr_rate": 0.013452914798206279,
+            "false_omission_rate": 1.0,
+            "non_cancer_retained": 31
+          },
+          "target_95": {
+            "threshold": 0.0069313049316406,
+            "tp": 172,
+            "tn": 4,
+            "fp": 27,
+            "fn": 20,
+            "missed_cancers": 20,
+            "sensitivity": 0.8958333333333334,
+            "specificity": 0.12903225806451613,
+            "fpr": 0.8709677419354839,
+            "fnr": 0.10416666666666667,
+            "below_thr_rate": 0.10762331838565023,
+            "false_omission_rate": 0.8333333333333334,
+            "non_cancer_retained": 27
+          }
+        },
+        "gmic_rsna_finetuned": {
+          "n_exams": 223,
+          "n_positive": 192,
+          "n_negative": 31,
+          "auroc": 0.5109206989247311,
+          "auprc": 0.8824393651412135,
+          "bootstrap_95ci": {
+            "auroc": {
+              "mean": 0.5106495165666435,
+              "ci95_low": 0.4080544367879663,
+              "ci95_high": 0.6092515508162824
+            },
+            "auprc": {
+              "mean": 0.8824223777751726,
+              "ci95_low": 0.8291944605256796,
+              "ci95_high": 0.9296504029108716
+            },
+            "s98": {
+              "mean": 0.9634042914958325,
+              "ci95_low": 0.9346671884010216,
+              "ci95_high": 0.985076474065317
+            },
+            "d98": {
+              "mean": 0.03148206278026906,
+              "ci95_low": 0.013452914798206279,
+              "ci95_high": 0.05392376681614289
+            },
+            "s95": {
+              "mean": 0.9167650008878224,
+              "ci95_low": 0.875,
+              "ci95_high": 0.9562841530054644
+            },
+            "d95": {
+              "mean": 0.08065470852017938,
+              "ci95_low": 0.04484304932735426,
+              "ci95_high": 0.11670403587443885
+            }
+          },
+          "target_98": {
+            "threshold": 0.130207672715187,
+            "tp": 185,
+            "tn": 0,
+            "fp": 31,
+            "fn": 7,
+            "missed_cancers": 7,
+            "sensitivity": 0.9635416666666666,
+            "specificity": 0.0,
+            "fpr": 1.0,
+            "fnr": 0.036458333333333336,
+            "below_thr_rate": 0.03139013452914798,
+            "false_omission_rate": 1.0,
+            "non_cancer_retained": 31
+          },
+          "target_95": {
+            "threshold": 0.1583975553512573,
+            "tp": 176,
+            "tn": 2,
+            "fp": 29,
+            "fn": 16,
+            "missed_cancers": 16,
+            "sensitivity": 0.9166666666666666,
+            "specificity": 0.06451612903225806,
+            "fpr": 0.9354838709677419,
+            "fnr": 0.08333333333333333,
+            "below_thr_rate": 0.08071748878923767,
+            "false_omission_rate": 0.8888888888888888,
+            "non_cancer_retained": 29
+          }
+        },
+        "nyu_fourview_rsna_finetuned": {
+          "n_exams": 223,
+          "n_positive": 192,
+          "n_negative": 31,
+          "auroc": 0.557627688172043,
+          "auprc": 0.8909469477508671,
+          "bootstrap_95ci": {
+            "auroc": {
+              "mean": 0.5573160066463897,
+              "ci95_low": 0.4499860929319372,
+              "ci95_high": 0.668032971909245
+            },
+            "auprc": {
+              "mean": 0.8909998019217028,
+              "ci95_low": 0.8360436907215334,
+              "ci95_high": 0.9373989176233539
+            },
+            "s98": {
+              "mean": 0.9947990898574177,
+              "ci95_low": 0.983957219251337,
+              "ci95_high": 1.0
+            },
+            "d98": {
+              "mean": 0.004477578475336323,
+              "ci95_low": 0.0,
+              "ci95_high": 0.013452914798206279
+            },
+            "s95": {
+              "mean": 0.9425877905345983,
+              "ci95_low": 0.9067357512953368,
+              "ci95_high": 0.9739583333333334
+            },
+            "d95": {
+              "mean": 0.06304260089686099,
+              "ci95_low": 0.03139013452914798,
+              "ci95_high": 0.09865470852017937
+            }
+          },
+          "target_98": {
+            "threshold": 0.0477315112948417,
+            "tp": 191,
+            "tn": 0,
+            "fp": 31,
+            "fn": 1,
+            "missed_cancers": 1,
+            "sensitivity": 0.9947916666666666,
+            "specificity": 0.0,
+            "fpr": 1.0,
+            "fnr": 0.005208333333333333,
+            "below_thr_rate": 0.004484304932735426,
+            "false_omission_rate": 1.0,
+            "non_cancer_retained": 31
+          },
+          "target_95": {
+            "threshold": 0.0690864473581314,
+            "tp": 181,
+            "tn": 3,
+            "fp": 28,
+            "fn": 11,
+            "missed_cancers": 11,
+            "sensitivity": 0.9427083333333334,
+            "specificity": 0.0967741935483871,
+            "fpr": 0.9032258064516129,
+            "fnr": 0.057291666666666664,
+            "below_thr_rate": 0.06278026905829596,
+            "false_omission_rate": 0.7857142857142857,
+            "non_cancer_retained": 28
+          }
+        }
+      }
+    },
+    "analysis_a_combined_path": {
+      "n_exams": 284,
+      "n_positive": 252,
+      "n_negative": 32,
+      "models": {
+        "ce_b5": {
+          "n_exams": 284,
+          "n_positive": 252,
+          "n_negative": 32,
+          "auroc": 0.5510292658730159,
+          "auprc": 0.9038137641155835,
+          "bootstrap_95ci": {
+            "auroc": {
+              "mean": 0.5502847110187911,
+              "ci95_low": 0.4352102550374035,
+              "ci95_high": 0.6566568722964233
+            },
+            "auprc": {
+              "mean": 0.9044322804475644,
+              "ci95_low": 0.8548000002593167,
+              "ci95_high": 0.9465511750701991
+            },
+            "s98": {
+              "mean": 0.9325827038938196,
+              "ci95_low": 0.9011846435924796,
+              "ci95_high": 0.9609375
+            },
+            "d98": {
+              "mean": 0.07042781690140847,
+              "ci95_low": 0.04225352112676056,
+              "ci95_high": 0.10211267605633803
+            },
+            "s95": {
+              "mean": 0.8767765871537144,
+              "ci95_low": 0.8359812260536398,
+              "ci95_high": 0.9137254901960784
+            },
+            "d95": {
+              "mean": 0.11991901408450704,
+              "ci95_low": 0.08450704225352113,
+              "ci95_high": 0.15845070422535212
+            }
+          },
+          "target_98": {
+            "threshold": 0.0961934626102447,
+            "tp": 235,
+            "tn": 3,
+            "fp": 29,
+            "fn": 17,
+            "missed_cancers": 17,
+            "sensitivity": 0.9325396825396826,
+            "specificity": 0.09375,
+            "fpr": 0.90625,
+            "fnr": 0.06746031746031746,
+            "below_thr_rate": 0.07042253521126761,
+            "false_omission_rate": 0.85,
+            "non_cancer_retained": 29
+          },
+          "target_95": {
+            "threshold": 0.124415136873722,
+            "tp": 221,
+            "tn": 3,
+            "fp": 29,
+            "fn": 31,
+            "missed_cancers": 31,
+            "sensitivity": 0.876984126984127,
+            "specificity": 0.09375,
+            "fpr": 0.90625,
+            "fnr": 0.12301587301587301,
+            "below_thr_rate": 0.11971830985915492,
+            "false_omission_rate": 0.9117647058823529,
+            "non_cancer_retained": 29
+          }
+        },
+        "trust_b5": {
+          "n_exams": 284,
+          "n_positive": 252,
+          "n_negative": 32,
+          "auroc": 0.5514632936507936,
+          "auprc": 0.9033634844679458,
+          "bootstrap_95ci": {
+            "auroc": {
+              "mean": 0.5508072530232158,
+              "ci95_low": 0.4383171439214776,
+              "ci95_high": 0.6559702943646277
+            },
+            "auprc": {
+              "mean": 0.9041009668794912,
+              "ci95_low": 0.8534667677359478,
+              "ci95_high": 0.9466728502224323
+            },
+            "s98": {
+              "mean": 0.9123781701461899,
+              "ci95_low": 0.8769826007326007,
+              "ci95_high": 0.9453125
+            },
+            "d98": {
+              "mean": 0.08834683098591549,
+              "ci95_low": 0.056338028169014086,
+              "ci95_high": 0.12323943661971831
+            },
+            "s95": {
+              "mean": 0.888477123184462,
+              "ci95_low": 0.8482428015564202,
+              "ci95_high": 0.9233947888327503
+            },
+            "d95": {
+              "mean": 0.10954753521126762,
+              "ci95_low": 0.07746478873239436,
+              "ci95_high": 0.14788732394366197
+            }
+          },
+          "target_98": {
+            "threshold": 0.1795480698347091,
+            "tp": 230,
+            "tn": 3,
+            "fp": 29,
+            "fn": 22,
+            "missed_cancers": 22,
+            "sensitivity": 0.9126984126984127,
+            "specificity": 0.09375,
+            "fpr": 0.90625,
+            "fnr": 0.0873015873015873,
+            "below_thr_rate": 0.0880281690140845,
+            "false_omission_rate": 0.88,
+            "non_cancer_retained": 29
+          },
+          "target_95": {
+            "threshold": 0.1954631060361862,
+            "tp": 224,
+            "tn": 3,
+            "fp": 29,
+            "fn": 28,
+            "missed_cancers": 28,
+            "sensitivity": 0.8888888888888888,
+            "specificity": 0.09375,
+            "fpr": 0.90625,
+            "fnr": 0.1111111111111111,
+            "below_thr_rate": 0.10915492957746478,
+            "false_omission_rate": 0.9032258064516129,
+            "non_cancer_retained": 29
+          }
+        },
+        "dinov2_rsna": {
+          "n_exams": 284,
+          "n_positive": 252,
+          "n_negative": 32,
+          "auroc": 0.5213293650793651,
+          "auprc": 0.9065642150145211,
+          "bootstrap_95ci": {
+            "auroc": {
+              "mean": 0.5206967485218659,
+              "ci95_low": 0.4141937119675457,
+              "ci95_high": 0.6177566699351217
+            },
+            "auprc": {
+              "mean": 0.9066186512504554,
+              "ci95_low": 0.8641533419528364,
+              "ci95_high": 0.9448276270926249
+            },
+            "s98": {
+              "mean": 0.992116852758328,
+              "ci95_low": 0.9800796812749004,
+              "ci95_high": 1.0
+            },
+            "d98": {
+              "mean": 0.006989436619718309,
+              "ci95_low": 0.0,
+              "ci95_high": 0.017605633802816902
+            },
+            "s95": {
+              "mean": 0.992116852758328,
+              "ci95_low": 0.9800796812749004,
+              "ci95_high": 1.0
+            },
+            "d95": {
+              "mean": 0.006989436619718309,
+              "ci95_low": 0.0,
+              "ci95_high": 0.017605633802816902
+            }
+          },
+          "target_98": {
+            "threshold": 0.183435708284378,
+            "tp": 250,
+            "tn": 0,
+            "fp": 32,
+            "fn": 2,
+            "missed_cancers": 2,
+            "sensitivity": 0.9920634920634921,
+            "specificity": 0.0,
+            "fpr": 1.0,
+            "fnr": 0.007936507936507936,
+            "below_thr_rate": 0.007042253521126761,
+            "false_omission_rate": 1.0,
+            "non_cancer_retained": 32
+          },
+          "target_95": {
+            "threshold": 0.2065157741308212,
+            "tp": 250,
+            "tn": 0,
+            "fp": 32,
+            "fn": 2,
+            "missed_cancers": 2,
+            "sensitivity": 0.9920634920634921,
+            "specificity": 0.0,
+            "fpr": 1.0,
+            "fnr": 0.007936507936507936,
+            "below_thr_rate": 0.007042253521126761,
+            "false_omission_rate": 1.0,
+            "non_cancer_retained": 32
+          }
+        },
+        "resnet50_rsna": {
+          "n_exams": 284,
+          "n_positive": 252,
+          "n_negative": 32,
+          "auroc": 0.5442088293650794,
+          "auprc": 0.9017424870420023,
+          "bootstrap_95ci": {
+            "auroc": {
+              "mean": 0.5447275416524403,
+              "ci95_low": 0.4382239933837475,
+              "ci95_high": 0.64915984044877
+            },
+            "auprc": {
+              "mean": 0.9028341300622996,
+              "ci95_low": 0.8526418155968515,
+              "ci95_high": 0.946865605122253
+            },
+            "s98": {
+              "mean": 0.9839176825689893,
+              "ci95_low": 0.9655139257294431,
+              "ci95_high": 0.9961240310077519
+            },
+            "d98": {
+              "mean": 0.014265845070422535,
+              "ci95_low": 0.0035211267605633804,
+              "ci95_high": 0.03169014084507042
+            },
+            "s95": {
+              "mean": 0.9010337641078054,
+              "ci95_low": 0.8611111111111112,
+              "ci95_high": 0.93775520935054
+            },
+            "d95": {
+              "mean": 0.10194894366197184,
+              "ci95_low": 0.06690140845070422,
+              "ci95_high": 0.14084507042253522
+            }
+          },
+          "target_98": {
+            "threshold": 0.0009927749633789,
+            "tp": 248,
+            "tn": 0,
+            "fp": 32,
+            "fn": 4,
+            "missed_cancers": 4,
+            "sensitivity": 0.9841269841269841,
+            "specificity": 0.0,
+            "fpr": 1.0,
+            "fnr": 0.015873015873015872,
+            "below_thr_rate": 0.014084507042253521,
+            "false_omission_rate": 1.0,
+            "non_cancer_retained": 32
+          },
+          "target_95": {
+            "threshold": 0.0069313049316406,
+            "tp": 227,
+            "tn": 4,
+            "fp": 28,
+            "fn": 25,
+            "missed_cancers": 25,
+            "sensitivity": 0.9007936507936508,
+            "specificity": 0.125,
+            "fpr": 0.875,
+            "fnr": 0.0992063492063492,
+            "below_thr_rate": 0.10211267605633803,
+            "false_omission_rate": 0.8620689655172413,
+            "non_cancer_retained": 28
+          }
+        },
+        "gmic_rsna_finetuned": {
+          "n_exams": 284,
+          "n_positive": 252,
+          "n_negative": 32,
+          "auroc": 0.5034722222222222,
+          "auprc": 0.9033106810508874,
+          "bootstrap_95ci": {
+            "auroc": {
+              "mean": 0.503128603712739,
+              "ci95_low": 0.4098416862695383,
+              "ci95_high": 0.5982136966759398
+            },
+            "auprc": {
+              "mean": 0.9033761265975313,
+              "ci95_low": 0.8610264380123194,
+              "ci95_high": 0.9400648970846214
+            },
+            "s98": {
+              "mean": 0.9681306127724358,
+              "ci95_low": 0.944,
+              "ci95_high": 0.9881422924901185
+            },
+            "d98": {
+              "mean": 0.028267605633802817,
+              "ci95_low": 0.01056338028169014,
+              "ci95_high": 0.04929577464788732
+            },
+            "s95": {
+              "mean": 0.928598260437915,
+              "ci95_low": 0.8945256923272358,
+              "ci95_high": 0.9591836734693877
+            },
+            "d95": {
+              "mean": 0.07035739436619719,
+              "ci95_low": 0.04225352112676056,
+              "ci95_high": 0.10211267605633803
+            }
+          },
+          "target_98": {
+            "threshold": 0.130207672715187,
+            "tp": 244,
+            "tn": 0,
+            "fp": 32,
+            "fn": 8,
+            "missed_cancers": 8,
+            "sensitivity": 0.9682539682539683,
+            "specificity": 0.0,
+            "fpr": 1.0,
+            "fnr": 0.031746031746031744,
+            "below_thr_rate": 0.028169014084507043,
+            "false_omission_rate": 1.0,
+            "non_cancer_retained": 32
+          },
+          "target_95": {
+            "threshold": 0.1583975553512573,
+            "tp": 234,
+            "tn": 2,
+            "fp": 30,
+            "fn": 18,
+            "missed_cancers": 18,
+            "sensitivity": 0.9285714285714286,
+            "specificity": 0.0625,
+            "fpr": 0.9375,
+            "fnr": 0.07142857142857142,
+            "below_thr_rate": 0.07042253521126761,
+            "false_omission_rate": 0.9,
+            "non_cancer_retained": 30
+          }
+        },
+        "nyu_fourview_rsna_finetuned": {
+          "n_exams": 284,
+          "n_positive": 252,
+          "n_negative": 32,
+          "auroc": 0.5500992063492064,
+          "auprc": 0.909445063858557,
+          "bootstrap_95ci": {
+            "auroc": {
+              "mean": 0.5497241711548106,
+              "ci95_low": 0.446294344198261,
+              "ci95_high": 0.6527533918981004
+            },
+            "auprc": {
+              "mean": 0.9096112239955125,
+              "ci95_low": 0.8653199855654004,
+              "ci95_high": 0.948059683010004
+            },
+            "s98": {
+              "mean": 0.9959083716227949,
+              "ci95_low": 0.987600723140496,
+              "ci95_high": 1.0
+            },
+            "d98": {
+              "mean": 0.003632042253521127,
+              "ci95_low": 0.0,
+              "ci95_high": 0.01056338028169014
+            },
+            "s95": {
+              "mean": 0.9484543954502778,
+              "ci95_low": 0.9176942628903414,
+              "ci95_high": 0.9757085020242915
+            },
+            "d95": {
+              "mean": 0.05623239436619719,
+              "ci95_low": 0.03169014084507042,
+              "ci95_high": 0.08450704225352113
+            }
+          },
+          "target_98": {
+            "threshold": 0.0477315112948417,
+            "tp": 251,
+            "tn": 0,
+            "fp": 32,
+            "fn": 1,
+            "missed_cancers": 1,
+            "sensitivity": 0.996031746031746,
+            "specificity": 0.0,
+            "fpr": 1.0,
+            "fnr": 0.003968253968253968,
+            "below_thr_rate": 0.0035211267605633804,
+            "false_omission_rate": 1.0,
+            "non_cancer_retained": 32
+          },
+          "target_95": {
+            "threshold": 0.0690864473581314,
+            "tp": 239,
+            "tn": 3,
+            "fp": 29,
+            "fn": 13,
+            "missed_cancers": 13,
+            "sensitivity": 0.9484126984126984,
+            "specificity": 0.09375,
+            "fpr": 0.90625,
+            "fnr": 0.051587301587301584,
+            "below_thr_rate": 0.056338028169014086,
+            "false_omission_rate": 0.8125,
+            "non_cancer_retained": 29
+          }
+        }
+      }
+    },
+    "analysis_b_r1_orig": {
+      "n_exams": 304,
+      "n_positive": 60,
+      "n_negative": 244,
+      "models": {
+        "ce_b5": {
+          "n_exams": 304,
+          "n_positive": 60,
+          "n_negative": 244,
+          "auroc": 0.5212090163934426,
+          "auprc": 0.23984853089367678,
+          "bootstrap_95ci": {
+            "auroc": {
+              "mean": 0.5207402030540559,
+              "ci95_low": 0.4316445395999823,
+              "ci95_high": 0.6075258946093155
+            },
+            "auprc": {
+              "mean": 0.24856660781126044,
+              "ci95_low": 0.1696164880934316,
+              "ci95_high": 0.3367729063648186
+            },
+            "s98": {
+              "mean": 1.0,
+              "ci95_low": 1.0,
+              "ci95_high": 1.0
+            },
+            "d98": {
+              "mean": 0.0,
+              "ci95_low": 0.0,
+              "ci95_high": 0.0
+            },
+            "s95": {
+              "mean": 1.0,
+              "ci95_low": 1.0,
+              "ci95_high": 1.0
+            },
+            "d95": {
+              "mean": 0.0,
+              "ci95_low": 0.0,
+              "ci95_high": 0.0
+            }
+          },
+          "target_98": {
+            "threshold": 0.0961934626102447,
+            "tp": 60,
+            "tn": 0,
+            "fp": 244,
+            "fn": 0,
+            "missed_cancers": 0,
+            "sensitivity": 1.0,
+            "specificity": 0.0,
+            "fpr": 1.0,
+            "fnr": 0.0,
+            "below_thr_rate": 0.0,
+            "false_omission_rate": 0.0,
+            "non_cancer_retained": 244
+          },
+          "target_95": {
+            "threshold": 0.124415136873722,
+            "tp": 60,
+            "tn": 0,
+            "fp": 244,
+            "fn": 0,
+            "missed_cancers": 0,
+            "sensitivity": 1.0,
+            "specificity": 0.0,
+            "fpr": 1.0,
+            "fnr": 0.0,
+            "below_thr_rate": 0.0,
+            "false_omission_rate": 0.0,
+            "non_cancer_retained": 244
+          }
+        },
+        "trust_b5": {
+          "n_exams": 304,
+          "n_positive": 60,
+          "n_negative": 244,
+          "auroc": 0.5082308743169399,
+          "auprc": 0.2322720086102229,
+          "bootstrap_95ci": {
+            "auroc": {
+              "mean": 0.5077051604481879,
+              "ci95_low": 0.41828519256308105,
+              "ci95_high": 0.5955981621168582
+            },
+            "auprc": {
+              "mean": 0.24076438822150992,
+              "ci95_low": 0.1636163223970703,
+              "ci95_high": 0.32591531398104895
+            },
+            "s98": {
+              "mean": 1.0,
+              "ci95_low": 1.0,
+              "ci95_high": 1.0
+            },
+            "d98": {
+              "mean": 0.0,
+              "ci95_low": 0.0,
+              "ci95_high": 0.0
+            },
+            "s95": {
+              "mean": 1.0,
+              "ci95_low": 1.0,
+              "ci95_high": 1.0
+            },
+            "d95": {
+              "mean": 0.0,
+              "ci95_low": 0.0,
+              "ci95_high": 0.0
+            }
+          },
+          "target_98": {
+            "threshold": 0.1795480698347091,
+            "tp": 60,
+            "tn": 0,
+            "fp": 244,
+            "fn": 0,
+            "missed_cancers": 0,
+            "sensitivity": 1.0,
+            "specificity": 0.0,
+            "fpr": 1.0,
+            "fnr": 0.0,
+            "below_thr_rate": 0.0,
+            "false_omission_rate": 0.0,
+            "non_cancer_retained": 244
+          },
+          "target_95": {
+            "threshold": 0.1954631060361862,
+            "tp": 60,
+            "tn": 0,
+            "fp": 244,
+            "fn": 0,
+            "missed_cancers": 0,
+            "sensitivity": 1.0,
+            "specificity": 0.0,
+            "fpr": 1.0,
+            "fnr": 0.0,
+            "below_thr_rate": 0.0,
+            "false_omission_rate": 0.0,
+            "non_cancer_retained": 244
+          }
+        },
+        "dinov2_rsna": {
+          "n_exams": 304,
+          "n_positive": 60,
+          "n_negative": 244,
+          "auroc": 0.5054986338797814,
+          "auprc": 0.2627473378019767,
+          "bootstrap_95ci": {
+            "auroc": {
+              "mean": 0.5049740442766468,
+              "ci95_low": 0.41772941091330146,
+              "ci95_high": 0.5901469691954105
+            },
+            "auprc": {
+              "mean": 0.2707547858288464,
+              "ci95_low": 0.18278723246287884,
+              "ci95_high": 0.36580342348845185
+            },
+            "s98": {
+              "mean": 1.0,
+              "ci95_low": 1.0,
+              "ci95_high": 1.0
+            },
+            "d98": {
+              "mean": 0.0,
+              "ci95_low": 0.0,
+              "ci95_high": 0.0
+            },
+            "s95": {
+              "mean": 1.0,
+              "ci95_low": 1.0,
+              "ci95_high": 1.0
+            },
+            "d95": {
+              "mean": 0.003202302631578947,
+              "ci95_low": 0.0,
+              "ci95_high": 0.009868421052631578
+            }
+          },
+          "target_98": {
+            "threshold": 0.183435708284378,
+            "tp": 60,
+            "tn": 0,
+            "fp": 244,
+            "fn": 0,
+            "missed_cancers": 0,
+            "sensitivity": 1.0,
+            "specificity": 0.0,
+            "fpr": 1.0,
+            "fnr": 0.0,
+            "below_thr_rate": 0.0,
+            "false_omission_rate": 0.0,
+            "non_cancer_retained": 244
+          },
+          "target_95": {
+            "threshold": 0.2065157741308212,
+            "tp": 60,
+            "tn": 1,
+            "fp": 243,
+            "fn": 0,
+            "missed_cancers": 0,
+            "sensitivity": 1.0,
+            "specificity": 0.004098360655737705,
+            "fpr": 0.9959016393442623,
+            "fnr": 0.0,
+            "below_thr_rate": 0.003289473684210526,
+            "false_omission_rate": 0.0,
+            "non_cancer_retained": 243
+          }
+        },
+        "resnet50_rsna": {
+          "n_exams": 304,
+          "n_positive": 60,
+          "n_negative": 244,
+          "auroc": 0.49709699453551914,
+          "auprc": 0.2448559708275213,
+          "bootstrap_95ci": {
+            "auroc": {
+              "mean": 0.4981750826568114,
+              "ci95_low": 0.41433991288203254,
+              "ci95_high": 0.5817635908352945
+            },
+            "auprc": {
+              "mean": 0.2537838046672283,
+              "ci95_low": 0.16921849989579188,
+              "ci95_high": 0.34572668889435954
+            },
+            "s98": {
+              "mean": 0.9826728895680481,
+              "ci95_low": 0.9402985074626866,
+              "ci95_high": 1.0
+            },
+            "d98": {
+              "mean": 0.01673190789473684,
+              "ci95_low": 0.003289473684210526,
+              "ci95_high": 0.03289473684210526
+            },
+            "s95": {
+              "mean": 0.9151486865389424,
+              "ci95_low": 0.8332627118644068,
+              "ci95_high": 0.9814814814814815
+            },
+            "d95": {
+              "mean": 0.10259868421052631,
+              "ci95_low": 0.06907894736842106,
+              "ci95_high": 0.13815789473684212
+            }
+          },
+          "target_98": {
+            "threshold": 0.0009927749633789,
+            "tp": 59,
+            "tn": 4,
+            "fp": 240,
+            "fn": 1,
+            "missed_cancers": 1,
+            "sensitivity": 0.9833333333333333,
+            "specificity": 0.01639344262295082,
+            "fpr": 0.9836065573770492,
+            "fnr": 0.016666666666666666,
+            "below_thr_rate": 0.01644736842105263,
+            "false_omission_rate": 0.2,
+            "non_cancer_retained": 240
+          },
+          "target_95": {
+            "threshold": 0.0069313049316406,
+            "tp": 55,
+            "tn": 26,
+            "fp": 218,
+            "fn": 5,
+            "missed_cancers": 5,
+            "sensitivity": 0.9166666666666666,
+            "specificity": 0.10655737704918032,
+            "fpr": 0.8934426229508197,
+            "fnr": 0.08333333333333333,
+            "below_thr_rate": 0.10197368421052631,
+            "false_omission_rate": 0.16129032258064516,
+            "non_cancer_retained": 218
+          }
+        },
+        "gmic_rsna_finetuned": {
+          "n_exams": 304,
+          "n_positive": 60,
+          "n_negative": 244,
+          "auroc": 0.5169398907103825,
+          "auprc": 0.2510817713357686,
+          "bootstrap_95ci": {
+            "auroc": {
+              "mean": 0.5168409141113965,
+              "ci95_low": 0.42928383862237623,
+              "ci95_high": 0.6005955300127712
+            },
+            "auprc": {
+              "mean": 0.26542650488314745,
+              "ci95_low": 0.17975315972861364,
+              "ci95_high": 0.3720818216354632
+            },
+            "s98": {
+              "mean": 0.9832252626649838,
+              "ci95_low": 0.9433962264150944,
+              "ci95_high": 1.0
+            },
+            "d98": {
+              "mean": 0.0133125,
+              "ci95_low": 0.003289473684210526,
+              "ci95_high": 0.02631578947368421
+            },
+            "s95": {
+              "mean": 0.9668074628998327,
+              "ci95_low": 0.9130434782608695,
+              "ci95_high": 1.0
+            },
+            "d95": {
+              "mean": 0.03976151315789474,
+              "ci95_low": 0.019736842105263157,
+              "ci95_high": 0.0625
+            }
+          },
+          "target_98": {
+            "threshold": 0.130207672715187,
+            "tp": 59,
+            "tn": 3,
+            "fp": 241,
+            "fn": 1,
+            "missed_cancers": 1,
+            "sensitivity": 0.9833333333333333,
+            "specificity": 0.012295081967213115,
+            "fpr": 0.9877049180327869,
+            "fnr": 0.016666666666666666,
+            "below_thr_rate": 0.013157894736842105,
+            "false_omission_rate": 0.25,
+            "non_cancer_retained": 241
+          },
+          "target_95": {
+            "threshold": 0.1583975553512573,
+            "tp": 58,
+            "tn": 10,
+            "fp": 234,
+            "fn": 2,
+            "missed_cancers": 2,
+            "sensitivity": 0.9666666666666667,
+            "specificity": 0.040983606557377046,
+            "fpr": 0.9590163934426229,
+            "fnr": 0.03333333333333333,
+            "below_thr_rate": 0.039473684210526314,
+            "false_omission_rate": 0.16666666666666666,
+            "non_cancer_retained": 234
+          }
+        },
+        "nyu_fourview_rsna_finetuned": {
+          "n_exams": 304,
+          "n_positive": 60,
+          "n_negative": 244,
+          "auroc": 0.5476092896174863,
+          "auprc": 0.2409811679503486,
+          "bootstrap_95ci": {
+            "auroc": {
+              "mean": 0.5472149495869576,
+              "ci95_low": 0.4622895803169241,
+              "ci95_high": 0.6310657117390829
+            },
+            "auprc": {
+              "mean": 0.2528033872608495,
+              "ci95_low": 0.17721586945117598,
+              "ci95_high": 0.3412445736465127
+            },
+            "s98": {
+              "mean": 1.0,
+              "ci95_low": 1.0,
+              "ci95_high": 1.0
+            },
+            "d98": {
+              "mean": 0.006705592105263157,
+              "ci95_low": 0.0,
+              "ci95_high": 0.01644736842105263
+            },
+            "s95": {
+              "mean": 0.9667258221628201,
+              "ci95_low": 0.9137743628185907,
+              "ci95_high": 1.0
+            },
+            "d95": {
+              "mean": 0.052878289473684205,
+              "ci95_low": 0.029605263157894735,
+              "ci95_high": 0.07894736842105263
+            }
+          },
+          "target_98": {
+            "threshold": 0.0477315112948417,
+            "tp": 60,
+            "tn": 2,
+            "fp": 242,
+            "fn": 0,
+            "missed_cancers": 0,
+            "sensitivity": 1.0,
+            "specificity": 0.00819672131147541,
+            "fpr": 0.9918032786885246,
+            "fnr": 0.0,
+            "below_thr_rate": 0.006578947368421052,
+            "false_omission_rate": 0.0,
+            "non_cancer_retained": 242
+          },
+          "target_95": {
+            "threshold": 0.0690864473581314,
+            "tp": 58,
+            "tn": 14,
+            "fp": 230,
+            "fn": 2,
+            "missed_cancers": 2,
+            "sensitivity": 0.9666666666666667,
+            "specificity": 0.05737704918032787,
+            "fpr": 0.9426229508196722,
+            "fnr": 0.03333333333333333,
+            "below_thr_rate": 0.05263157894736842,
+            "false_omission_rate": 0.125,
+            "non_cancer_retained": 230
+          }
+        }
+      }
+    },
+    "analysis_b_r2_orig": {
+      "n_exams": 1359,
+      "n_positive": 192,
+      "n_negative": 1167,
+      "models": {
+        "ce_b5": {
+          "n_exams": 1359,
+          "n_positive": 192,
+          "n_negative": 1167,
+          "auroc": 0.5378775706940874,
+          "auprc": 0.15905660701126856,
+          "bootstrap_95ci": {
+            "auroc": {
+              "mean": 0.5384787794358897,
+              "ci95_low": 0.49548374849993826,
+              "ci95_high": 0.5782697234887763
+            },
+            "auprc": {
+              "mean": 0.16376617251442638,
+              "ci95_low": 0.1327999045112298,
+              "ci95_high": 0.20044239172372547
+            },
+            "s98": {
+              "mean": 0.9116808811225802,
+              "ci95_low": 0.8697805433417085,
+              "ci95_high": 0.9489795918367347
+            },
+            "d98": {
+              "mean": 0.13620125091979396,
+              "ci95_low": 0.11845106696100073,
+              "ci95_high": 0.15526122148638705
+            },
+            "s95": {
+              "mean": 0.8387095928522652,
+              "ci95_low": 0.7849986559139785,
+              "ci95_high": 0.8888888888888888
+            },
+            "d95": {
+              "mean": 0.20331456953642382,
+              "ci95_low": 0.18248712288447388,
+              "ci95_high": 0.2251655629139073
+            }
+          },
+          "target_98": {
+            "threshold": 0.0961934626102447,
+            "tp": 175,
+            "tn": 168,
+            "fp": 999,
+            "fn": 17,
+            "missed_cancers": 17,
+            "sensitivity": 0.9114583333333334,
+            "specificity": 0.14395886889460155,
+            "fpr": 0.8560411311053985,
+            "fnr": 0.08854166666666667,
+            "below_thr_rate": 0.13612950699043413,
+            "false_omission_rate": 0.0918918918918919,
+            "non_cancer_retained": 999
+          },
+          "target_95": {
+            "threshold": 0.124415136873722,
+            "tp": 161,
+            "tn": 245,
+            "fp": 922,
+            "fn": 31,
+            "missed_cancers": 31,
+            "sensitivity": 0.8385416666666666,
+            "specificity": 0.2099400171379606,
+            "fpr": 0.7900599828620394,
+            "fnr": 0.16145833333333334,
+            "below_thr_rate": 0.20309050772626933,
+            "false_omission_rate": 0.11231884057971014,
+            "non_cancer_retained": 922
+          }
+        },
+        "trust_b5": {
+          "n_exams": 1359,
+          "n_positive": 192,
+          "n_negative": 1167,
+          "auroc": 0.5365275099971437,
+          "auprc": 0.15893757826885435,
+          "bootstrap_95ci": {
+            "auroc": {
+              "mean": 0.5370857435813923,
+              "ci95_low": 0.4955271120299119,
+              "ci95_high": 0.5780466444880688
+            },
+            "auprc": {
+              "mean": 0.16367168770511634,
+              "ci95_low": 0.13291762291952067,
+              "ci95_high": 0.19971495097202174
+            },
+            "s98": {
+              "mean": 0.8857085633242248,
+              "ci95_low": 0.84,
+              "ci95_high": 0.9279348579348579
+            },
+            "d98": {
+              "mean": 0.168654157468727,
+              "ci95_low": 0.14937454010301693,
+              "ci95_high": 0.18910963944076528
+            },
+            "s95": {
+              "mean": 0.8545784646966145,
+              "ci95_low": 0.8052631578947368,
+              "ci95_high": 0.9020646571044375
+            },
+            "d95": {
+              "mean": 0.1995036791758646,
+              "ci95_low": 0.17954378219278883,
+              "ci95_high": 0.22075055187637968
+            }
+          },
+          "target_98": {
+            "threshold": 0.1795480698347091,
+            "tp": 170,
+            "tn": 207,
+            "fp": 960,
+            "fn": 22,
+            "missed_cancers": 22,
+            "sensitivity": 0.8854166666666666,
+            "specificity": 0.17737789203084833,
+            "fpr": 0.8226221079691517,
+            "fnr": 0.11458333333333333,
+            "below_thr_rate": 0.16850625459896984,
+            "false_omission_rate": 0.09606986899563319,
+            "non_cancer_retained": 960
+          },
+          "target_95": {
+            "threshold": 0.1954631060361862,
+            "tp": 164,
+            "tn": 243,
+            "fp": 924,
+            "fn": 28,
+            "missed_cancers": 28,
+            "sensitivity": 0.8541666666666666,
+            "specificity": 0.20822622107969152,
+            "fpr": 0.7917737789203085,
+            "fnr": 0.14583333333333334,
+            "below_thr_rate": 0.199411331861663,
+            "false_omission_rate": 0.1033210332103321,
+            "non_cancer_retained": 924
+          }
+        },
+        "dinov2_rsna": {
+          "n_exams": 1359,
+          "n_positive": 192,
+          "n_negative": 1167,
+          "auroc": 0.5103497215081405,
+          "auprc": 0.15286362994575903,
+          "bootstrap_95ci": {
+            "auroc": {
+              "mean": 0.51052175176922,
+              "ci95_low": 0.46932609660100083,
+              "ci95_high": 0.5528541295444208
+            },
+            "auprc": {
+              "mean": 0.15567094446534468,
+              "ci95_low": 0.12524916162558233,
+              "ci95_high": 0.1887025796394031
+            },
+            "s98": {
+              "mean": 0.9896248164161109,
+              "ci95_low": 0.9732584382726698,
+              "ci95_high": 1.0
+            },
+            "d98": {
+              "mean": 0.005168138337012509,
+              "ci95_low": 0.0014716703458425313,
+              "ci95_high": 0.009565857247976454
+            },
+            "s95": {
+              "mean": 0.9896248164161109,
+              "ci95_low": 0.9732584382726698,
+              "ci95_high": 1.0
+            },
+            "d95": {
+              "mean": 0.009609639440765268,
+              "ci95_low": 0.0051508462104488595,
+              "ci95_high": 0.01545253863134658
+            }
+          },
+          "target_98": {
+            "threshold": 0.183435708284378,
+            "tp": 190,
+            "tn": 5,
+            "fp": 1162,
+            "fn": 2,
+            "missed_cancers": 2,
+            "sensitivity": 0.9895833333333334,
+            "specificity": 0.004284490145672665,
+            "fpr": 0.9957155098543273,
+            "fnr": 0.010416666666666666,
+            "below_thr_rate": 0.0051508462104488595,
+            "false_omission_rate": 0.2857142857142857,
+            "non_cancer_retained": 1162
+          },
+          "target_95": {
+            "threshold": 0.2065157741308212,
+            "tp": 190,
+            "tn": 11,
+            "fp": 1156,
+            "fn": 2,
+            "missed_cancers": 2,
+            "sensitivity": 0.9895833333333334,
+            "specificity": 0.009425878320479864,
+            "fpr": 0.9905741216795202,
+            "fnr": 0.010416666666666666,
+            "below_thr_rate": 0.009565857247976454,
+            "false_omission_rate": 0.15384615384615385,
+            "non_cancer_retained": 1156
+          }
+        },
+        "resnet50_rsna": {
+          "n_exams": 1359,
+          "n_positive": 192,
+          "n_negative": 1167,
+          "auroc": 0.5298620037132248,
+          "auprc": 0.1629510528476215,
+          "bootstrap_95ci": {
+            "auroc": {
+              "mean": 0.5306235890703522,
+              "ci95_low": 0.48643363975939763,
+              "ci95_high": 0.5760487784490421
+            },
+            "auprc": {
+              "mean": 0.1673298152637849,
+              "ci95_low": 0.13435874623727712,
+              "ci95_high": 0.20668112357932678
+            },
+            "s98": {
+              "mean": 0.9847631297914188,
+              "ci95_low": 0.9642811355311356,
+              "ci95_high": 1.0
+            },
+            "d98": {
+              "mean": 0.012390728476821192,
+              "ci95_low": 0.006622516556291391,
+              "ci95_high": 0.01839587932303164
+            },
+            "s95": {
+              "mean": 0.8967456296037005,
+              "ci95_low": 0.8520310047095762,
+              "ci95_high": 0.9368503720033067
+            },
+            "d95": {
+              "mean": 0.08391979396615158,
+              "ci95_low": 0.06990434142752024,
+              "ci95_high": 0.09860191317144959
+            }
+          },
+          "target_98": {
+            "threshold": 0.0009927749633789,
+            "tp": 189,
+            "tn": 14,
+            "fp": 1153,
+            "fn": 3,
+            "missed_cancers": 3,
+            "sensitivity": 0.984375,
+            "specificity": 0.011996572407883462,
+            "fpr": 0.9880034275921166,
+            "fnr": 0.015625,
+            "below_thr_rate": 0.012509197939661517,
+            "false_omission_rate": 0.17647058823529413,
+            "non_cancer_retained": 1153
+          },
+          "target_95": {
+            "threshold": 0.0069313049316406,
+            "tp": 172,
+            "tn": 94,
+            "fp": 1073,
+            "fn": 20,
+            "missed_cancers": 20,
+            "sensitivity": 0.8958333333333334,
+            "specificity": 0.0805484147386461,
+            "fpr": 0.919451585261354,
+            "fnr": 0.10416666666666667,
+            "below_thr_rate": 0.08388520971302428,
+            "false_omission_rate": 0.17543859649122806,
+            "non_cancer_retained": 1073
+          }
+        },
+        "gmic_rsna_finetuned": {
+          "n_exams": 1359,
+          "n_positive": 192,
+          "n_negative": 1167,
+          "auroc": 0.5170085332762068,
+          "auprc": 0.1538911403807583,
+          "bootstrap_95ci": {
+            "auroc": {
+              "mean": 0.5177182472794518,
+              "ci95_low": 0.47092007168032285,
+              "ci95_high": 0.5622335709564948
+            },
+            "auprc": {
+              "mean": 0.1577363605779424,
+              "ci95_low": 0.12987157179964298,
+              "ci95_high": 0.1896879099979346
+            },
+            "s98": {
+              "mean": 0.963635838008088,
+              "ci95_low": 0.9340645395213923,
+              "ci95_high": 0.9890725231646471
+            },
+            "d98": {
+              "mean": 0.04718138337012509,
+              "ci95_low": 0.036055923473142015,
+              "ci95_high": 0.05886681383370125
+            },
+            "s95": {
+              "mean": 0.9167735122572453,
+              "ci95_low": 0.875,
+              "ci95_high": 0.95402445460943
+            },
+            "d95": {
+              "mean": 0.08902354672553349,
+              "ci95_low": 0.07431935246504782,
+              "ci95_high": 0.10448859455481972
+            }
+          },
+          "target_98": {
+            "threshold": 0.130207672715187,
+            "tp": 185,
+            "tn": 57,
+            "fp": 1110,
+            "fn": 7,
+            "missed_cancers": 7,
+            "sensitivity": 0.9635416666666666,
+            "specificity": 0.04884318766066838,
+            "fpr": 0.9511568123393316,
+            "fnr": 0.036458333333333336,
+            "below_thr_rate": 0.047093451066961,
+            "false_omission_rate": 0.109375,
+            "non_cancer_retained": 1110
+          },
+          "target_95": {
+            "threshold": 0.1583975553512573,
+            "tp": 176,
+            "tn": 105,
+            "fp": 1062,
+            "fn": 16,
+            "missed_cancers": 16,
+            "sensitivity": 0.9166666666666666,
+            "specificity": 0.08997429305912596,
+            "fpr": 0.910025706940874,
+            "fnr": 0.08333333333333333,
+            "below_thr_rate": 0.08903605592347315,
+            "false_omission_rate": 0.1322314049586777,
+            "non_cancer_retained": 1062
+          }
+        },
+        "nyu_fourview_rsna_finetuned": {
+          "n_exams": 1359,
+          "n_positive": 192,
+          "n_negative": 1167,
+          "auroc": 0.5115101042559269,
+          "auprc": 0.15726170212190227,
+          "bootstrap_95ci": {
+            "auroc": {
+              "mean": 0.5120527952987014,
+              "ci95_low": 0.46769780283908857,
+              "ci95_high": 0.5571290435119419
+            },
+            "auprc": {
+              "mean": 0.16163172605096876,
+              "ci95_low": 0.13116447630328512,
+              "ci95_high": 0.19898595045407086
+            },
+            "s98": {
+              "mean": 0.9949357386721321,
+              "ci95_low": 0.9829521103896104,
+              "ci95_high": 1.0
+            },
+            "d98": {
+              "mean": 0.008119941133186167,
+              "ci95_low": 0.003679175864606328,
+              "ci95_high": 0.013245033112582781
+            },
+            "s95": {
+              "mean": 0.9418711379213452,
+              "ci95_low": 0.9086177872164094,
+              "ci95_high": 0.9723756906077348
+            },
+            "d95": {
+              "mean": 0.053243561442236936,
+              "ci95_low": 0.041206769683590876,
+              "ci95_high": 0.06548933038999265
+            }
+          },
+          "target_98": {
+            "threshold": 0.0477315112948417,
+            "tp": 191,
+            "tn": 10,
+            "fp": 1157,
+            "fn": 1,
+            "missed_cancers": 1,
+            "sensitivity": 0.9947916666666666,
+            "specificity": 0.00856898029134533,
+            "fpr": 0.9914310197086547,
+            "fnr": 0.005208333333333333,
+            "below_thr_rate": 0.008094186902133923,
+            "false_omission_rate": 0.09090909090909091,
+            "non_cancer_retained": 1157
+          },
+          "target_95": {
+            "threshold": 0.0690864473581314,
+            "tp": 181,
+            "tn": 61,
+            "fp": 1106,
+            "fn": 11,
+            "missed_cancers": 11,
+            "sensitivity": 0.9427083333333334,
+            "specificity": 0.05227077977720651,
+            "fpr": 0.9477292202227935,
+            "fnr": 0.057291666666666664,
+            "below_thr_rate": 0.052980132450331126,
+            "false_omission_rate": 0.1527777777777778,
+            "non_cancer_retained": 1106
+          }
+        }
+      }
+    },
+    "analysis_b_combined_orig": {
+      "n_exams": 1663,
+      "n_positive": 252,
+      "n_negative": 1411,
+      "models": {
+        "ce_b5": {
+          "n_exams": 1663,
+          "n_positive": 252,
+          "n_negative": 1411,
+          "auroc": 0.5443806036470813,
+          "auprc": 0.17788841916675804,
+          "bootstrap_95ci": {
+            "auroc": {
+              "mean": 0.5448949281779553,
+              "ci95_low": 0.5077301315596291,
+              "ci95_high": 0.5830169840581221
+            },
+            "auprc": {
+              "mean": 0.18095120996787206,
+              "ci95_low": 0.15169252297638638,
+              "ci95_high": 0.216708573603962
+            },
+            "s98": {
+              "mean": 0.9334091080291871,
+              "ci95_low": 0.9007528658744524,
+              "ci95_high": 0.9631000090738612
+            },
+            "d98": {
+              "mean": 0.11094046903187012,
+              "ci95_low": 0.09621166566446182,
+              "ci95_high": 0.12627781118460613
+            },
+            "s95": {
+              "mean": 0.8773816320830476,
+              "ci95_low": 0.8352049635757501,
+              "ci95_high": 0.9160644232933535
+            },
+            "d95": {
+              "mean": 0.16575375826819,
+              "ci95_low": 0.14852675886951291,
+              "ci95_high": 0.1840198436560432
+            }
+          },
+          "target_98": {
+            "threshold": 0.0961934626102447,
+            "tp": 235,
+            "tn": 168,
+            "fp": 1243,
+            "fn": 17,
+            "missed_cancers": 17,
+            "sensitivity": 0.9325396825396826,
+            "specificity": 0.11906449326718639,
+            "fpr": 0.8809355067328136,
+            "fnr": 0.06746031746031746,
+            "below_thr_rate": 0.11124473842453397,
+            "false_omission_rate": 0.0918918918918919,
+            "non_cancer_retained": 1243
+          },
+          "target_95": {
+            "threshold": 0.124415136873722,
+            "tp": 221,
+            "tn": 245,
+            "fp": 1166,
+            "fn": 31,
+            "missed_cancers": 31,
+            "sensitivity": 0.876984126984127,
+            "specificity": 0.17363571934798017,
+            "fpr": 0.8263642806520198,
+            "fnr": 0.12301587301587301,
+            "below_thr_rate": 0.16596512327119664,
+            "false_omission_rate": 0.11231884057971014,
+            "non_cancer_retained": 1166
+          }
+        },
+        "trust_b5": {
+          "n_exams": 1663,
+          "n_positive": 252,
+          "n_negative": 1411,
+          "auroc": 0.5420828974159945,
+          "auprc": 0.17727040131681238,
+          "bootstrap_95ci": {
+            "auroc": {
+              "mean": 0.5425748333792714,
+              "ci95_low": 0.5059238814395313,
+              "ci95_high": 0.5795270217892662
+            },
+            "auprc": {
+              "mean": 0.18010310766671167,
+              "ci95_low": 0.1506328965325261,
+              "ci95_high": 0.21506982286615503
+            },
+            "s98": {
+              "mean": 0.9132934174477056,
+              "ci95_low": 0.8786581234224925,
+              "ci95_high": 0.9458333333333333
+            },
+            "d98": {
+              "mean": 0.13737943475646422,
+              "ci95_low": 0.12206855081178593,
+              "ci95_high": 0.1545399879735418
+            },
+            "s95": {
+              "mean": 0.8892346488936455,
+              "ci95_low": 0.8497806099305628,
+              "ci95_high": 0.9257682354843927
+            },
+            "d95": {
+              "mean": 0.16279855682501504,
+              "ci95_low": 0.1455201443174985,
+              "ci95_high": 0.1809981960312688
+            }
+          },
+          "target_98": {
+            "threshold": 0.1795480698347091,
+            "tp": 230,
+            "tn": 207,
+            "fp": 1204,
+            "fn": 22,
+            "missed_cancers": 22,
+            "sensitivity": 0.9126984126984127,
+            "specificity": 0.1467044649184975,
+            "fpr": 0.8532955350815025,
+            "fnr": 0.0873015873015873,
+            "below_thr_rate": 0.13770294648226097,
+            "false_omission_rate": 0.09606986899563319,
+            "non_cancer_retained": 1204
+          },
+          "target_95": {
+            "threshold": 0.1954631060361862,
+            "tp": 224,
+            "tn": 243,
+            "fp": 1168,
+            "fn": 28,
+            "missed_cancers": 28,
+            "sensitivity": 0.8888888888888888,
+            "specificity": 0.17221828490432317,
+            "fpr": 0.8277817150956768,
+            "fnr": 0.1111111111111111,
+            "below_thr_rate": 0.1629585087191822,
+            "false_omission_rate": 0.1033210332103321,
+            "non_cancer_retained": 1168
+          }
+        },
+        "dinov2_rsna": {
+          "n_exams": 1663,
+          "n_positive": 252,
+          "n_negative": 1411,
+          "auroc": 0.5102328079826308,
+          "auprc": 0.16597538334671763,
+          "bootstrap_95ci": {
+            "auroc": {
+              "mean": 0.5109773968400041,
+              "ci95_low": 0.4722998885992501,
+              "ci95_high": 0.550024574470439
+            },
+            "auprc": {
+              "mean": 0.16879737466253575,
+              "ci95_low": 0.13983411957587563,
+              "ci95_high": 0.20039124275835893
+            },
+            "s98": {
+              "mean": 0.992289122843473,
+              "ci95_low": 0.98,
+              "ci95_high": 1.0
+            },
+            "d98": {
+              "mean": 0.004193926638604931,
+              "ci95_low": 0.0018039687312086591,
+              "ci95_high": 0.007817197835237523
+            },
+            "s95": {
+              "mean": 0.992289122843473,
+              "ci95_low": 0.98,
+              "ci95_high": 1.0
+            },
+            "d95": {
+              "mean": 0.008433553818400481,
+              "ci95_low": 0.004209260372820205,
+              "ci95_high": 0.0132291040288635
+            }
+          },
+          "target_98": {
+            "threshold": 0.183435708284378,
+            "tp": 250,
+            "tn": 5,
+            "fp": 1406,
+            "fn": 2,
+            "missed_cancers": 2,
+            "sensitivity": 0.9920634920634921,
+            "specificity": 0.003543586109142452,
+            "fpr": 0.9964564138908576,
+            "fnr": 0.007936507936507936,
+            "below_thr_rate": 0.004209260372820205,
+            "false_omission_rate": 0.2857142857142857,
+            "non_cancer_retained": 1406
+          },
+          "target_95": {
+            "threshold": 0.2065157741308212,
+            "tp": 250,
+            "tn": 12,
+            "fp": 1399,
+            "fn": 2,
+            "missed_cancers": 2,
+            "sensitivity": 0.9920634920634921,
+            "specificity": 0.008504606661941885,
+            "fpr": 0.9914953933380581,
+            "fnr": 0.007936507936507936,
+            "below_thr_rate": 0.00841852074564041,
+            "false_omission_rate": 0.14285714285714285,
+            "non_cancer_retained": 1399
+          }
+        },
+        "resnet50_rsna": {
+          "n_exams": 1663,
+          "n_positive": 252,
+          "n_negative": 1411,
+          "auroc": 0.5181763468439584,
+          "auprc": 0.17602684558782544,
+          "bootstrap_95ci": {
+            "auroc": {
+              "mean": 0.5188776397281537,
+              "ci95_low": 0.48022420077168304,
+              "ci95_high": 0.5593831098426261
+            },
+            "auprc": {
+              "mean": 0.1789635672515567,
+              "ci95_low": 0.14681352522772906,
+              "ci95_high": 0.21425121951722473
+            },
+            "s98": {
+              "mean": 0.984140193393634,
+              "ci95_low": 0.9663865546218487,
+              "ci95_high": 0.9963905386695651
+            },
+            "d98": {
+              "mean": 0.01326428141912207,
+              "ci95_low": 0.007817197835237523,
+              "ci95_high": 0.019242333132892364
+            },
+            "s95": {
+              "mean": 0.9017031260109329,
+              "ci95_low": 0.8623481781376519,
+              "ci95_high": 0.9372751383763837
+            },
+            "d95": {
+              "mean": 0.08702375225496092,
+              "ci95_low": 0.07276007215874924,
+              "ci95_high": 0.10102224894768491
+            }
+          },
+          "target_98": {
+            "threshold": 0.0009927749633789,
+            "tp": 248,
+            "tn": 18,
+            "fp": 1393,
+            "fn": 4,
+            "missed_cancers": 4,
+            "sensitivity": 0.9841269841269841,
+            "specificity": 0.012756909992912827,
+            "fpr": 0.9872430900070872,
+            "fnr": 0.015873015873015872,
+            "below_thr_rate": 0.0132291040288635,
+            "false_omission_rate": 0.18181818181818182,
+            "non_cancer_retained": 1393
+          },
+          "target_95": {
+            "threshold": 0.0069313049316406,
+            "tp": 227,
+            "tn": 120,
+            "fp": 1291,
+            "fn": 25,
+            "missed_cancers": 25,
+            "sensitivity": 0.9007936507936508,
+            "specificity": 0.08504606661941885,
+            "fpr": 0.9149539333805812,
+            "fnr": 0.0992063492063492,
+            "below_thr_rate": 0.08719182200841852,
+            "false_omission_rate": 0.1724137931034483,
+            "non_cancer_retained": 1291
+          }
+        },
+        "gmic_rsna_finetuned": {
+          "n_exams": 1663,
+          "n_positive": 252,
+          "n_negative": 1411,
+          "auroc": 0.5179935427986455,
+          "auprc": 0.16938462295027673,
+          "bootstrap_95ci": {
+            "auroc": {
+              "mean": 0.5188502931025102,
+              "ci95_low": 0.47768394798142755,
+              "ci95_high": 0.5594615798123315
+            },
+            "auprc": {
+              "mean": 0.1727697149591732,
+              "ci95_low": 0.14331926589344965,
+              "ci95_high": 0.20454028768746238
+            },
+            "s98": {
+              "mean": 0.9683172764956555,
+              "ci95_low": 0.9458479993983153,
+              "ci95_high": 0.9878061123728646
+            },
+            "d98": {
+              "mean": 0.040987672880336744,
+              "ci95_low": 0.03187011425135298,
+              "ci95_high": 0.050526157546602446
+            },
+            "s95": {
+              "mean": 0.9292304572232049,
+              "ci95_low": 0.8969402561352596,
+              "ci95_high": 0.959111593005645
+            },
+            "d95": {
+              "mean": 0.08000661455201444,
+              "ci95_low": 0.06734816596512327,
+              "ci95_high": 0.09320505111244738
+            }
+          },
+          "target_98": {
+            "threshold": 0.130207672715187,
+            "tp": 244,
+            "tn": 60,
+            "fp": 1351,
+            "fn": 8,
+            "missed_cancers": 8,
+            "sensitivity": 0.9682539682539683,
+            "specificity": 0.042523033309709427,
+            "fpr": 0.9574769666902906,
+            "fnr": 0.031746031746031744,
+            "below_thr_rate": 0.040889957907396274,
+            "false_omission_rate": 0.11764705882352941,
+            "non_cancer_retained": 1351
+          },
+          "target_95": {
+            "threshold": 0.1583975553512573,
+            "tp": 234,
+            "tn": 115,
+            "fp": 1296,
+            "fn": 18,
+            "missed_cancers": 18,
+            "sensitivity": 0.9285714285714286,
+            "specificity": 0.0815024805102764,
+            "fpr": 0.9184975194897236,
+            "fnr": 0.07142857142857142,
+            "below_thr_rate": 0.07997594708358388,
+            "false_omission_rate": 0.13533834586466165,
+            "non_cancer_retained": 1296
+          }
+        },
+        "nyu_fourview_rsna_finetuned": {
+          "n_exams": 1663,
+          "n_positive": 252,
+          "n_negative": 1411,
+          "auroc": 0.5153611645461398,
+          "auprc": 0.16614438672411702,
+          "bootstrap_95ci": {
+            "auroc": {
+              "mean": 0.5160611261702016,
+              "ci95_low": 0.47352871963679194,
+              "ci95_high": 0.557264280901999
+            },
+            "auprc": {
+              "mean": 0.1695270833732489,
+              "ci95_low": 0.14120077767027345,
+              "ci95_high": 0.20252332236413761
+            },
+            "s98": {
+              "mean": 0.9960902591728955,
+              "ci95_low": 0.9873949579831933,
+              "ci95_high": 1.0
+            },
+            "d98": {
+              "mean": 0.0078012627781118464,
+              "ci95_low": 0.0036079374624173183,
+              "ci95_high": 0.012026458208057728
+            },
+            "s95": {
+              "mean": 0.9488482355410963,
+              "ci95_low": 0.9205776173285198,
+              "ci95_high": 0.9758064516129032
+            },
+            "d95": {
+              "mean": 0.05286139506915214,
+              "ci95_low": 0.04209260372820205,
+              "ci95_high": 0.06374022850270596
+            }
+          },
+          "target_98": {
+            "threshold": 0.0477315112948417,
+            "tp": 251,
+            "tn": 12,
+            "fp": 1399,
+            "fn": 1,
+            "missed_cancers": 1,
+            "sensitivity": 0.996031746031746,
+            "specificity": 0.008504606661941885,
+            "fpr": 0.9914953933380581,
+            "fnr": 0.003968253968253968,
+            "below_thr_rate": 0.007817197835237523,
+            "false_omission_rate": 0.07692307692307693,
+            "non_cancer_retained": 1399
+          },
+          "target_95": {
+            "threshold": 0.0690864473581314,
+            "tp": 239,
+            "tn": 75,
+            "fp": 1336,
+            "fn": 13,
+            "missed_cancers": 13,
+            "sensitivity": 0.9484126984126984,
+            "specificity": 0.05315379163713678,
+            "fpr": 0.9468462083628633,
+            "fnr": 0.051587301587301584,
+            "below_thr_rate": 0.052916416115454,
+            "false_omission_rate": 0.14772727272727273,
+            "non_cancer_retained": 1336
+          }
+        }
+      }
+    }
+  }
+}
