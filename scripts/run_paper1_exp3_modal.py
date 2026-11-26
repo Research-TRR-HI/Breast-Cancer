@@ -1048,29 +1048,31 @@ def infer_external_dataset_shard_l40s(
                         records.append({"item_id": str(row["image_id"]), "score": float(p), "crop_fallback": fb})
         else:
             img_ids = shard_df["image_id"].astype(str).tolist()
-            for s in range(0, len(img_ids), batch_size):
-                if ((time.perf_counter() - t0) / 3600.0) * L40S_HOURLY_USD > float(max_spend_usd):
-                    raise RuntimeError(f"Budget cap ${max_spend_usd:.2f} exceeded in shard {shard_idx}")
-                b_ids = img_ids[s : s + batch_size]
-                tensors = []
-                for iid in b_ids:
-                    arr = cv2.imread(str(png_dir / f"{iid}.png"), cv2.IMREAD_UNCHANGED)
-                    if arr is None:
-                        raise FileNotFoundError(f"Missing cached PNG: {png_dir / f'{iid}.png'}")
-                    if model_id in ("ce_b5", "trust_b5"):
-                        tensors.append(prepare_tensor_from_cropped(arr))
-                    elif model_id == "dinov2_rsna":
-                        tensors.append(prepare_dinov2_tensor_from_uint16(arr))
-                    elif model_id == "resnet50_rsna":
-                        tensors.append(prepare_resnet50_tensor_from_uint16(arr))
-                bx = torch.stack(tensors, dim=0).to(device, non_blocking=True)
-                with torch.no_grad(), torch.amp.autocast("cuda", enabled=True):
-                    if model_id in ("ce_b5", "trust_b5", "dinov2_rsna"):
-                        probs = torch.sigmoid(loaded["head"](loaded["encoder"](bx)).squeeze(1)).float().cpu().tolist()
-                    else:
-                        probs = torch.sigmoid(loaded["model"](bx).squeeze(1)).float().cpu().tolist()
-                for iid, p in zip(b_ids, probs):
-                    records.append({"item_id": iid, "score": float(p), "crop_fallback": False})
+
+            def _prep_cached_row(iid: str) -> torch.Tensor:
+                arr = cv2.imread(str(png_dir / f"{iid}.png"), cv2.IMREAD_UNCHANGED)
+                if arr is None:
+                    raise FileNotFoundError(f"Missing cached PNG: {png_dir / f'{iid}.png'}")
+                if model_id in ("ce_b5", "trust_b5"):
+                    return prepare_tensor_from_cropped(arr)
+                if model_id == "dinov2_rsna":
+                    return prepare_dinov2_tensor_from_uint16(arr)
+                return prepare_resnet50_tensor_from_uint16(arr)
+
+            with ThreadPoolExecutor(max_workers=16) as pool:
+                for s in range(0, len(img_ids), batch_size):
+                    if ((time.perf_counter() - t0) / 3600.0) * L40S_HOURLY_USD > float(max_spend_usd):
+                        raise RuntimeError(f"Budget cap ${max_spend_usd:.2f} exceeded in shard {shard_idx}")
+                    b_ids = img_ids[s : s + batch_size]
+                    tensors = list(pool.map(_prep_cached_row, b_ids))
+                    bx = torch.stack(tensors, dim=0).to(device, non_blocking=True)
+                    with torch.no_grad(), torch.amp.autocast("cuda", enabled=True):
+                        if model_id in ("ce_b5", "trust_b5", "dinov2_rsna"):
+                            probs = torch.sigmoid(loaded["head"](loaded["encoder"](bx)).squeeze(1)).float().cpu().tolist()
+                        else:
+                            probs = torch.sigmoid(loaded["model"](bx).squeeze(1)).float().cpu().tolist()
+                    for iid, p in zip(b_ids, probs):
+                        records.append({"item_id": iid, "score": float(p), "crop_fallback": False})
     else:
         from src.paper1.nyu_fourview_adapter import (
             NYU_TTA_EPOCHS_OFFICIAL,
