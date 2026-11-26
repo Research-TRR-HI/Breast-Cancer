@@ -1,0 +1,34 @@
+{
+  "dataset_id": "imdb",
+  "cohort_mode": "full",
+  "estimated_total_usd": 1.209,
+  "models": {
+    "gmic_rsna_finetuned": {
+      "schema_version": "paper1_exp3_locked_predictions_v1",
+      "locked_at_utc": "2026-11-26T12:40:51.356448+00:00",
+      "dataset_id": "imdb",
+      "model_id": "gmic_rsna_finetuned",
+      "model_sha256": "11efb7c65f773fc7f4f7a7bf8b0620c276c63536a3e7e7b2bf84eed6024146d5",
+      "inference_manifest_sha256": "2a31c7e8ba77787fc98ed4ed189106b2abe74f9d72883c5c5872a8ee2b6fca2f",
+      "frozen_rsna_thresholds": {
+        "target_98": 0.130207672715187,
+        "target_95": 0.1583975553512573
+      },
+      "frozen_rsna_thresholds_sha256": "891dd0bff6a0cab7ed98ce517121283533f0bed1e881f2c8d5f115212827be2a",
+      "n_exams": 1665,
+      "n_clusters": 1665,
+      "n_exams_with_crop_fallback": 0,
+      "predictions_csv": "gmic_rsna_finetuned_locked_imdb_predictions.csv",
+      "predictions_sha256": "7544141f7fc5a6b96e1e2c968c7f67cc638cda13c90ec22987cd998d9ab79a03",
+      "cohort_mode": "full",
+      "num_shards": 4,
+      "resumed_shards": 0,
+      "batch_size": 16,
+      "estimated_gpu_seconds": 1842.88,
+      "estimated_gpu_usd": 1.209,
+      "exam_scores_csv": "reports\\paper1\\expanded\\exp3\\locked_preds\\imdb_ffdm_4view\\gmic_rsna_finetuned\\imdb\\gmic_rsna_finetuned_locked_imdb_predictions.csv",
+      "image_scores_csv": "reports\\paper1\\expanded\\exp3\\locked_preds\\imdb_ffdm_4view\\gmic_rsna_finetuned\\imdb\\gmic_rsna_finetuned_image_scores_imdb.csv",
+      "breast_scores_csv": "reports\\paper1\\expanded\\exp3\\locked_preds\\imdb_ffdm_4view\\gmic_rsna_finetuned\\imdb\\gmic_rsna_finetuned_breast_scores_imdb.csv"
+    }
+  }
+}
