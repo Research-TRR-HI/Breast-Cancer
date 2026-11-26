@@ -73,7 +73,7 @@ def prepare_dicom_uint16_for_nyukat(
     """
     from src.data.preprocessing import decode_mammogram_array
 
-    arr_f32, phot, lat_dcm = decode_mammogram_array(dicom_path, apply_luts=True)
+    arr_f32, phot, lat_dcm = decode_mammogram_array(dicom_path, apply_luts=True, laterality=str(laterality))
     eff_lat = lat_dcm if lat_dcm in ("L", "R") else str(laterality).strip().upper()
     if eff_lat not in ("L", "R"):
         raise ValueError(f"Unknown laterality {laterality!r} for {dicom_path}")
