@@ -307,6 +307,17 @@ def decode_dicom_array(
     """Decode DICOM pixels, apply Modality/VOI LUTs with strict error reporting, and return (arr, phot, lat)."""
     path_str = str(dicom_path)
     ds = pydicom.dcmread(path_str)
+    if not getattr(ds, "file_meta", None) or "TransferSyntaxUID" not in ds.file_meta:
+        from pydicom.dataset import FileMetaDataset
+
+        if not getattr(ds, "file_meta", None):
+            ds.file_meta = FileMetaDataset()
+        if getattr(ds, "is_implicit_VR", True):
+            ds.file_meta.TransferSyntaxUID = pydicom.uid.ImplicitVRLittleEndian
+        elif getattr(ds, "is_little_endian", True):
+            ds.file_meta.TransferSyntaxUID = pydicom.uid.ExplicitVRLittleEndian
+        else:
+            ds.file_meta.TransferSyntaxUID = pydicom.uid.ExplicitVRBigEndian
     try:
         arr = ds.pixel_array
     except Exception as exc:
@@ -349,8 +360,8 @@ def decode_dicom_array(
     return arr_f32, photometric, laterality
 
 
-def decode_pgm_array(pgm_path: Union[str, Path]) -> Tuple[np.ndarray, str, str]:
-    """Decode an 8-bit/16-bit PGM image (e.g. mini-MIAS) into float32 array, MONOCHROME2, and empty laterality."""
+def decode_pgm_array(pgm_path: Union[str, Path], laterality: str = "") -> Tuple[np.ndarray, str, str]:
+    """Decode an 8-bit/16-bit PGM image (e.g. mini-MIAS) into upright float32 array, MONOCHROME2, and laterality."""
     path_obj = Path(pgm_path)
     if not path_obj.exists():
         raise FileNotFoundError(f"PGM file not found: {path_obj}")
@@ -364,17 +375,26 @@ def decode_pgm_array(pgm_path: Union[str, Path]) -> Tuple[np.ndarray, str, str]:
     arr_f32 = np.asarray(arr, dtype=np.float32)
     if not np.all(np.isfinite(arr_f32)):
         raise ValueError(f"Non-finite pixel values in PGM image: {path_obj}")
-    return arr_f32, "MONOCHROME2", ""
+    eff_lat = str(laterality or "").strip().upper()
+    # MIAS PGMs are landscape (width > height) with chest wall at the top edge;
+    # rotate 90 deg upright so L has chest wall on left and R has chest wall on right.
+    if arr_f32.shape[1] > arr_f32.shape[0]:
+        if eff_lat == "R":
+            arr_f32 = cv2.rotate(arr_f32, cv2.ROTATE_90_CLOCKWISE)
+        else:
+            arr_f32 = cv2.rotate(arr_f32, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    return arr_f32, "MONOCHROME2", eff_lat if eff_lat in ("L", "R") else ""
 
 
 def decode_mammogram_array(
     image_path: Union[str, Path],
     apply_luts: bool = True,
+    laterality: str = "",
 ) -> Tuple[np.ndarray, str, str]:
     """Dispatch mammogram decoding by extension (`.pgm` -> PGM, otherwise DICOM)."""
     p = Path(image_path)
     if p.suffix.lower() == ".pgm":
-        return decode_pgm_array(p)
+        return decode_pgm_array(p, laterality=laterality)
     return decode_dicom_array(p, apply_luts=apply_luts)
 
 
