@@ -1,0 +1,10 @@
+{
+  "dataset_id": "mias",
+  "version": "v1.21",
+  "images": 322,
+  "exams_pairs": 161,
+  "malignant_exams": 52,
+  "non_malignant_exams": 109,
+  "inference_manifest": "datasets\\exp3_meta\\mias_inference_manifest.csv",
+  "outcome_manifest": "datasets\\exp3_meta\\mias_outcome_manifest.csv"
+}
