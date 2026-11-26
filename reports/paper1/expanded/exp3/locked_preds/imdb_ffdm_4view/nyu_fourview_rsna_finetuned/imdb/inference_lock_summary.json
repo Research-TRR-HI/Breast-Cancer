@@ -1,0 +1,34 @@
+{
+  "dataset_id": "imdb",
+  "cohort_mode": "full",
+  "estimated_total_usd": 0.0,
+  "models": {
+    "nyu_fourview_rsna_finetuned": {
+      "schema_version": "paper1_exp3_locked_predictions_v1",
+      "locked_at_utc": "2026-11-26T12:50:36.413488+00:00",
+      "dataset_id": "imdb",
+      "model_id": "nyu_fourview_rsna_finetuned",
+      "model_sha256": "b42a8b7d623210cd88369b402981b4d1050ea72052851c656c0bbd380532b00e",
+      "inference_manifest_sha256": "44c44f41d78d600fd93ec492ef5d4115bfb2a9496954eac03119c6e4156dde3e",
+      "frozen_rsna_thresholds": {
+        "target_98": 0.0477315112948417,
+        "target_95": 0.0690864473581314
+      },
+      "frozen_rsna_thresholds_sha256": "8e2e6361ad0d084c60521bce1679c4293e72927032d49778edc54b83704269ea",
+      "n_exams": 1665,
+      "n_clusters": 1665,
+      "n_exams_with_crop_fallback": 0,
+      "predictions_csv": "nyu_fourview_rsna_finetuned_locked_imdb_predictions.csv",
+      "predictions_sha256": "3c1efe8d9ec782b379be19bc6e2c18b1d1d6010c016d59d74c3854e4c642b5ec",
+      "cohort_mode": "common_4view",
+      "num_shards": 4,
+      "resumed_shards": 4,
+      "batch_size": 4,
+      "estimated_gpu_seconds": 0.0,
+      "estimated_gpu_usd": 0.0,
+      "exam_scores_csv": "reports\\paper1\\expanded\\exp3\\locked_preds\\imdb_ffdm_4view\\nyu_fourview_rsna_finetuned\\imdb\\nyu_fourview_rsna_finetuned_locked_imdb_predictions.csv",
+      "image_scores_csv": null,
+      "breast_scores_csv": null
+    }
+  }
+}
