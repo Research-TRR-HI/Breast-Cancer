@@ -1,0 +1,18 @@
+{
+  "schema_version": "paper1_exp3_locked_predictions_v1",
+  "locked_at_utc": "2026-11-26T12:30:01.291016+00:00",
+  "dataset_id": "imdb",
+  "model_id": "ce_b5",
+  "model_sha256": "adf1443455ee1b507485ee4b7f64932d5cf6f59bb6afcf11b9f415c634372d22",
+  "inference_manifest_sha256": "2a31c7e8ba77787fc98ed4ed189106b2abe74f9d72883c5c5872a8ee2b6fca2f",
+  "frozen_rsna_thresholds": {
+    "target_98": 0.0961934626102447,
+    "target_95": 0.124415136873722
+  },
+  "frozen_rsna_thresholds_sha256": "e3b8fc40b54ed61ef636ab3fafd33a901150cf08be62bec0ea9fed2da39d4734",
+  "n_exams": 1665,
+  "n_clusters": 1665,
+  "n_exams_with_crop_fallback": 0,
+  "predictions_csv": "ce_b5_locked_imdb_predictions.csv",
+  "predictions_sha256": "6b5b442a3b68a808b66d656c01b04114cb4676fca37e1e8d8f929f677d438a76"
+}
