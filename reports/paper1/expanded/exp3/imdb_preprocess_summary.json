@@ -1,0 +1,30 @@
+[
+  {
+    "dataset_id": "imdb",
+    "shard_idx": 0,
+    "processed": 3169,
+    "skipped": 0,
+    "fallbacks": 0
+  },
+  {
+    "dataset_id": "imdb",
+    "shard_idx": 1,
+    "processed": 3169,
+    "skipped": 0,
+    "fallbacks": 0
+  },
+  {
+    "dataset_id": "imdb",
+    "shard_idx": 2,
+    "processed": 3168,
+    "skipped": 0,
+    "fallbacks": 0
+  },
+  {
+    "dataset_id": "imdb",
+    "shard_idx": 3,
+    "processed": 3168,
+    "skipped": 0,
+    "fallbacks": 0
+  }
+]
