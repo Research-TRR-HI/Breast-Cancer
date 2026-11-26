@@ -1,0 +1,75 @@
+{
+  "imdb_r1": {
+    "dataset_id": "imdb_r1",
+    "n_images": 3577,
+    "n_exams": 583,
+    "n_clusters": 583,
+    "n_positives": 73,
+    "inference_manifest_csv": "datasets\\exp3_meta\\imdb_r1_inference_manifest.csv",
+    "inference_manifest_sha256": "93af64612f622a57fff8572b7520f093cc376b0549fda6fbd367c2ca41245cb1",
+    "outcome_manifest_csv": "datasets\\exp3_meta\\imdb_r1_outcome_manifest.csv",
+    "outcome_manifest_sha256": "d4c80aa1084e4de3f7071a04a3ef7ce16981f87d99d6238d9db748716c2f3e0b",
+    "n_4view_exams_all": 304,
+    "n_4view_pos_all": 60,
+    "ffdm_images": 1869,
+    "ffdm_exams": 583,
+    "ffdm_4view_exams": 304,
+    "ffdm_4view_pos": 60,
+    "sm_images": 1708,
+    "sm_exams": 549,
+    "sm_4view_exams": 285,
+    "sm_4view_pos": 56,
+    "outcome_reliability_exams": {
+      "noncancer_without_adequate_followup": 509,
+      "pathology_confirmed_malignant": 72,
+      "pathology_confirmed_benign": 1,
+      "unknown_or_ambiguous": 1
+    }
+  },
+  "imdb_r2": {
+    "dataset_id": "imdb_r2",
+    "n_images": 9097,
+    "n_exams": 2636,
+    "n_clusters": 2636,
+    "n_positives": 316,
+    "inference_manifest_csv": "datasets\\exp3_meta\\imdb_r2_inference_manifest.csv",
+    "inference_manifest_sha256": "e363fd761e568f1c92c4de40e970befa592df924c8c225c7d3416b3dd5f796ac",
+    "outcome_manifest_csv": "datasets\\exp3_meta\\imdb_r2_outcome_manifest.csv",
+    "outcome_manifest_sha256": "7ea76cf4925a79e1764ce759014c93ea27f4f391638f5d936cec7f3389e6fcf1",
+    "n_4view_exams_all": 1849,
+    "n_4view_pos_all": 278,
+    "ffdm_images": 5996,
+    "ffdm_exams": 1645,
+    "ffdm_4view_exams": 1361,
+    "ffdm_4view_pos": 193,
+    "sm_images": 3101,
+    "sm_exams": 1051,
+    "sm_4view_exams": 493,
+    "sm_4view_pos": 85,
+    "outcome_reliability_exams": {
+      "noncancer_without_adequate_followup": 2267,
+      "pathology_confirmed_benign": 49,
+      "pathology_confirmed_malignant": 315,
+      "unknown_or_ambiguous": 5
+    }
+  },
+  "imdb_combined": {
+    "dataset_id": "imdb",
+    "n_images": 12674,
+    "n_exams": 3219,
+    "n_clusters": 3219,
+    "n_positives": 389,
+    "inference_manifest_csv": "datasets\\exp3_meta\\imdb_inference_manifest.csv",
+    "inference_manifest_sha256": "532aeb3538463ab08d40b1a2e7122e51c96dbfc7938dceea93376613e7f10a09",
+    "outcome_manifest_csv": "datasets\\exp3_meta\\imdb_outcome_manifest.csv",
+    "outcome_manifest_sha256": "a85ac6bb222df94171568e1b0257773b04b03b31931937b1f985911886289b90",
+    "n_4view_exams_all": 2153,
+    "n_4view_pos_all": 338,
+    "outcome_reliability_exams": {
+      "noncancer_without_adequate_followup": 2776,
+      "pathology_confirmed_malignant": 387,
+      "pathology_confirmed_benign": 50,
+      "unknown_or_ambiguous": 6
+    }
+  }
+}
