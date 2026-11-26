@@ -89,6 +89,29 @@ VERIFIED_WAVE3_BATCH_SIZES: Dict[str, Dict[str, int]] = {
         "gmic_rsna_finetuned": 16,
         "nyu_fourview_rsna_finetuned": 4,
     },
+    "imdb_r1": {
+        "ce_b5": 32,
+        "trust_b5": 32,
+        "dinov2_rsna": 32,
+        "resnet50_rsna": 32,
+        "gmic_rsna_finetuned": 16,
+        "nyu_fourview_rsna_finetuned": 4,
+    },
+    "imdb_r2": {
+        "ce_b5": 32,
+        "trust_b5": 32,
+        "dinov2_rsna": 32,
+        "resnet50_rsna": 32,
+        "gmic_rsna_finetuned": 16,
+        "nyu_fourview_rsna_finetuned": 4,
+    },
+    "mias": {
+        "ce_b5": 32,
+        "trust_b5": 32,
+        "dinov2_rsna": 32,
+        "resnet50_rsna": 32,
+        "gmic_rsna_finetuned": 16,
+    },
     "nlbs": {
         "ce_b5": 32,
         "trust_b5": 32,
@@ -231,11 +254,11 @@ def enforce_dataset_model_eligibility(
     df = validate_inference_manifest(inf_df, context=f"elig_{dataset_id}_{model_id}")
     requires_4v = bool(MODEL_HANDOFF_SPECS[model_id].get("requires_4view", False))
 
-    if dataset_id == "lumina" and (requires_4v or cohort_mode == "common_4view"):
+    if not DATASET_REGISTRY[dataset_id].get("has_4view_paired_cohort", False) and (requires_4v or cohort_mode == "common_4view"):
         raise ValueError(
-            "SCIENTIFIC ELIGIBILITY BLOCK: `nyu_fourview_rsna_finetuned` and `common_4view` mode are "
-            "strictly blocked on 'lumina' because malignant cases discard contralateral views (4view_pos=1/174). "
-            "Never fabricate views; evaluate single-view models on LUMINA instead."
+            f"SCIENTIFIC ELIGIBILITY BLOCK: `nyu_fourview_rsna_finetuned` and `common_4view` mode are "
+            f"strictly blocked on {dataset_id!r} ({DATASET_REGISTRY[dataset_id]['notes']}). "
+            "Never fabricate views; evaluate single-view models instead."
         )
 
     if requires_4v or cohort_mode == "common_4view":
@@ -745,7 +768,7 @@ def preprocess_external_dataset_cpu(
     import cv2
     import numpy as np
     import pandas as pd
-    from src.data.preprocessing import decode_dicom_array, extract_cropped_mammogram_with_metadata
+    from src.data.preprocessing import decode_mammogram_array, extract_cropped_mammogram_with_metadata
 
     df = validate_inference_manifest(pd.read_csv(io.StringIO(manifest_csv_content)), context=f"preproc_{dataset_id}")
     shard_df = df.iloc[int(shard_idx) :: int(num_shards)].copy().reset_index(drop=True)
@@ -760,7 +783,7 @@ def preprocess_external_dataset_cpu(
         if out_png.exists() and out_png.stat().st_size > 0:
             return "skipped"
         dcm_path = raw_root / str(row["image_path"])
-        arr_f32, phot, lat_dcm = decode_dicom_array(dcm_path, apply_luts=True)
+        arr_f32, phot, lat_dcm = decode_mammogram_array(dcm_path, apply_luts=True)
         eff_lat = lat_dcm if lat_dcm in ("L", "R") else str(row["laterality"])
         res = extract_cropped_mammogram_with_metadata(arr_f32, photometric=phot, laterality=eff_lat)
         u16 = res.cropped_uint16
