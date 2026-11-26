@@ -96,6 +96,39 @@ DATASET_REGISTRY: Dict[str, Dict[str, Any]] = {
         "has_4view_paired_cohort": True,
         "notes": "Screening-naive tertiary care mix (diagnostic + opportunistic screening); composite ground truth; must separate FFDM vs SM and r1/r2 IDs.",
     },
+    "imdb_r1": {
+        "dataset_id": "imdb_r1",
+        "country": "India",
+        "cohort_role": "mixed_diagnostic_opportunistic",
+        "population_screening_dismissal_allowed": False,
+        "license": "IBIA Open Access (DBT BIOTECH-PRIDE / comparable to CC BY)",
+        "access_route": "IBIA web download (MAMOS_1000000004 r1.0)",
+        "native_format": "DICOM (Hologic Selenia; mixed FFDM + Synthetic Mammography SM)",
+        "has_4view_paired_cohort": True,
+        "notes": "IMDB Release 1.0 isolated cohort; separate FFDM vs SM and preserve 5 outcome-confidence categories.",
+    },
+    "imdb_r2": {
+        "dataset_id": "imdb_r2",
+        "country": "India",
+        "cohort_role": "mixed_diagnostic_opportunistic",
+        "population_screening_dismissal_allowed": False,
+        "license": "IBIA Open Access (DBT BIOTECH-PRIDE / comparable to CC BY)",
+        "access_route": "IBIA web download (MAMOS_1000000050 r2.0)",
+        "native_format": "DICOM (Hologic Selenia; mixed FFDM + Synthetic Mammography SM)",
+        "has_4view_paired_cohort": True,
+        "notes": "IMDB Release 2.0 isolated cohort; separate FFDM vs SM and preserve 5 outcome-confidence categories.",
+    },
+    "mias": {
+        "dataset_id": "mias",
+        "country": "UK",
+        "cohort_role": "screening",
+        "population_screening_dismissal_allowed": True,
+        "license": "CC0 / Open Research Use (mini-MIAS)",
+        "access_route": "PEIPA / mini-MIAS archive (322 digitized film MLO PGMs + Info.txt)",
+        "native_format": "PGM (8-bit 1024x1024 digitized film-screen MLO only)",
+        "has_4view_paired_cohort": False,
+        "notes": "Digitized film-screen screening cohort (322 MLO images / 161 pairs; no CC views). NYU 4-view and common_4view strictly blocked.",
+    },
     "cmmd": {
         "dataset_id": "cmmd",
         "country": "China",
@@ -416,20 +449,96 @@ def build_nlbs_external_manifests(
     return validate_inference_manifest(inf_df, "nlbs_inf"), validate_outcome_manifest(out_df, "nlbs_out")
 
 
+IMDB_OUTCOME_CONFIDENCE_CATEGORIES: Tuple[str, ...] = (
+    "histopathology_malignant",
+    "histopathology_benign",
+    "followup_negative",
+    "birads12_negative",
+    "clinical_or_imaging_malignant",
+)
+
+
+def normalize_imdb_outcome_confidence(
+    label_source: str,
+    outcome_label: int,
+    raw_category: Optional[str] = None,
+) -> str:
+    """Map IMDB label_source + outcome_label (or explicit category) into the 5 outcome-confidence tiers."""
+    if raw_category is not None and str(raw_category).strip():
+        cand = str(raw_category).strip().lower()
+        if cand not in IMDB_OUTCOME_CONFIDENCE_CATEGORIES:
+            raise ValueError(
+                f"Invalid IMDB outcome_confidence={raw_category!r}; expected one of {IMDB_OUTCOME_CONFIDENCE_CATEGORIES}"
+            )
+        if cand.endswith("_malignant") and int(outcome_label) != 1:
+            raise ValueError(f"Outcome confidence {cand!r} requires outcome_label=1, got {outcome_label}")
+        if (cand.endswith("_benign") or cand.endswith("_negative")) and int(outcome_label) != 0:
+            raise ValueError(f"Outcome confidence {cand!r} requires outcome_label=0, got {outcome_label}")
+        return cand
+
+    src = str(label_source or "").strip().lower()
+    lbl = int(outcome_label)
+    is_path = any(tok in src for tok in ("histopathology", "biopsy", "pathology"))
+    if lbl == 1:
+        return "histopathology_malignant" if is_path else "clinical_or_imaging_malignant"
+    if is_path:
+        return "histopathology_benign"
+    if "followup" in src or "follow_up" in src or "phone" in src:
+        return "followup_negative"
+    if "birads" in src or "bi-rads" in src:
+        return "birads12_negative"
+    raise ValueError(
+        f"Cannot map IMDB label_source={label_source!r} (outcome_label={lbl}) to 5 outcome-confidence categories."
+    )
+
+
+def filter_imdb_manifests_by_modality(
+    inference_df: pd.DataFrame,
+    outcome_df: pd.DataFrame,
+    modality_subtype: str,
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Filter an IMDB manifest pair strictly to 'FFDM' or 'SM' images and align outcome exams."""
+    target = str(modality_subtype or "").strip().upper()
+    if target not in ("FFDM", "SM"):
+        raise ValueError(f"modality_subtype must be 'FFDM' or 'SM', got {modality_subtype!r}")
+
+    inf_clean = validate_inference_manifest(inference_df, context=f"filter_imdb_{target}_inf")
+    out_clean = validate_outcome_manifest(outcome_df, context=f"filter_imdb_{target}_out")
+
+    def _mod_of(meta_json: str) -> str:
+        try:
+            return str(json.loads(meta_json).get("modality_subtype", "")).strip().upper()
+        except Exception:
+            return ""
+
+    kept_inf = inf_clean[inf_clean["acquisition_meta"].map(_mod_of) == target].copy().reset_index(drop=True)
+    if kept_inf.empty:
+        raise ValueError(f"No IMDB images found with modality_subtype={target!r}")
+    kept_exams = set(kept_inf["exam_id"])
+    kept_out = out_clean[out_clean["exam_id"].isin(kept_exams)].copy().reset_index(drop=True)
+    return validate_inference_manifest(kept_inf, f"imdb_{target}_inf"), validate_outcome_manifest(kept_out, f"imdb_{target}_out")
+
+
 def build_imdb_external_manifests(
     records_df: pd.DataFrame,
     preprocess_version: str = "trust_sec3_2_v2",
+    dataset_id: str = "imdb",
+    modality_filter: Optional[str] = None,
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Build standardized IMDB inference + outcome manifests with r1/r2 namespacing & UID dedup.
 
     Important clinical safeguards:
+        - Supports combined `dataset_id='imdb'` or isolated release IDs `'imdb_r1'` / `'imdb_r2'`.
         - Prefixes patient IDs with release (`imdb_r1_<pt>` / `imdb_r2_<pt>`) so r1.0 and r2.0
           sequential `pt_XXX` IDs never collide.
         - Deduplicates by `sop_instance_uid` (if present) or `file_sha256` / `image_path`.
-        - Never substitutes BI-RADS directly for cancer; preserves `label_source` provenance
-          (`histopathology`, `followup_imaging_or_phone`, `birads12_negative`) and rejects
-          missing/ambiguous binary outcomes.
+        - Supports strict `modality_filter` (`'FFDM'` or `'SM'`).
+        - Never substitutes BI-RADS directly for cancer; classifies into the 5
+          `IMDB_OUTCOME_CONFIDENCE_CATEGORIES` and rejects missing/ambiguous binary outcomes.
     """
+    if dataset_id not in ("imdb", "imdb_r1", "imdb_r2"):
+        raise ValueError(f"IMDB dataset_id must be 'imdb', 'imdb_r1', or 'imdb_r2', got {dataset_id!r}")
+
     req = {"release", "patient_id", "exam_id", "image_id", "laterality", "view", "image_path", "outcome_label", "label_source"}
     missing = sorted(req - set(records_df.columns))
     if missing:
@@ -440,6 +549,23 @@ def build_imdb_external_manifests(
     if not df["release"].isin(["r1", "r2", "r1.0", "r2.0"]).all():
         raise ValueError("IMDB release must be one of r1, r2, r1.0, r2.0")
     df["rel_tag"] = df["release"].map(lambda x: "r1" if x.startswith("r1") else "r2")
+
+    if dataset_id == "imdb_r1":
+        df = df[df["rel_tag"] == "r1"].copy()
+    elif dataset_id == "imdb_r2":
+        df = df[df["rel_tag"] == "r2"].copy()
+    if df.empty:
+        raise ValueError(f"No IMDB records remain for dataset_id={dataset_id!r}")
+
+    if modality_filter is not None:
+        mod_target = str(modality_filter).strip().upper()
+        if mod_target not in ("FFDM", "SM"):
+            raise ValueError(f"IMDB modality_filter must be 'FFDM' or 'SM', got {modality_filter!r}")
+        if "modality_subtype" not in df.columns:
+            raise ValueError("IMDB records_df missing 'modality_subtype' required for modality_filter")
+        df = df[df["modality_subtype"].astype(str).str.strip().str.upper() == mod_target].copy()
+        if df.empty:
+            raise ValueError(f"No IMDB records remain after modality_filter={mod_target!r}")
 
     # Namespace patient & exam IDs by release to avoid r1/r2 pt_XXX collisions
     df["cluster_id"] = "imdb_" + df["rel_tag"] + "_" + df["patient_id"].astype(str).str.strip()
@@ -476,7 +602,7 @@ def build_imdb_external_manifests(
 
     inf_df = pd.DataFrame(
         {
-            "dataset_id": "imdb",
+            "dataset_id": dataset_id,
             "cluster_id": df["cluster_id"],
             "exam_id": df["ns_exam_id"],
             "image_id": df["ns_image_id"],
@@ -496,9 +622,11 @@ def build_imdb_external_manifests(
     for eid, grp in exam_grp:
         first = grp.iloc[0]
         mods = sorted(set(grp.get("modality_subtype", pd.Series(["FFDM"])).astype(str).str.upper()))
+        raw_conf = first.get("outcome_confidence") if "outcome_confidence" in grp.columns else None
+        conf_cat = normalize_imdb_outcome_confidence(str(first["label_source"]), int(first["outcome_label"]), raw_conf)
         out_rows.append(
             {
-                "dataset_id": "imdb",
+                "dataset_id": dataset_id,
                 "cluster_id": str(first["cluster_id"]),
                 "exam_id": str(eid),
                 "outcome_label": int(first["outcome_label"]),
@@ -509,14 +637,15 @@ def build_imdb_external_manifests(
                         "release": str(first["rel_tag"]),
                         "has_ffdm": "FFDM" in mods,
                         "has_sm": "SM" in mods,
-                        "pathology_confirmed": str(first["label_source"]).lower() in ("histopathology", "biopsy", "pathology"),
+                        "pathology_confirmed": conf_cat in ("histopathology_malignant", "histopathology_benign"),
+                        "outcome_confidence": conf_cat,
                     },
                     sort_keys=True,
                 ),
             }
         )
     out_df = pd.DataFrame(out_rows)
-    return validate_inference_manifest(inf_df, "imdb_inf"), validate_outcome_manifest(out_df, "imdb_out")
+    return validate_inference_manifest(inf_df, f"{dataset_id}_inf"), validate_outcome_manifest(out_df, f"{dataset_id}_out")
 
 
 def build_cmmd_external_manifests(
@@ -783,3 +912,158 @@ def build_sensitivity_cohorts(
         "ffdm_exam_ids": ffdm_exams,
         "pathology_confirmed_exam_ids": path_exams,
     }
+
+
+_MIAS_BG_TISSUE = {"F", "G", "D"}
+_MIAS_ABNORMALITIES = {"CALC", "CIRC", "SPIC", "MISC", "ARCH", "ASYM", "NORM"}
+
+
+def parse_mias_truth_file(truth_source: Union[str, Path]) -> pd.DataFrame:
+    """Parse mini-MIAS Info.txt into a per-image table with aggregated binary malignancy labels.
+
+    Handles:
+        - Blank lines and comment/header lines not starting with `mdb\\d+`.
+        - `NORM` rows (no severity/coordinates) -> `outcome_label=0`.
+        - Multiple abnormality rows for the same `mdbXXX` image (malignant if ANY row is `M`).
+        - Deterministic pair/exam grouping: `mdb001`+`mdb002` -> `mias_pair_001` (`L`/`R` MLO).
+    """
+    if isinstance(truth_source, Path) or (isinstance(truth_source, str) and "\n" not in truth_source and Path(truth_source).exists()):
+        raw_text = Path(truth_source).read_text(encoding="utf-8")
+    else:
+        raw_text = str(truth_source)
+
+    rows: List[Dict[str, Any]] = []
+    for line_no, raw_line in enumerate(raw_text.splitlines(), start=1):
+        line = raw_line.strip()
+        if not line or line.startswith("#") or line.startswith("*"):
+            continue
+        parts = line.split()
+        ref = parts[0].lower()
+        if not re.fullmatch(r"mdb\d+", ref):
+            continue
+        if len(parts) < 3:
+            raise ValueError(f"MIAS truth line {line_no} malformed: {raw_line!r}")
+
+        bg = parts[1].upper()
+        abn = parts[2].upper()
+        if bg not in _MIAS_BG_TISSUE:
+            raise ValueError(f"MIAS truth line {line_no} invalid background tissue {bg!r}")
+        if abn not in _MIAS_ABNORMALITIES:
+            raise ValueError(f"MIAS truth line {line_no} invalid abnormality {abn!r}")
+
+        if abn == "NORM":
+            sev = "N"
+            is_mal = 0
+        else:
+            if len(parts) < 4 or parts[3].upper() not in ("B", "M"):
+                raise ValueError(f"MIAS truth line {line_no} missing valid B/M severity: {raw_line!r}")
+            sev = parts[3].upper()
+            is_mal = 1 if sev == "M" else 0
+
+        num = int(ref[3:])
+        pair_idx = (num - 1) // 2 + 1
+        default_lat = "L" if (num % 2 == 1) else "R"
+        rows.append(
+            {
+                "image_id": ref,
+                "pair_id": f"mias_pair_{pair_idx:03d}",
+                "default_laterality": default_lat,
+                "bg_tissue": bg,
+                "abnormality": abn,
+                "severity": sev,
+                "is_malignant": is_mal,
+            }
+        )
+
+    if not rows:
+        raise ValueError("No valid mdbXXX records parsed from MIAS truth file.")
+
+    df = pd.DataFrame(rows)
+    agg = (
+        df.groupby("image_id", sort=True)
+        .agg(
+            pair_id=("pair_id", "first"),
+            default_laterality=("default_laterality", "first"),
+            bg_tissue=("bg_tissue", "first"),
+            abnormalities=("abnormality", lambda s: sorted(set(s))),
+            is_malignant=("is_malignant", "max"),
+        )
+        .reset_index()
+    )
+    return agg
+
+
+def build_mias_external_manifests(
+    truth_source: Union[str, Path, pd.DataFrame],
+    image_paths_by_id: Dict[str, str],
+    *,
+    laterality_map: Optional[Dict[str, str]] = None,
+    preprocess_version: str = "trust_sec3_2_v2",
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Build target-quarantined MIAS inference + outcome manifests (MLO-only digitized film).
+
+    Zero severity/abnormality/malignancy strings appear anywhere in `INFERENCE_MANIFEST`.
+    """
+    truth_df = truth_source.copy() if isinstance(truth_source, pd.DataFrame) else parse_mias_truth_file(truth_source)
+    norm_paths = {str(k).strip().lower(): str(v).strip() for k, v in image_paths_by_id.items()}
+    lat_override = {str(k).strip().lower(): normalize_laterality(v) for k, v in (laterality_map or {}).items()}
+
+    inf_rows: List[Dict[str, Any]] = []
+    matched_truth: List[Dict[str, Any]] = []
+    for r in truth_df.to_dict("records"):
+        iid = str(r["image_id"]).strip().lower()
+        if iid not in norm_paths:
+            continue
+        lat = lat_override.get(iid, str(r["default_laterality"]))
+        inf_rows.append(
+            {
+                "dataset_id": "mias",
+                "cluster_id": str(r["pair_id"]),
+                "exam_id": str(r["pair_id"]),
+                "image_id": iid,
+                "laterality": lat,
+                "view": "MLO",
+                "image_path": norm_paths[iid],
+                "acquisition_meta": json.dumps(
+                    {
+                        "manufacturer": "MINI_MIAS_FILM_SCANNER",
+                        "modality_subtype": "DIGITIZED_FILM",
+                        "photometric_interpretation": "MONOCHROME2",
+                        "native_format": "PGM",
+                    },
+                    sort_keys=True,
+                ),
+                "preprocess_version": preprocess_version,
+            }
+        )
+        matched_truth.append(r)
+
+    if not inf_rows:
+        raise ValueError("No MIAS truth records matched image_paths_by_id.")
+
+    inf_df = pd.DataFrame(inf_rows)
+    mt_df = pd.DataFrame(matched_truth)
+    out_rows: List[Dict[str, Any]] = []
+    for pid, grp in mt_df.groupby("pair_id", sort=True):
+        abns = sorted({a for lst in grp["abnormalities"] for a in (lst if isinstance(lst, list) else [lst])})
+        out_rows.append(
+            {
+                "dataset_id": "mias",
+                "cluster_id": str(pid),
+                "exam_id": str(pid),
+                "outcome_label": int(grp["is_malignant"].max()),
+                "label_source": "mias_expert_truth_and_biopsy",
+                "cohort_role": "screening",
+                "eligibility_flags": json.dumps(
+                    {
+                        "n_images": int(len(grp)),
+                        "abnormalities": abns,
+                        "view_completeness": "mlo_only_no_cc",
+                        "pathology_confirmed": any(a != "NORM" for a in abns),
+                    },
+                    sort_keys=True,
+                ),
+            }
+        )
+    out_df = pd.DataFrame(out_rows)
+    return validate_inference_manifest(inf_df, "mias_inf"), validate_outcome_manifest(out_df, "mias_out")
