@@ -55,6 +55,15 @@ RSNA_VOL = modal.Volume.from_name("rsna-mammography-vol")
 RSNA_MOUNT = Path("/rsna_vol")
 L40S_HOURLY_USD = 2.3618  # 1x L40S ($1.95) + 6 vCPU ($0.2838) + 16 GiB RAM ($0.1280)
 ALLOWED_CPU_WORKERS = (2, 4, 8, 16)
+
+
+def _resolve_external_raw_root(dataset_id: str) -> Path:
+    ds = str(dataset_id).strip().lower()
+    if ds in ("imdb", "imdb_r1", "imdb_r2"):
+        return RSNA_MOUNT / "external_datasets" / "imdb" / "raw"
+    if ds == "mias":
+        return RSNA_MOUNT / "external_datasets" / "mias" / "raw" / "extracted"
+    return RSNA_MOUNT / "external_datasets" / ds / "extracted"
 READY_MODELS: Tuple[str, ...] = ("ce_b5", "trust_b5", "dinov2_rsna", "resnet50_rsna")
 AGENT1_HANDOFF_MODELS: Tuple[str, ...] = ("gmic_rsna_finetuned", "nyu_fourview_rsna_finetuned")
 DEFAULT_PILOT_BATCH_SIZES: Dict[str, tuple[int, ...]] = {
@@ -775,7 +784,7 @@ def preprocess_external_dataset_cpu(
 
     cache_dir = RSNA_MOUNT / "cache" / f"stage1_{dataset_id}_uint16" / "png_1520x912"
     cache_dir.mkdir(parents=True, exist_ok=True)
-    raw_root = RSNA_MOUNT / "external_datasets" / dataset_id / "extracted"
+    raw_root = _resolve_external_raw_root(dataset_id)
 
     def _one_row(row: Dict[str, Any]) -> str:
         img_id = str(row["image_id"])
@@ -783,7 +792,7 @@ def preprocess_external_dataset_cpu(
         if out_png.exists() and out_png.stat().st_size > 0:
             return "skipped"
         dcm_path = raw_root / str(row["image_path"])
-        arr_f32, phot, lat_dcm = decode_mammogram_array(dcm_path, apply_luts=True)
+        arr_f32, phot, lat_dcm = decode_mammogram_array(dcm_path, apply_luts=True, laterality=str(row["laterality"]))
         eff_lat = lat_dcm if lat_dcm in ("L", "R") else str(row["laterality"])
         res = extract_cropped_mammogram_with_metadata(arr_f32, photometric=phot, laterality=eff_lat)
         u16 = res.cropped_uint16
@@ -1000,7 +1009,7 @@ def infer_external_dataset_shard_l40s(
             )
 
             gmic_png_dir = RSNA_MOUNT / "cache" / "paper1_gmic_uint16_v1" / dataset_id / "png_2944x1920"
-            raw_root = RSNA_MOUNT / "external_datasets" / dataset_id / "extracted"
+            raw_root = _resolve_external_raw_root(dataset_id)
             nyukat_mods = loaded.get("mods") or _ensure_gmic_importable(Path("/root/external/GMIC"))
             rows_list = shard_df.to_dict("records")
 
@@ -1072,7 +1081,7 @@ def infer_external_dataset_shard_l40s(
             score_nyu_fourview_exam_batch,
         )
 
-        raw_root = RSNA_MOUNT / "external_datasets" / dataset_id / "extracted"
+        raw_root = _resolve_external_raw_root(dataset_id)
         nyu_mods = loaded["mods"]
         shard_df["view_slot"] = shard_df["laterality"] + "-" + shard_df["view"]
         exams = sorted(shard_df["exam_id"].unique().tolist())
